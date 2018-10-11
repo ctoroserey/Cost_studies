@@ -1,0 +1,1894 @@
+---
+title: "MA681 Final Project"
+author: "Claudio Toro Serey"
+date: "Fall 2017"
+output:
+  html_document: default
+  fig_caption: true
+  #pdf_document:
+  #  pandoc_args: [
+  #  "-V", "classoption=twocolumn"]  
+---
+
+# Final project
+
+Packages used: survival (survival analysis on RTs), tidyverse, ggfortify, knitr, pwr (for power analyses), nloptr (for nonlinear optimization problems) and pander.
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+``` {r, echo=FALSE}
+##------------- functions, libraries, and setups--------------
+# libraries
+#library(survival)
+library(tidyverse)
+library(ggfortify)
+library(knitr)
+library(pander) 
+library(nloptr)
+library(pwr)
+library(lme4)
+library(lmerTest)
+
+## Miscelaneous
+lbls <- c("Wait","Cognitive","Physical","Easy")
+cols = c("#78AB05","#D9541A","deepskyblue4", "grey50") # plot colors (wait, effort)
+lthick = 2 # line thickness for plots
+
+## Functions
+# Permutation for 2 groups
+permute <- function(group1 = 1, group2 = 2, statType = mean, nPerms = 5000, paired = FALSE){
+  
+    # prep data
+    summaryPerm <- list()
+    lOne <- length(group1)
+    lTwo <- length(group2)
+    bigSample <- c(group1,group2)  
+    
+    if (paired == FALSE) {
+      
+        
+        for (i in 1:nPerms){
+          
+            # relabel samples
+            tempBig <- sample(bigSample)
+            tempOne <- tempBig[1:lOne]
+            tempTwo <- tempBig[(lOne+1):length(bigSample)]
+            
+            # stats
+            tempDiffs <- statType(tempOne,na.rm=T) - statType(tempTwo,na.rm=T)
+            summaryPerm$jointDist[i] <- tempDiffs # statType(tempDiffs, na.rm = T) 
+          
+        }  
+        
+    } else {
+      
+        for (i in 1:nPerms){
+          
+            # shift labels in a pairwise fashion
+            tempDiffs <- statType((-1)^rbinom(lOne,1,0.5) * (group1 - group2))
+            summaryPerm$jointDist[i] <- tempDiffs
+          
+        }
+      
+    }
+  
+    # get the observed difference
+    diffs <- statType(group1,na.rm=T) - statType(group2,na.rm=T)
+    observedAbs <- abs(diffs) # maybe leave it as means here
+    observed <- diffs
+    summaryPerm$Pval <- 2 * (1 - ecdf(summaryPerm$jointDist)(observedAbs))
+    if (length(unique(abs(summaryPerm$jointDist))) == 1) {summaryPerm$Pval <- 1} # if the difference is always the same, then p = 1
+    summaryPerm$Observed <- observed
+    
+    return(summaryPerm)
+    
+}
+
+# Non-parametric Bootstrap for a single group
+bootstrap <- function(group = 1, statType = mean, B = 5000){
+  
+    # prep param
+    bootStats <- rep(0,B)
+    
+    # iterate
+    for(b in 1:B){
+      
+      # wait group
+      x <- sample(group,length(group),replace=T)  
+      bootStats[b] <- statType(x,na.rm = T)
+      
+    }
+    
+    return(bootStats)
+    
+}
+
+# plot logistic (for the prop complete test, mainly, but it can be easily expanded for more flexibility in n-params)
+plotLogis <- function(coeffs = 1, group = "Cognitive", handling = 1:14, reward = 1:20, xAxis = "Reward", plotType = lines, color = "black", lType = 1, pchType = 16){
+  
+    
+    # divide into relevant coefficients (assumes logisComb was the best model)
+    intercept <- coeffs[1]
+    cogBeta <- coeffs[2]    
+    physBeta <- coeffs[3]
+    easyBeta <- coeffs[4]
+    handBeta <- coeffs[5]
+    rwdBeta <- coeffs[6]
+    
+    #wait <- numeric()
+    #phys <- numeric()
+    
+    # now the parameters
+    label = "Reward Amount"
+    if (group == "Cognitive"){cog = 1} else {cog = 0}
+    if (group == "Phys"){phys = 1} else {phys = 0}
+    if (group == "Easy") {easy = 1} else {easy = 0}
+    if (xAxis == "Reward"){
+        xAxis = reward 
+        label = "Reward Amount" 
+    } else {
+        xAxis = handling
+        label = "Handling Time"
+    }
+    
+    # logistic function
+    model <- intercept + cogBeta*cog + physBeta*phys + easyBeta*easy + handBeta*handling + rwdBeta*reward 
+    func <- 1 / (1 + exp(-(model)))
+    plotType(xAxis,
+         func,
+         ylim = c(0,1),
+         xlim = c(0,25),
+         xlab = label,
+         ylab = "Probability of Completing a Trial",
+         type="l",
+         col = color,
+         lty = lType,
+         pch = pchType,
+         lwd = 2,
+         xaxt = "n",
+         bty = "n")
+  
+    # use title() to add title afterwards
+}
+
+# Cohen's D for 2 groups
+# for a more flexible approach, make the data input to be a list with entries for n groups, 
+# then do length(list) for the number of groups. 
+cohenD <- function(group1 = 1, group2 = 2){
+  
+      # means
+      mean1 <- mean(group1, na.rm = T)
+      mean2 <- mean(group2, na.rm = T)
+      
+      # variance
+      var1 <- var(group1, na.rm = T)
+      var2 <- var(group2, na.rm = T)
+      
+      # equation
+      out <- (mean1 - mean2) / sqrt((var1 + var2)/2)
+      
+      return(out)
+  
+}
+
+# get the number of continuous quits before current trial
+seqQuits <- function(subjData = 1){
+  
+    # get the lag
+    tempSeq <- sequence(rle(subjData)$lengths) # sequence
+    tempSeq[subjData==1] <- 0 # not interested in completed runs, just quits
+    tempSeq <- c(0,tempSeq) # lag it so it can be used as a t-1 regressor
+
+    # return data so that the length is equivalent
+    out <- tempSeq[1:length(subjData)]
+    
+    return(out)
+    
+}
+
+# basic power calculation for a one way ANOVA
+powerCalc <- function(d = 1.2, Za = 1.96, Zb = 0.842){
+  
+  out <- 2*((Za + Zb)/d)^2 + (0.25*(Za^2))
+  
+  return(round(out))
+  
+}
+
+## gather basic data (this is better as a function, then rbind)
+summarizeData <- function(Data = waitData, nSubs = nSubsW, type = "Wait"){
+  
+  tempSummary <- data.frame(group = rep(type, nSubs))
+  
+  if (type == "Cognitive") {
+    
+    for (subj in seq(nSubs)){
+      
+        # Choice index
+        tempChoice <- Data[[subj]]$Choice
+        
+        # Proportion complete
+        tempSummary[subj,2] <- mean(tempChoice)
+      
+        # earnings
+        tempSummary[subj,3] <- sum(Data[[subj]]$Reward[tempChoice==1])
+        
+        # RTs
+        tempSummary[subj,4] <- median(Data[[subj]]$`Choice RT`[tempChoice==0])
+    
+        # Mistakes (only for cognitive effort group)
+        tempMistakes <- sum(cogDataLong[[subj]]$`Trial Outcome`=="Forced travel") # how many forced travel trials
+        tempTrialnum <- length(Data[[subj]]$Choice) # how many decision trials
+        tempSummary[subj,5] <- tempMistakes / (tempMistakes + tempTrialnum) # proportion of forced travels throughout the exp        
+    
+    }    
+    
+  } else {
+    
+    for (subj in seq(nSubs)){
+        
+        # choice index
+        tempChoice <- Data[[subj]]$Choice
+      
+        # propotion complete
+        tempSummary[subj,2] <- mean(tempChoice)
+        
+        # earnings
+        tempSummary[subj,3] <- sum(Data[[subj]]$Reward[tempChoice==1])
+        
+        # RTs
+        tempSummary[subj,4] <- median(Data[[subj]]$RT[tempChoice==0])
+        
+        # Mistakes (to allow for mistakes on the cognitive group)
+        tempSummary[subj,5] <- NA
+        
+    }
+  
+  }
+  
+  return(tempSummary)
+  
+}
+
+# Summarize the proportion complete for GLMs
+propComplete <- function(Data = waitData, nSubs = nSubsW, indx = indxWait, type = "Wait") {
+    
+    tempProp <- data.frame(SubjID = rep(indx,9),
+                           Group = rep(type,nSubs*9),
+                           Handling = c(rep(2,nSubs*3), 
+                                        rep(10,nSubs*3), 
+                                        rep(14,nSubs*3)),
+                           Reward = rep(c(rep(5,nSubs),rep(10,nSubs),rep(25,nSubs)),3),
+                           propComplete = rep(NA,length(indx)*9),
+                           totalTrials = rep(NA,length(indx)*9),
+                           totalComplete = rep(NA,length(indx)*9))                         
+                           
+    for (subj in seq(nSubs)){  
+      
+      # handling of 2s
+      tempProp$propComplete[subj] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==2 & Data[[subj]]$Reward==4])
+      tempProp$propComplete[subj+nSubs] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==2 & Data[[subj]]$Reward==8])
+      tempProp$propComplete[subj+(nSubs*2)] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==2 & Data[[subj]]$Reward==20])
+      tempProp$totalTrials[subj] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==2 & Data[[subj]]$Reward==4])
+      tempProp$totalTrials[subj+nSubs] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==2 & Data[[subj]]$Reward==8])
+      tempProp$totalTrials[subj+(nSubs*2)] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==2 & Data[[subj]]$Reward==20])
+  
+      # handling of 10s
+      tempProp$propComplete[subj+(nSubs*3)] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==10 & Data[[subj]]$Reward==4])
+      tempProp$propComplete[subj+(nSubs*4)] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==10 & Data[[subj]]$Reward==8])
+      tempProp$propComplete[subj+(nSubs*5)] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==10 & Data[[subj]]$Reward==20])
+      tempProp$totalTrials[subj+(nSubs*3)] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==10 & Data[[subj]]$Reward==4])
+      tempProp$totalTrials[subj+(nSubs*4)] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==10 & Data[[subj]]$Reward==8])
+      tempProp$totalTrials[subj+(nSubs*5)] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==10 & Data[[subj]]$Reward==20])    
+      
+      # handling of 14s
+      tempProp$propComplete[subj+(nSubs*6)] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==14 & Data[[subj]]$Reward==4])
+      tempProp$propComplete[subj+(nSubs*7)] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==14 & Data[[subj]]$Reward==8])
+      tempProp$propComplete[subj+(nSubs*8)] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==14 & Data[[subj]]$Reward==20])
+      tempProp$totalTrials[subj+(nSubs*6)] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==14 & Data[[subj]]$Reward==4])
+      tempProp$totalTrials[subj+(nSubs*7)] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==14 & Data[[subj]]$Reward==8])
+      tempProp$totalTrials[subj+(nSubs*8)] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==14 & Data[[subj]]$Reward==20])
+    
+    }
+      
+    return(tempProp)
+    
+}
+
+
+```
+
+
+
+``` {r, echo=FALSE}
+### data loading and cleaning up
+
+# load cognitive effort group
+setwd('/Volumes/Addon/Grad school/Cost2_data/cog')
+temp = list.files(pattern="*.csv")
+cogDataLong = lapply(temp, read.csv, header = FALSE)
+
+# load wait group
+setwd('../wait')
+temp = list.files(pattern="*.csv")
+waitDataLong = lapply(temp, read.csv, header = FALSE)
+
+# load physical group
+setwd('../phys')
+temp = list.files(pattern="*.csv")
+physDataLong = lapply(temp, read.csv, header = FALSE)
+
+# load pheasysical group
+setwd('../easy')
+temp = list.files(pattern="*.csv")
+easyDataLong = lapply(temp, read.csv, header = FALSE)
+
+### cleaning data
+# this will generate a simple list with only info about trials that participants quit or completed
+# this is because cognitive logs also include within-trial task-specific information
+# for the wait condition, it will get rid of the break indicator 
+
+nSubsW <- length(waitDataLong)
+nSubsC <- length(cogDataLong)
+nSubsP <- length(physDataLong)
+nSubsE <- length(easyDataLong)
+totalSubs <- (nSubsW + nSubsC + nSubsP + nSubsE) # why didn't I think of this before...
+
+#  short lists
+cogData <- list()
+waitData <- list()
+physData <- list()
+easyData <- list()
+
+# For pre-post analysis
+cogBefore <- list()
+cogAfter <- list()
+waitBefore <- list()
+waitAfter <- list()
+physBefore <- list()
+physAfter <- list()
+easyBefore <- list()
+easyAfter <- list()
+
+# clean wait group data
+for (subject in seq(nSubsW)){
+  
+  # Before/after
+  breakW <- which(waitDataLong[[subject]]$V1 == 0)
+
+  waitBefore[[subject]] <- waitDataLong[[subject]][1:(breakW - 1),]
+  waitAfter[[subject]] <- waitDataLong[[subject]][(breakW + 1):length(waitDataLong[[subject]]$V1),] 
+
+  # assign header names
+  colnames(waitBefore[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")
+  colnames(waitAfter[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")
+    
+  
+  
+  # Overall data cleaning
+  tempW <- waitDataLong[[subject]]$V1 != 0
+  
+  # create a new list with only decision trials / without break
+  waitData[[subject]] <- waitDataLong[[subject]][tempW,]
+  
+  # assign header names
+  colnames(waitData[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")
+  
+}
+
+# clean cognitive group data
+for (subject in seq(nSubsC)){
+  
+  # Before/After
+  breakC <- which(cogDataLong[[subject]]$V1 == 0)
+  
+  cogBefore[[subject]] <- cogDataLong[[subject]][1:(breakC-1),]
+  temp <- cogBefore[[subject]]$V7 # trial outcome vector
+  quitTrials <- grep("Quit",temp)
+  completeTrials <- grep("Reward",temp)
+  decisionTrials <- sort(c(quitTrials,completeTrials))
+  cogBefore[[subject]] <- cogBefore[[subject]][decisionTrials,]
+  
+  cogAfter[[subject]] <- cogDataLong[[subject]][(breakC+1):length(cogDataLong[[subject]]$V1),]
+  temp <- cogAfter[[subject]]$V7 # trial outcome vector
+  quitTrials <- grep("Quit",temp)
+  completeTrials <- grep("Reward",temp)
+  decisionTrials <- sort(c(quitTrials,completeTrials))
+  cogAfter[[subject]] <- cogAfter[[subject]][decisionTrials,]
+  
+  
+  colnames(cogBefore[[subject]]) <- c("Handling","Reward","Choice","Task RT","Choice RT",
+                                      "Experiment Time","Trial Outcome","Task Type","Task Setup")
+  colnames(cogAfter[[subject]]) <- c("Handling","Reward","Choice","Task RT","Choice RT",
+                                     "Experiment Time","Trial Outcome","Task Type","Task Setup")
+  
+  # Overall data cleaning
+  # create an index for the trials in which a decision was made (completed, quit) 
+  temp <- cogDataLong[[subject]]$V7 # trial outcome vector
+  quitTrials <- grep("Quit",temp)
+  completeTrials <- grep("Reward",temp)
+  decisionTrials <- sort(c(quitTrials,completeTrials))
+  
+  # create a new list with only decision trials / without break
+  tempC <- cogDataLong[[subject]]$V1 != 0  
+  cogData[[subject]] <- cogDataLong[[subject]][decisionTrials,]
+  cogDataLong[[subject]] <- cogDataLong[[subject]][tempC,]  
+
+  colnames(cogData[[subject]]) <- c("Handling","Reward","Choice","Task RT","Choice RT",
+                                    "Experiment Time","Trial Outcome","Task Type","Task Setup")
+  colnames(cogDataLong[[subject]]) <- c("Handling","Reward","Choice","Task RT","Choice RT",
+                                        "Experiment Time","Trial Outcome","Task Type","Task Setup") # Long contains within-trial info
+  
+  
+}
+
+# clean physical group data
+for (subject in seq(nSubsP)){
+  
+  # Before/After
+  breakP <- which(physDataLong[[subject]]$V1 == 0)
+  
+  physBefore[[subject]] <- physDataLong[[subject]][1:(breakP - 1),]
+  physAfter[[subject]] <- physDataLong[[subject]][(breakP + 1):length(physDataLong[[subject]]$V1),] 
+  
+  colnames(physBefore[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")
+  colnames(physAfter[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")
+
+  # create a new list with only decision trials / without break  
+  tempP <- physDataLong[[subject]]$V1 != 0
+  physData[[subject]] <- physDataLong[[subject]][tempP,]
+  colnames(physData[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")  
+  
+}
+
+
+# clean pheaysical group data
+for (subject in seq(nSubsE)){
+  
+  # Before/After
+  breakE <- which(easyDataLong[[subject]]$V1 == 0)
+  
+  easyBefore[[subject]] <- easyDataLong[[subject]][1:(breakE - 1),]
+  easyAfter[[subject]] <- easyDataLong[[subject]][(breakE + 1):length(easyDataLong[[subject]]$V1),] 
+  
+  colnames(easyBefore[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")
+  colnames(easyAfter[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")
+
+  # create a new list with only decision trials / without break  
+  tempE <- easyDataLong[[subject]]$V1 != 0
+  easyData[[subject]] <- easyDataLong[[subject]][tempE,]
+  colnames(easyData[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")  
+  
+}
+
+
+# Combine before/after across subjects
+cBefore <- rbind(cogBefore[[1]],cogBefore[[2]]) 
+cAfter <- rbind(cogAfter[[1]],cogAfter[[2]]) 
+wBefore <- rbind(waitBefore[[1]],waitBefore[[2]]) 
+wAfter <- rbind(waitAfter[[1]],waitAfter[[2]]) 
+pBefore <- rbind(easyBefore[[1]],physBefore[[2]])
+pAfter <- rbind(physAfter[[1]],physAfter[[2]])
+eBefore <- rbind(easyBefore[[1]],easyBefore[[2]])
+eAfter <- rbind(easyAfter[[1]],easyAfter[[2]])
+
+for (i in 3:nSubsW){
+  
+    wBefore <- rbind(wBefore,waitBefore[[i]])
+    wAfter <- rbind(wAfter,waitAfter[[i]])
+    
+}
+
+for (i in 3:nSubsC){
+  
+    cBefore <- rbind(cBefore,cogBefore[[i]])  
+    cAfter <- rbind(cAfter,cogAfter[[i]])
+    
+}
+
+
+for (i in 3:nSubsP){
+  
+    pBefore <- rbind(pBefore,physBefore[[i]])
+    pAfter <- rbind(pAfter,physAfter[[i]])
+    
+}
+
+
+for (i in 3:nSubsE){
+  
+    eBefore <- rbind(eBefore,easyBefore[[i]])
+    eAfter <- rbind(eAfter,easyAfter[[i]])
+    
+}
+
+
+#rm(cogBefore,cogAfter,waitBefore,waitAfter)
+
+# aggregate ADD PHYS
+waitBeforeAll <- aggregate(wBefore$Choice,
+          by = list(wBefore$Reward, wBefore$Handling),
+          FUN = 'mean')
+waitAfterAll <- aggregate(wAfter$Choice,
+          by = list(wAfter$Reward, wAfter$Handling),
+          FUN = 'mean')
+cogBeforeAll <- aggregate(cBefore$Choice,
+          by = list(cBefore$Reward, cBefore$Handling),
+          FUN = 'mean')
+cogAfterAll <- aggregate(cAfter$Choice,
+          by = list(cAfter$Reward, cAfter$Handling),
+          FUN = 'mean')
+physBeforeAll <- aggregate(pBefore$Choice,
+          by = list(pBefore$Reward, pBefore$Handling),
+          FUN = 'mean')
+physAfterAll <- aggregate(pAfter$Choice,
+          by = list(pAfter$Reward, pAfter$Handling),
+          FUN = 'mean')
+easyBeforeAll <- aggregate(eBefore$Choice,
+          by = list(eBefore$Reward, eBefore$Handling),
+          FUN = 'mean')
+easyAfterAll <- aggregate(eAfter$Choice,
+          by = list(eAfter$Reward, eAfter$Handling),
+          FUN = 'mean')
+
+
+rm(cBefore,cAfter,wBefore,wAfter, pBefore, pAfter, eBefore, eAfter)
+#--------------------------
+# remove unnecessary variables
+rm(temp,tempW,tempC,quitTrials,completeTrials,decisionTrials,subject)
+```
+
+## Introduction
+
+Decisions lie at the actionable core of human experience. Much of what we see in others, such as the way they dress or what they eat, can be conveyed as a result of their choices. An important aspect of such decisions involves weighing the value of an outcome against the cost incurred in obtaining it. This cost-value interaction has many forms and characteristics, such as the allocation of monetary resources, or the uncertainty of obtaining of an outcome versus a sure gain. A considerable amount of work has been focused on understanding the nature of value (Schultz, 2015). Cost, on the other hand, is less understood. A prevalent idea is that effort can act as a discounting factor.  Indeed, effort has been shown to be an actively avoided cost that devalues rewards, so that decision makers will prefer small rewards tied to low demands over large rewards that require high effort (Massar, Libedinsky, Weiyan, Huettel, & Chee, 2015). Importantly, this effect is independent from the amount of errors made in the task (Apps, Grima, Manohar, & Husain, 2015; Kool, McGuire, Rosen, & Botvinick, 2010; Westbrook, Kester, & Braver, 2013).
+
+\bigskip
+
+In the animal literature, the amount of effort a subject is willing to exert for a reward can be probed by increasing the ratio of responses required per each reinforcement until an animal refuses to work for the reward (Richardson & Roberts, 1996). Although findings from such studies have provided important information about the cost of effort in general, controversy regarding the particular nature of cognitive and physical effort persists (Westbrook & Braver, 2015). This debate has motivated investigators to characterize these types of effort more precisely (Schmidt, Lebreton, Cléry-Melin, Daunizeau, & Pessiglione, 2012; Walton, Kennerley, Bannerman, Phillips, & Rushworth, 2006). However, even though effort can be seen as cost in and of itself (Botvinick, Huffstetler, & McGuire, 2009), in ecological scenarios the magnitude of effort required by a task often affects the amount of time that is spent performing it. For example, going through an additional section of one’s tax return involves weighing both the mental effort and the extra time it takes against the reward attained. This is an important consideration. Multiple studies show that delayed rewards are discounted, so that having to wait longer for an outcome makes it less rewarding (Ainslie, 1975; Frederick, Loewenstein, & O ’donoghue, 2002; Green, Fristoe, & Myerson, 1994; Mcclure, Ericson, Laibson, Loewenstein, & Cohen, 2004). Additional investigations suggest that delay is discounted in a qualitatively similar fashion to physical (Prévost, Pessiglione, Météreau, Cléry-Melin, & Dreher, 2010) and mental effort (Massar et al., 2015). Although these studies have examined cost differences by combining time with physical or cognitive effort, there is currently no evidence on how participants would actively choose between all three types of cost. Recent findings demonstrate that cost related to physical and mental effort is computed differently in the brain (Hosking, Floresco, & Winstanley, 2014; Kurniawan et al., 2011; Westbrook & Braver, 2015), thus highlighting the need to examine these effects simultaneously. Because of this, it is important to understand if and how effort acts as a source of cost that is distinct from delay, and how this dissociation is represented in people’s choices.
+
+\bigskip
+
+The original aim of this project is to use behavioral and neuroimaging methods to investigate the potential differences in cost between time, cognitive effort, and physical effort. However, the results presented here pertain to behavioral pilot data that is limited to cognitive effort and pure time. These attributes are examined in a between-subject manner in order to provide a baseline that will guide future within-subject examinations. In particular, we explore how participants behave when faced with a modified foraging task, and estimate their individual opportunity cost of time to measure perceived cost for each group. We also sought to investigate the hypothesis that experiential phenomena would alter subjects' acceptance rates. Specifically we looked for sequential effects, such as an increase in the rate of rejecting or quitting trials leading a subject to subsequently accept more trials, as well as temporal effects, such as the onset of a sense of urgency leading to an increase in trial acceptance as the subject estimates that the trial block is nearing its end.
+
+## Methods
+
+Subjects:  A total of 22 healthy subjects (age 18-23; 13 female) were recruited from Psychology 101 classes through the Boston University SONA system. This system prohibits paying subjects for their time, as credits are given instead. Because of this limitation, participants were told to acquire as many points as possible during the task. All participants were consented before the experiment began, and all verbalized their understanding of the task after a short practice session. After the task, subjects were questioned on their within-task behavior, and all mentioned that they followed a specific strategy that they developed early on in the task. We thus found no reason to exclude any participants for this analysis.
+
+\bigskip
+
+Foraging task:  Temporal decision tasks differ from typical economic ones in that decision makers have the opportunity to reevaluate their choice until the time of reward. If the perceived cost of the current task surpasses the expected benefit during the waiting interval, switching to a different environment might prove beneficial. Foraging tasks are well equipped to measure these dynamics (Stephens & Krebs, 1986). In this experiment we crafted a modified version of classic experimental settings. Traditionally, foraging tasks offer the participant the option to harvest an environment whose reward progressively depletes (usually called the “patch”), or to quit and go to a new location with replenished resources. Once the reward amount in the current patch becomes lower than the expected reward in a different one, the decision maker should quit harvesting and “travel” to a new patch. The travel time is identified as varying and unrewarding, so decision makers have to make careful choices based on the current rate of reward (Hayden et al., 2011). The present study modifies this structure in an important way. Instead of harvesting a depleting source across trials, participants face individual trials in which they wait a given amount of time for a reward (the handling time). If the reward amount is not worth the time, the participant can quit the trial, forfeit the reward, and wait a different amount of time (traveling time) to try a new (and potentially more rewarding) trial. Quitting a trial is followed by the appearance of a progress bar that displays their traveling time (this bar is not present during handling times). Participants are shown the total amount of points they can earn at the beginning of each trial (5, 10, or 25 points, equally distributed). These amounts are explicitly disclosed during the practice session in order to avoid any confusion about the possible reward amounts throughout the experiment. The total experiment time was divided into six 7-minute blocks. Each block had one of three predefined combinations of handling and travel times, all of which added up to 16 seconds (handling times could be 2, 10, or 14 seconds long). All three timing combinations were shown in a semi-random order, once before and after a break, and each was visually disclosed to the participant at the beginning of each block.
+
+\bigskip
+
+Subjects were divided into two groups: the “wait” group passively waited during the handling time, while the “cognitive” group completed a random sequence of two-second-long cognitive tasks (i.e. Stroop, Flanker, and motion coherence) that collectively lasted the equivalent of the handling time. This kind of task switching is demonstrably effortful (Apps et al., 2015; Kool et al., 2010), and the unpredictable combination of tasks precludes training effects. Cognitive tasks were programmed so that the same two buttons (left and right arrow keys) were used to respond for all tasks. If a participant made more than two errors during the handling time, they were forced to travel. This contingency was added to guarantee engagement. Participants had the option of quitting the current condition at any point by pressing the spacebar.
+
+\bigskip
+
+Calculating optimal behavior:  Having predefined handling, traveling, and reward amounts allowed us to compute the optimal behavior for each block. In the foraging literature, the possible per-trial reward is often weighed against the per-second rate of reward (Constantino & Daw, 2015). This is called the opportunity rate. By multiplying the opportunity rate by the handling time, decision makers can estimate the opportunity cost of time. This measure conveys the richness of the environment, and is equivalent to the participant contemplating how much they could be making instead of waiting for the current reward.
+Given that rewards have a uniform probability distribution, we can calculate the highest possible opportunity rate for each combination of handling and traveling time based on the reward acceptance threshold. For example, we can compute the possible amount to be earned by a participant that accepts every reward (acceptance threshold of 5 points). Conversely, a more cautious approach would be to only accept 10 and 25 points (acceptance threshold of 10 points). Thus, the proportion accepted (2⁄3 in the case of acceptance threshold = 10) can be multiplied by the handling plus travel times (i.e. 16 seconds), while the remaining third would be multiplied by the travel time. This expected length then divides the expected reward, defined as the sum of the accepted points divided by 3 (rewards possible). We used this calculation to test the combinations of handling and travel times that yielded the most discriminating optimal behaviors (Figure 1). This ground truth opportunity rate helped us gauge the optimality of participants’ decisions on each condition. The resulting ideal behavior was to accept everything when the handling time was 2 seconds, accept 10 and 25 points when it was 10 seconds, and to only accept 25-point trials when it lasted 14 seconds.
+
+\bigskip
+
+## Results
+
+### Propotion Completed
+
+The most basic question that guides this project is which group accepted more trials. Intuitively, the condition that triggered the least acceptances can be argued to be the costliest. The wait group had a mean proportion acceptance of 0.53 (sd = 0.11), while the effort group's mean proportion was 0.72 (sd = 0.19). In order to estimate the significance of this difference, I first ran an independent samples t-test. This test suggested that the wait group accepted significantly fewer trials overall (t(16) = -2.86, p = 0.01), thus rejecting the null hypothesis that the difference between these groups would be 0.
+
+While this result was surprising and interesting (I was expecting the effort group to accept less), a t-test does not seem like the right statistic to perform. One of the problems with the present study is the small samples, making reliable inferences difficult to achieve. This becomes somewhat plain when considering the CDFs and confidence intervals for each group. According to the plot, it would be difficult to trust any test that describes them as significantly different. 
+
+
+``` {r,echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+
+## overall proportion complete
+# create data frame with summary stats
+tempW <- summarizeData()
+tempC <- summarizeData(Data = cogData, nSubs = nSubsC, type = "Cognitive")
+tempP <- summarizeData(Data = physData, nSubs = nSubsP, type = "Physical")
+tempE <- summarizeData(Data = easyData, nSubs = nSubsE, type = "Easy")
+
+summaryData <- rbind(tempW,
+                     tempC,
+                     tempP,
+                     tempE)
+
+colnames(summaryData) <- c("Group","propComplete","Earnings","RT","forcedTravel")
+
+summaryData$Cols <- c(rep(cols[1],nSubsW), rep(cols[2],nSubsC), rep(cols[3],nSubsP), rep(cols[4],nSubsE))
+rm(tempW, tempC, tempP, tempE)
+
+# Indexes for groups
+indxWait <- seq(nSubsW)
+indxWaitLong <- seq(nSubsW * 9) # 9 being the number of combinations
+indxCog <- (nSubsW + 1):(nSubsW + nSubsC)
+indxCogLong <- ((nSubsW * 9) + 1):((nSubsW * 9) + (nSubsC * 9))
+indxPhys <- ((nSubsW + nSubsC) + 1):(nSubsW + nSubsC + nSubsP)
+indxPhysLong <- ((nSubsW * 9) + (nSubsC * 9) + 1):((nSubsW * 9) + (nSubsC * 9) + (nSubsP * 9))
+indxEasy <- ((nSubsW + nSubsC + nSubsP) + 1):totalSubs #(nSubsW + nSubsC + nSubsP + nSubsE)
+indxEasyLong <- ((nSubsW * 9) + (nSubsC * 9) + (nSubsP * 9) + 1):((nSubsW * 9) + (nSubsC * 9) + (nSubsP * 9) + (nSubsE * 9))
+
+## prop complete
+# ecdfs
+wait <- ecdf(summaryData$propComplete[indxWait])
+cog <- ecdf(summaryData$propComplete[indxCog])
+phys <- ecdf(summaryData$propComplete[indxPhys])
+easy <- ecdf(summaryData$propComplete[indxEasy])
+range <- seq(0,1,by=0.01)
+
+test <- data.frame(range = range,
+                   ecdf = c(wait(range),cog(range),phys(range),easy(range)),
+                   Group = factor(c(rep("Wait",101),rep("Cognitive",101),rep("Physical",101),rep("Easy", 101)), levels = c("Wait","Cognitive","Physical","Easy")))
+
+p <- ggplot(test, aes(x=range,y=ecdf, group=Group, color=Group))
+p + geom_line() +
+    scale_color_manual(values = cols) +
+    labs(title = "ECDF of Acceptances per Group", y="ECDF") +
+    theme_classic()
+
+# plot(range,
+#      wait(range),
+#      main = "ECDF for Proportion Completed",
+#      xlab = "Proportion Completed",
+#      ylab = "ECDF",
+#      col = cols[1],
+#      type="l",
+#      lwd = lthick)
+# lines(range,
+#       cog(range),
+#       col = cols[2],
+#       lwd = lthick)
+# lines(range,
+#       phys(range),
+#       col = cols[3],
+#       lwd = lthick)
+# lines(range,
+#       easy(range),
+#       col = cols[4],
+#       lwd = lthick)
+# legend("bottomright",
+#        lbls,
+#        fill = cols,
+#        cex = 0.8)
+
+# CIs basic
+# CIC <- qt(.975,nSubsC-1)*(sd(summaryData$propComplete[indxCog])/sqrt(nSubsC))
+# CIW <- qt(.975,nSubsW-1)*(sd(summaryData$propComplete[indxWait])/sqrt(nSubsW))
+# CIP <- qt(.975,nSubsP-1)*(sd(summaryData$propComplete[indxPhys])/sqrt(nSubsP))
+# CIE <- qt(.975,nSubsE-1)*(sd(summaryData$propComplete[indxEasy])/sqrt(nSubsE))
+# lines(range,cog(range) + CIC,col = cols[2], lty = 2, lwd = lthick)
+# lines(range,cog(range) - CIC,col = cols[2], lty = 2, lwd = lthick) #qt(.975,nSubs-1)*(sd(meanBootC)/sqrt(nSubs))
+# lines(range,wait(range) + CIW,col = cols[1], lty = 2, lwd = lthick)
+# lines(range,wait(range) - CIW,col = cols[1], lty = 2, lwd = lthick)
+# lines(range,phys(range) + CIP,col = cols[3], lty = 2, lwd = lthick)
+# lines(range,phys(range) - CIP,col = cols[3], lty = 2, lwd = lthick)
+# lines(range,easy(range) + CIE,col = cols[4], lty = 2, lwd = lthick)
+# lines(range,easy(range) - CIE,col = cols[4], lty = 2, lwd = lthick)
+# 
+# rm(CIC,CIW,CIP,CIE)
+
+# problem is, data is not normal, so we're going to bootstrap it and DEFINITELY permute
+# Bootstrap nonparametric
+B <- 5000
+meanBootW <- bootstrap(summaryData$propComplete[indxWait],B = B) #rep(0,B)
+meanBootC <- bootstrap(summaryData$propComplete[indxCog], B = B) #rep(0,B)
+meanBootP <- bootstrap(summaryData$propComplete[indxPhys], B = B)
+meanBootE <- bootstrap(summaryData$propComplete[indxEasy], B = B)
+
+#CIs wait
+meanW <- mean(meanBootW)
+upperW <- quantile(meanBootW,0.975) # meanBoot?
+lowerW <- quantile(meanBootW,0.025)
+
+#CIs effort
+meanC <- mean(meanBootC)
+upperC <- quantile(meanBootC,0.975) # meanBoot?
+lowerC <- quantile(meanBootC,0.025)
+
+#CIs physical
+meanP <- mean(meanBootP)
+upperP <- quantile(meanBootP,0.975) # meanBoot?
+lowerP <- quantile(meanBootP,0.025)
+
+#CIs easy
+meanE <- mean(meanBootE)
+upperE <- quantile(meanBootE,0.975) # meanBoot?
+lowerE <- quantile(meanBootE,0.025)
+
+# formal testing
+# prop.test(sum(cogData[[i]]$Choice),length(cogData[[i]]$Choice))
+# propTtest <- t.test(summaryData$propComplete[indxWait],summaryData$propComplete[indxCog])
+# propPerm <- permute(summaryData$propComplete[indxWait],summaryData$propComplete[indxCog])
+propAov <- aov(propComplete ~ factor(Group), data = summaryData)
+
+# effect size
+propRsq <- cohenD(summaryData$propComplete[indxWait],summaryData$propComplete[indxCog])
+
+rm(B,cog,wait,phys,easy)
+```
+
+
+``` {r,echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+# boxplot(summaryData$propComplete[indxWait],
+#         summaryData$propComplete[indxCog],
+#         summaryData$propComplete[indxPhys],
+#         summaryData$propComplete[indxEasy],
+#         names = lbls,
+p <- ggplot(summaryData, aes(x=Group, y=propComplete, fill = Group))
+p + geom_boxplot(show.legend = F) +
+    scale_fill_manual(values = cols) +
+    labs(title = "Proportion Completed by Group", y="Proportion Completed") +
+    theme_classic()
+```
+
+In order to accomodate for this shortcoming, I took a handful of steps. First, I bootstrapped the mean proportion for each group separately (5000 iterations), so I could get a better estimate of the mean and CIs. As seen in the plots below, the mean for each became normally distributed. The table shows the bootstrapped means and confidence intervals.
+
+
+``` {r,echo=FALSE,fig.align="center",fig.width=10,fig.height=6}
+# plot the hist and qqnorm 
+# par(mfrow=c(4,2))
+# hist(meanBootW,
+#      main = "Distribution for the Bootstrapped propotions \n Wait Group",
+#      xlab = "Proportion Completed")
+# qqnorm(meanBootW,
+#        main = "QQ-norm for the Wait Group")
+# hist(meanBootC,
+#      main = "Distribution for the Bootstrapped propotions \n Cognitive Effort Group",
+#      xlab = "Proportion Completed")
+# qqnorm(meanBootC,
+#        main = "QQ-norm for the Cognitive Effort Group")
+# hist(meanBootP,
+#      main = "Distribution for the Bootstrapped propotions \n Physical Effort Group",
+#      xlab = "Proportion Completed")
+# qqnorm(meanBootP,
+#        main = "QQ-norm for the Physical Effort Group")
+# hist(meanBootE,
+#      main = "Distribution for the Bootstrapped propotions \n Easy Effort Group",
+#      xlab = "Proportion Completed")
+# qqnorm(meanBootE,
+#        main = "QQ-norm for the Easy Effort Group")
+```
+
+
+| Group       | Bootstrapped Mean | Bootstrapped CI lower   | Bootstrapped CI upper   |
+| :---------- | :---------------: | :---------------------: | ----------------------:
+| Wait        | $`r meanW`$       | $`r lowerW`$            | $`r upperW`$            |
+| Cog. Effort | $`r meanC`$       | $`r lowerC`$            | $`r upperC`$            |
+| Phys. Effort| $`r meanP`$       | $`r lowerP`$            | $`r upperP`$            |
+Table: Bootstrapped descriptives for each group
+
+
+With these estimates, I re-ploted the ECDF from above. It can now be seen that the CIs do not overlap, suggesting a true difference between these groups.
+
+``` {r,echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+# plot ecdf 
+par(mfrow=c(1,1))
+ecdfW <- ecdf(meanBootW)
+ecdfC <- ecdf(meanBootC)
+ecdfP <- ecdf(meanBootP)
+ecdfE <- ecdf(meanBootE)
+
+plot(range,ecdfW(range),
+     type = "l",
+     main = "ECDF for the Bootstrapped Proportions",
+     xlab = "Proportion Completed",
+     ylab = "ECDF",
+     xlim = c(0,1),
+     col = cols[1],
+     lwd = lthick)
+lines(range,
+      ecdfC(range),
+      col = cols[2],
+      lwd = lthick)
+lines(range,
+      ecdfP(range),
+      col = cols[3],
+      lwd = lthick)
+lines(range,
+      ecdfE(range),
+      col = cols[4],
+      lwd = lthick)
+legend("bottomright",
+       lbls,
+       fill = cols,
+       cex = 0.8)
+
+# and CIs for each (unnecessary unless I end up plotting)
+CIC <- qt(.975,nSubsC-1)*(sd(meanBootC)/sqrt(nSubsC))
+CIW <- qt(.975,nSubsW-1)*(sd(meanBootW)/sqrt(nSubsW))
+CIP <- qt(.975,nSubsP-1)*(sd(meanBootP)/sqrt(nSubsP))
+CIE <- qt(.975,nSubsE-1)*(sd(meanBootE)/sqrt(nSubsE))
+lines(range,ecdfC(range) + CIC,col = cols[2], lty = 2, lwd = lthick)
+lines(range,ecdfC(range) - CIC,col = cols[2], lty = 2, lwd = lthick) #qt(.975,nSubs-1)*(sd(meanBootC)/sqrt(nSubs))
+lines(range,ecdfW(range) + CIW,col = cols[1], lty = 2, lwd = lthick)
+lines(range,ecdfW(range) - CIW,col = cols[1], lty = 2, lwd = lthick)
+lines(range,ecdfP(range) + CIP,col = cols[3], lty = 2, lwd = lthick)
+lines(range,ecdfP(range) - CIP,col = cols[3], lty = 2, lwd = lthick)
+lines(range,ecdfE(range) + CIE,col = cols[4], lty = 2, lwd = lthick)
+lines(range,ecdfE(range) - CIE,col = cols[4], lty = 2, lwd = lthick)
+
+rm(CIC,CIW,CIP,CIE)
+```
+
+While these measures showed promise, they don't formalize the differences in proportin completed. To achieve this, I performed a permutation test on the mean difference in proportions between both groups. The resulting p-value was 0.01, and the estimated null distribution of this difference is shown below. Finally, I used Cohen's D to estimate the effect size of this comparison, which yielded a value of 0.5. 
+
+``` {r,echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+# plotting the permutation
+# plot(density(propPerm$jointDist),
+#      main = "Permuted Null Distribution for the Difference in Proportions \n Wait - Effort",
+#      xlab = "Mean Difference",
+#      lwd = lthick)
+# lines(c(propPerm$Observed,propPerm$Observed), c(0,1200), lty=2, col="red", lwd = lthick)
+```
+
+This shows that the effort group completed a significantly larger amount of trials overall than the wait group.
+
+\bigbreak
+
+### Total Earnings
+In the current experiment earnings are of no big interest, as the main goal of the study is to estimate differences in perceived cost as reflected by choices. However, it can be useful to take a look at earnings, especially because they can help us confirm certain aspects of the experiment (as seen in the results). The following graphs show the differences in mean earnings between groups.
+
+``` {r,echo=FALSE,fig.align="center",fig.width=9,fig.height=5}
+# wilcoxon rank sum
+earningTest <- wilcox.test(summaryData$Earnings[indxWait], summaryData$Earnings[indxCog], alternative = "two.sided")
+earningsPerm <- permute(summaryData$Earnings[indxWait], summaryData$Earnings[indxCog]) # I believe this more
+earningsRsq <- cohenD(summaryData$Earnings[indxWait], summaryData$Earnings[indxCog])
+
+# linear model (think of doing a Poisson Regression instead, since earnings are not normally distributed [although bootstrapped they're fine])
+propAllsq <- summaryData$propComplete^2 
+lmEarn <- lm(Earnings ~ propComplete + propAllsq, data = summaryData)
+coeffsEarn <- lmEarn$coefficients
+x <- seq(0,1,length=100) # for plotting
+
+# plotting
+par(mfrow=c(1,2))
+boxplot(summaryData$Earnings[indxWait],
+        summaryData$Earnings[indxCog],
+        summaryData$Earnings[indxPhys],
+        summaryData$Earnings[indxEasy],
+        names = lbls,
+        main = "Total Earnings for Each Group",
+        ylab = "Total Earnings (pts)",
+        xlab = "Group",
+        col = cols)
+
+
+# earnings (inverse-U, which makes sense because either over or under accepting are detrimental to earnings)
+plot(summaryData$propComplete[indxWait],
+     summaryData$Earnings[indxWait],
+     main = "Total Earnings as a Function of Proportion Accepted",
+     xlab = "Total Proportion Completed",
+     ylab = "Total Earned",
+     col=cols[1],
+     xlim=c(0.2,1),
+     ylim = c(1000,2000),
+     pch=16,
+     cex = lthick - 0.5)
+points(summaryData$propComplete[indxCog],
+       summaryData$Earnings[indxCog],
+       col=cols[2],
+       pch=16,
+       cex = lthick - 0.5)
+points(summaryData$propComplete[indxPhys],
+       summaryData$Earnings[indxPhys],
+       col=cols[3],
+       pch=16,
+       cex = lthick - 0.5)
+points(summaryData$propComplete[indxEasy],
+       summaryData$Earnings[indxEasy],
+       col=cols[4],
+       pch=16,
+       cex = lthick - 0.5)
+legend("topright",
+       lbls,
+       fill = cols,
+       cex = 0.8)
+lines(x, coeffsEarn[1] + coeffsEarn[2]*x + coeffsEarn[3]*(x^2),
+       col="black",
+      lwd = lthick)
+
+
+```
+
+\bigskip
+
+The effort group, while accepting more trials also earned slightly less than the wait group. A permutation analysis of differences in mean earnings per group indicated a trend (p = `r earningsPerm$Pval`; Cohen's D = `r earningsRsq`). The figure on the right shows a nonlinear relationship between acceptance rates and total earnings (line of best fit: beta = , T = , p-value = ). This is in line with the nature of the experiment, as participants should cautiously balance rewards with opportunity cost, and both under- and over-acceptance were non-optimal.
+
+### Response Times
+After checking for acceptance and earnings, another question is how fast participants were in making decisions (as they could quit at any point during the handling time). Perhaps participants were unclear about the experimental procedures, or changed their minds mid-trial. To account for this, I pooled all the response times for quit trials (since they are representative of a participant's choice to leave) across participants for each group. With these vectors, I plotted their respective ECDFs (Figure 4) and bootstrapped 95% CIs. As it can be seen, most decisions were made before the first second, with the cognitive effort group being slightly faster than the other two. Notably, the physical effort group shows a spike at 1s. This is due to the experimental setup, which automatically quit if no response was registered by that time. In addition, this group showed some mid-trial quitting, probably due to fatigue. This is not seen in the other conditions.
+The quick response times indicate that participants had a clear idea of what rewards were worth their time and effort. This is in agreement with the post-experiment questionaire, in which participant explained very specific strategies that they followed throughout the session.
+
+```{r,echo=FALSE,fig.align="center",fig.width=6,fig.height=4, fig.cap="ECDFs of pooled response times from each group. Responses were overall quick, with the wait group being slightly slower."}
+# RTs
+# let's try to do some survival curves
+RTW <- numeric() # vector of all decision-related RTs for the wait group
+RTC <- numeric() # same for the cog group
+RTP <- numeric()
+RTE <- numeric()
+
+# Wait group
+for (subj in seq(nSubsW)){
+  
+    # index for trials quit
+    tempChoiceW <- waitData[[subj]]$Choice == 0
+    
+    # concatenate the subject RT to the group
+    RTW <- c(RTW,waitData[[subj]]$RT[tempChoiceW])
+    
+}
+
+# Cognitive group
+for (subj in seq(nSubsC)){
+  
+    # index for trials quit
+    tempChoiceC <- cogData[[subj]]$Choice == 0
+
+    # concatenate the subject RT to the group
+    RTC <- c(RTC,cogData[[subj]]$`Choice RT`[tempChoiceC])
+
+}
+
+# Physical group
+for (subj in seq(nSubsP)){
+  
+    # index for trials quit
+    tempChoiceP <- physData[[subj]]$Choice == 0
+    
+    # concatenate the subject RT to the group
+    RTP <- c(RTP,physData[[subj]]$RT[tempChoiceP])  
+  
+}
+
+# Pheaysical group
+for (subj in seq(nSubsE)){
+  
+    # index for trials quit
+    tempChoiceE <- easyData[[subj]]$Choice == 0
+    
+    # concatenate the subject RT to the group
+    RTE <- c(RTE,easyData[[subj]]$RT[tempChoiceE])  
+  
+}
+
+
+# create an array with both data (for surv fit autoplot trials)
+lenC <- length(RTC)
+lenW <- length(RTW)
+lenP <- length(RTP)
+lenE <- length(RTE)
+
+RTgroups <- c(rep("Wait",lenW), 
+              rep("Effort",lenC), 
+              rep("Physical",lenP),
+              rep("Easy",lenE))
+RTall <- c(RTW,RTC,RTP,RTE)
+
+# plot ecdf 
+ecdfW <- ecdf(RTW)
+ecdfC <- ecdf(RTC)
+ecdfP <- ecdf(RTP)
+ecdfE <- ecdf(RTE)
+
+range <- seq(0,10, by = 0.001)
+
+plot(range,ecdfW(range),
+     type = "l",
+     main = "ECDF and CIs for the Response Times",
+     xlab = "Seconds",
+     ylab = "ECDF",
+     xlim = c(0,5),
+     col = cols[1],
+     bty = "n",
+     lwd = lthick)
+lines(range,
+      ecdfC(range),
+      col = cols[2],
+      lwd = lthick)
+lines(range,
+      ecdfP(range),
+      col = cols[3],
+      lwd = lthick)
+lines(range,
+      ecdfE(range),
+      col = cols[4],
+      lwd = lthick)
+legend("right",
+       lbls,
+       fill = cols,
+       cex = 0.8)
+
+# and CIs for each (unnecessary unless I end up plotting)
+CIC <- bootstrap(group = RTC, statType = median)  #qt(.975,nSubs-1)*(sd(RTC)/sqrt(nSubs))
+CIC <- median(CIC) - (quantile(CIC,0.025))
+CIW <- bootstrap(group = RTW, statType = median)  #qt(.975,nSubs-1)*(sd(RTW)/sqrt(nSubs))
+CIW <- median(CIW) - (quantile(CIW,0.025))
+CIP <- bootstrap(group = RTP, statType = median)  #qt(.975,nSubs-1)*(sd(RTW)/sqrt(nSubs))
+CIP <- median(CIP) - (quantile(CIP,0.025))
+CIE <- bootstrap(group = RTE, statType = median)  #qt(.975,nSubs-1)*(sd(RTW)/sqrt(nSubs))
+CIE <- median(CIE) - (quantile(CIE,0.025))
+lines(range,ecdfC(range) + CIC,col = cols[2], lty = 2, lwd = lthick)
+lines(range,ecdfC(range) - CIC,col = cols[2], lty = 2, lwd = lthick) 
+lines(range,ecdfW(range) + CIW,col = cols[1], lty = 2, lwd = lthick)
+lines(range,ecdfW(range) - CIW,col = cols[1], lty = 2, lwd = lthick)
+lines(range,ecdfP(range) + CIP,col = cols[3], lty = 2, lwd = lthick)
+lines(range,ecdfP(range) - CIP,col = cols[3], lty = 2, lwd = lthick)
+lines(range,ecdfE(range) + CIE,col = cols[4], lty = 2, lwd = lthick)
+lines(range,ecdfE(range) - CIE,col = cols[4], lty = 2, lwd = lthick)
+
+# just cause, Kolmogrov-Smirnov 
+# ksRT <- ks.test(RTW,RTC)
+# RTPerm <- permute(RTW,RTC)
+# RTCohen <- cohenD(RTW,RTC)
+
+rm(lenC,lenW,lenP,lenE)
+
+```
+
+
+``` {r,echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+# mistakes
+# significant from 0
+mistakeTest <- wilcox.test(summaryData$forcedTravel)
+mistakePerm <- permute(rep(0,11), summaryData$forcedTravel[indxCog]) # revise
+
+```
+
+\bigskip
+
+#### Proportion per handling-reward combination 
+The analyses above give us a general sense of the characteristics of each group. However, it also necessary to asses whether decision makers were influenced differently at each timing and reward combinations, and how these factors varied by group. First, I was interested in seeing differences as a whole. Figure 5 shows the proportion accepted (and standard error) for all these combinations.
+
+``` {r,echo=FALSE,fig.align="center",fig.width=9,fig.height=6, results = 'asis'}
+
+# params for reference
+handling <- c(2,10,14)
+
+# the other, just summarizing for all participants
+# Not sure if this is necessary anymore
+# allProp <- data.frame(Group = c(rep("Wait",nSubsW*3),
+#                                 rep("Cognitive",nSubsC*3),
+#                                 rep("Physical",nSubsP*3)),
+#                       Handling = c(rep(2,nSubsW), rep(10,nSubsW), rep(14,nSubsW),
+#                                    rep(2,nSubsC), rep(10,nSubsC), rep(14,nSubsC), 
+#                                    rep(2,nSubsP), rep(10,nSubsP), rep(14,nSubsP)),
+#                       FivePts = rep(NA,(nSubsW + nSubsC + nSubsP)*9),
+#                       TenPts = rep(NA,(nSubsW + nSubsC + nSubsP)*9),
+#                       TwntyfivePts = rep(NA,(nSubsW + nSubsC + nSubsP)*9))
+
+
+# Get the proportion completed per combination for GLMs
+tempW <- propComplete()
+tempC <- propComplete(Data = cogData, nSubs = nSubsC, indx = indxCog, type = "Cognitive")
+tempP <- propComplete(Data = physData, nSubs = nSubsP, indx = indxPhys, type = "Physical")
+tempE <- propComplete(Data = easyData, nSubs = nSubsE, indx = indxEasy, type = "Easy")
+
+allProp2 <- rbind(tempW,
+                  tempC,
+                  tempP,
+                  tempE)  
+allProp2$totalComplete <- allProp2$propComplete * allProp2$totalTrials
+
+rm(tempW, tempC, tempP, tempE)
+
+# add optimal vector and difference from optimal
+wait <- c(rep(1,nSubsW*3),
+          c(rep(0,nSubsW), rep(1,nSubsW*2)),
+          c(rep(0,nSubsW*2), rep(1,nSubsW)))
+cog <- c(rep(1,nSubsC*3),
+          c(rep(0,nSubsC), rep(1,nSubsC*2)),
+          c(rep(0,nSubsC*2), rep(1,nSubsC)))
+phys <- c(rep(1,nSubsP*3),
+          c(rep(0,nSubsP), rep(1,nSubsP*2)),
+          c(rep(0,nSubsP*2), rep(1,nSubsP)))
+easy <- c(rep(1,nSubsE*3),
+          c(rep(0,nSubsE), rep(1,nSubsE*2)),
+          c(rep(0,nSubsE*2), rep(1,nSubsE)))
+allProp2$Optimal <- c(wait,cog,phys,easy)
+allProp2$Deviation <- allProp2$Optimal - allProp2$propComplete
+
+# sort by subject ID
+#allProp2 <- allProp2[order(allProp2$SubjID),]
+
+# actual proportions and standard errors, and the optimal summary for plotting
+trueProp <- aggregate(allProp2$propComplete,
+            by = list(allProp2$Reward, allProp2$Handling, allProp2$Group),
+            FUN = 'mean')
+
+trueSD <- aggregate(allProp2$propComplete,
+          by = list(allProp2$Reward, allProp2$Handling, allProp2$Group),
+          FUN = 'sd')
+colnames(trueProp) <- c("Reward","Handling","Group","propComplete")
+trueProp$SE[1:9] <- (trueSD$x[1:9])/(sqrt(nSubsW))
+trueProp$SE[10:18] <- (trueSD$x[10:18])/(sqrt(nSubsC))
+trueProp$SE[19:27] <- (trueSD$x[19:27])/(sqrt(nSubsP))
+trueProp$SE[28:36] <- (trueSD$x[28:36])/(sqrt(nSubsE))
+
+optimalProp <- aggregate(allProp2$Optimal,
+            by = list(allProp2$Reward, allProp2$Handling, allProp2$Group),
+            FUN = 'mean')$x
+
+```
+
+``` {r,echo=FALSE,fig.align="center",fig.width=9,fig.height=6}
+## REPEATED MEASURES VERSION
+# I think I like this the most
+prop.aov <- with(allProp2, aov(propComplete ~ factor(Group) * Handling * Reward + 
+                                 Error(SubjID / (Handling * Reward))))
+
+#prop.aov <- with(allProp2, aov(propComplete ~ factor(Group) * Handling * Reward + 
+ #                                Error(SubjID / (Handling * Reward))))
+
+## NOTES ON RESULTS
+# According to the logistic fit, there are main effects for all predictors, but no interactions. It also says that the overall odds for the wait group to accept versus the effort is around 16%. Similarly, increasing the handling time results in a decrease in the multiplicative odds of ~25%. Increments in reward increase the odds of acceptance by ~40%.
+```
+
+``` {r,echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+# In the works: the idea here is to estimate the probability of having observed a given amount of completed trials, assuming that the null is the reward maximizing behavior. That means: what is the probability of having seen this acceptance rate, assuming the optimal was to either accept or not (1 or 0)? If subjects knew the optimal behavior, then very low probabilities indicate that they were affected by the cost significantly. We cannot really assume that participants know this, but post-experiment interviews indicate that many of them had a clear idea of what the approxiimate optimal behavior was, even if they violated the rule during the experiment.
+
+# might use https://www.rdocumentation.org/packages/pracma for eps()
+
+TC <- aggregate(allProp2$totalComplete, by = list(allProp2$Reward, allProp2$Handling, allProp2$Group), FUN = 'sum')
+TC <- TC[order(TC$Group.3,decreasing = T),]
+TT <- aggregate(allProp2$totalTrials, by = list(allProp2$Reward, allProp2$Handling, allProp2$Group), FUN = 'sum')
+TT <- TT[order(TT$Group.3,decreasing = T),]
+OPT <- aggregate(allProp2$Optimal, by = list(allProp2$Reward, allProp2$Handling, allProp2$Group), FUN = 'mean')
+OPT <- OPT[order(OPT$Group.3,decreasing = T),]
+
+trueProp$totalComplete <- TC$x
+trueProp$totalTrials <- TT$x
+trueProp$Optimal <- OPT$x
+trueProp$Optimal[trueProp$Optimal==1] <- 0.99 # consider just getting eps(), like in matlab
+trueProp$Optimal[trueProp$Optimal==0] <- 0.01
+
+for (i in 1:18){
+
+    # parameters of interest for the binomial test
+    completed <- trueProp$totalComplete[i]
+    total <- trueProp$totalTrials[i]
+    prob <- trueProp$Optimal[i]
+  
+    # estimate the probability of having observed the acceptance rate, assuming reward-maximizing behavior
+    trueProp$binomProb[i] <- round(pbinom(completed,total,prob), digits = 10)
+
+}
+
+# this is important. Since each test is comparing against either the 1 or 0 side, the pvalue calculated from the probability needs to be signed appropriately. For optimal acceptances of 1, the probability given by pbinom() is the pvalue, but for 0 it is 1 - pbinom().
+trueProp$pval <- abs(rep(c(0,0,0,1,0,0,1,1,0),2) - trueProp$binomProb)
+
+# do multiple-test corrections
+trueProp$adjPval <- round(p.adjust(trueProp$pval, "BY"), digits = 4)
+```
+
+``` {r,echo=FALSE,fig.align="center",fig.width=9,fig.height=6}
+# trying another plot, for ANOVA (equivalent to the poster one)
+# make margins big enough
+# par(mar=c(10.2,4.1,4.1,2.1))
+# lthick <- 2.5
+# 
+# # putting this here for now, so it doesn't mess up anything above. Once the plot decision is made, clean up
+# trueProp <- trueProp[order(as.character(trueProp$Group),decreasing = T),]
+# # trueProp$SE[11:12] <- 0.001 # because otherwise it won't plot the arrows (SE = 0)
+# # trueProp$SE[15] <- 0.001
+# 
+# # actual plot
+# plot(1:3, trueProp$propComplete[1:3],
+#      main = "Proportion Completed Per Handling/Reward Combination \n Mean and SE for Each Group",
+#      xlab = "",
+#      ylab = "Proportion Completed",
+#      xlim = c(1,42), 
+#      ylim = c(0,1),
+#      type = "l",
+#      xaxt = "n",
+#      col = cols[1],
+#      lwd = lthick + 2,
+#      bty = "n")
+# points(1:3, 
+#      trueProp$propComplete[1:3],
+#      col = cols[1],
+#      pch = 16,
+#      cex = lthick - 1,
+#      bty = "n")
+# arrows(1:3, trueProp$propComplete[1:3] - trueProp$SE[1:3],
+#        1:3, trueProp$propComplete[1:3] + trueProp$SE[1:3], 
+#        length=0.05, 
+#        angle=90, 
+#        code=3,
+#        col = cols[1],
+#        lwd = lthick + 2)
+# # plot the optimal choices
+# lines(1:3,optimalProp[1:3], col = "grey48",lty=3, lwd = lthick + 2)
+# points(1:3,optimalProp[1:3], col = "grey48",pch=17, cex = lthick - 1)
+# 
+# ranges <- array(4:36,dim = c(3,11)) # for selecting and placin on x-axis
+# for (i in 1:11){
+#   
+#     # choose a different color for each group
+#     color = cols[1]
+#     if (i > 2){color = cols[3]} 
+#     if (i > 5) {color = cols[2]}
+#     if (i > 8) {color = cols[4]}
+#     
+#     # grab the relevant measure indexes
+#     indx <- ranges[,i]
+#     
+#     # SEs
+#     SEup <- trueProp$propComplete[indx] + trueProp$SE[indx]
+#     SEdown <- trueProp$propComplete[indx] - trueProp$SE[indx]
+#     
+#     # plot
+#     lines(indx,
+#           trueProp$propComplete[indx],
+#           col = color,
+#           lwd = lthick + 2)
+#     points(indx, 
+#            trueProp$propComplete[indx],
+#            col = color,
+#            cex = lthick - 1,
+#            pch = 16,
+#            bty = "n")      
+#     arrows(indx, SEdown,
+#            indx, SEup, 
+#            length=0.05, 
+#            angle=90, 
+#            code=3,
+#            col = color,
+#            lwd = lthick + 2)    
+#     lines(indx,optimalProp[indx], col = "grey48", lty=3, lwd = lthick + 2)
+#     points(indx,optimalProp[indx], col = "grey48", pch=17, cex = lthick - 1)
+#     
+# }
+# 
+# # legend
+# legend("topright",
+#        c(lbls, "Optimal"), 
+#        fill = c(cols, "grey48"),
+#        cex = 1)
+# 
+# # x axis
+# axis(1,at = 1:9, rep(c(5,10,25),3))
+# axis(1,at = 10:18, rep(c(5,10,25),3))
+# axis(1,at = 19:27, rep(c(5,10,25),3))
+# axis(1,at = 28:36, rep(c(5,10,25),3))
+# axis(1,at = c(2,5,8), c(2,10,14), line = 3)
+# axis(1,at = c(11,14,17), c(2,10,14), line = 3)
+# axis(1,at = c(20,23,26), c(2,10,14), line = 3)
+# axis(1,at = c(29,32,35), c(2,10,14), line = 3)
+# mtext("Reward",1,line=1,at=-0.5)
+# mtext("Handling",1,line=3,at=-0.5)
+
+
+
+### THE PLOTS FOR YALE
+# Ggplot made plotting way easier than the previous version
+# This is in case you don't want to plot the easy condition (easier to see)
+trueProp2 <- trueProp[-(28:36), ]
+
+a1 <- ggplot(data = trueProp2, aes(x=interaction(Reward, Handling), y=propComplete, color=Group)) + 
+        geom_point(size=3) + 
+        geom_errorbar(aes(ymin=propComplete-SE, ymax=propComplete+SE), width=0.2, size=1) +
+        geom_line(aes(group = interaction(Handling, Group)), size=1) +
+        geom_point(aes(y=round(Optimal)), shape = 24, fill = "grey48", color = "grey48", size = 3, show.legend = F) +
+        scale_color_manual(values=cols) +
+        theme_classic()
+
+a1
+```
+
+\bigskip
+
+This plot portrays some important features: the first hypothesis was supported, as we can see that participants accepted fewer trials for smaller rewards and longer handling times. On the other hand, and perhaps expectedly, we can see that the effort group accepted more trials than the wait group in all cases. This is contrary to the second hypothesis. Interestingly, the physical effort group shows a similar pattern of acceptances to the cognitive effort participants.
+In order to analyze these differences, I ran a 2-way repeated measures ANOVA to see how participants in each group performed at each combination of handling times and rewards. Since all three factors are relevant to the question, and since at this point I was interested in mean differences, I did not perform model selection. The table below shows the results from the analysis from variance. Main effects were found for group (F(2,281) = 5.76, p < 0.005), handling time (F(1,281) = 52.784, p < 0.0001), and reward amount (F(1,281) = 123.14, p < 0.0001). A handling by reward interaction was also found (F(1,281) = 19.44, p < 0.0001), indicating that participant tendencies to accept higher rewards were reduced by longer handling times. This was somewhat expected, since the optimal behavior was to forage selectively for higher rewards as the handling time increased, and participants were fairly sensible to this structure.
+This analysis opens the door to another important consideration: the optimality of each group's behavior. Since the reward-maximizing choices can be calculated, I overlayed them on the plot from figure 5 (in grey).
+
+``` {r pander}
+# anova table
+x <- summary(prop.aov)   
+x <- x$`Error: Within`
+panderOptions("digits", 2)
+pander(x, style = "rmarkdown",split.table = 110)
+```
+
+
+
+### Before/After break strategy changes
+Another question that is worth prusuing is whether participants changed their behavior before and after the break. This is particularly important because they saw the same handling and travel time combination blocks (in the same order) before and after this break. To evaluate this, I performed per-subject paired permutation tests (paired by handling-reward combination), and extracted the p-values from the permuted null distributions. After correction for multiple comparisons (using false discovery rate), there were no significant changes before and after the break. These results suggest that participants were consistent in their acceptance behavior, and were following determinate strategies. This is in addition to the response time evidence examined above.
+
+``` {r,echo=FALSE,fig.align="center",fig.width=5,fig.height=5}
+# Before/After per subject diffs
+# wilcoxon signed rank won't work because the vectors are likely to be of different lengths
+# prop.test works as test of proportions (chi-square ish, but evaluated with a z-distribution?)
+# just say it's a chi-squared test of proportions per subject, and that only one subject had a different proportion completed before and after the break. All other null could not be rejected.
+
+# Problem: this computes the proportion without accounting for handling or reward amounts. Problem is, there aren't enough trials per combination to really account for every bit. Could be interesting to try, though.
+
+# cogABPval <- numeric()
+# waitABPval <- numeric()
+# physABPval <- numeric()
+# 
+# for (i in 1:11){
+#   
+#     # wait  
+#     temp <- prop.test(x = c(sum(waitBefore[[i]]$Choice), sum(waitAfter[[i]]$Choice)), 
+#                       n = c(length(waitBefore[[i]]$Choice), length(waitAfter[[i]]$Choice)))
+#     waitABPval[i] <- temp$p.value
+#      
+#     # effort
+#     temp <- prop.test(x = c(sum(cogBefore[[i]]$Choice), sum(cogAfter[[i]]$Choice)), 
+#                       n = c(length(cogBefore[[i]]$Choice), length(cogAfter[[i]]$Choice)))
+#     cogABPval[i] <- temp$p.value    
+#   
+# }
+# 
+# # Before after group. Don't worry about plotting
+# # paired t-tests also show that there are no differences before and after the break, indicating consistency of strategies
+
+
+##------- Better version
+cogABPval <- numeric()
+waitABPval <- numeric()
+physABPval <- numeric()
+
+# wait
+for (i in seq(nSubsW)){
+
+      tempPropB <- aggregate(waitBefore[[i]]$Choice, by = list(waitBefore[[i]]$Handling, waitBefore[[i]]$Reward), FUN = 'mean')
+      tempPropA <- aggregate(waitAfter[[i]]$Choice, by = list(waitAfter[[i]]$Handling, waitAfter[[i]]$Reward), FUN = 'mean')
+      tempPerm <- permute(tempPropB$x,tempPropA$x,nPerms = 5000, paired = TRUE)
+      waitABPval[i] <- tempPerm$Pval
+
+}
+
+# cognitive
+for (i in seq(nSubsC)){  
+  
+      if (i == 9) { cogABPval[i] = 1} else {
+      tempPropB <- aggregate(cogBefore[[i]]$Choice, by = list(cogBefore[[i]]$Handling, cogBefore[[i]]$Reward), FUN = 'mean')
+      tempPropA <- aggregate(cogAfter[[i]]$Choice, by = list(cogAfter[[i]]$Handling, cogAfter[[i]]$Reward), FUN = 'mean')
+      tempPerm <- permute(tempPropB$x,tempPropA$x,nPerms = 5000, paired = TRUE)
+      cogABPval[i] <- tempPerm$Pval}
+}
+  
+# physical
+for (i in seq(nSubsP)){   
+  
+      tempPropB <- aggregate(physBefore[[i]]$Choice, by = list(physBefore[[i]]$Handling, physBefore[[i]]$Reward), FUN = 'mean')
+      tempPropA <- aggregate(physAfter[[i]]$Choice, by = list(physAfter[[i]]$Handling, physAfter[[i]]$Reward), FUN = 'mean')
+      tempPerm <- permute(tempPropB$x,tempPropA$x,nPerms = 5000, paired = TRUE)
+      physABPval[i] <- tempPerm$Pval
+      
+}
+
+# Notes:
+# A problem with the paired permutation is that if a participant accepted most trials, the distributions become tiny and even small observed deviations will become highly unlikely. That's why participant 9 had a forced p = 1: they mostly accepted in both cases. In the physical effort this is accentuated because participants that wanted to over accept seemed unable to do so due to fatigue, thus creating noise. Paired t-tests show that there are no differences before and after the break. The t-test is more robust against this problem, while giving similar significance levels for noisier behaviors. Bottom line: although some p = 0, participants did not really change strategies before/after break on any condition.
+
+
+# Another approach (Joe's suggestion)
+# This one just plots the correlation between pre-post acceptance rates, both overall and per cell
+# The overall acceptance looks great, with mostly consistent rates, and with the physical group accepting slightly less post-break
+# However, the per-cell distribution looks messy, although you can still tell that there's a linear relationship
+# If I do a linear model predicting post with pre using cell-specific data, the betas are close to 1 and significant (also good R2s). That's good.
+
+# create vdata frames that store acceptance data per combination cell pre-post break
+waitB <- data.frame()
+waitA <- data.frame()
+cogB <- data.frame()
+cogA <- data.frame()
+physB <- data.frame()
+physA <- data.frame()
+easyB <- data.frame()
+easyA <- data.frame()
+
+# and for overall proportion accepted
+waitBAll <- numeric()
+waitAAll <- numeric()
+cogBAll <- numeric()
+cogAAll <- numeric()
+physBAll <- numeric()
+physAAll <- numeric() 
+easyBAll <- numeric()
+easyAAll <- numeric()
+
+
+for (i in seq(nSubsW)){
+  
+  # wait
+  tempPropB <- aggregate(waitBefore[[i]]$Choice, by = list(waitBefore[[i]]$Handling, waitBefore[[i]]$Reward), FUN = 'mean')
+  tempPropA <- aggregate(waitAfter[[i]]$Choice, by = list(waitAfter[[i]]$Handling, waitAfter[[i]]$Reward), FUN = 'mean')
+  waitB <- rbind(waitB,tempPropB)
+  waitA <- rbind(waitA,tempPropA)
+  waitBAll[i] <- mean(waitBefore[[i]]$Choice) 
+  waitAAll[i] <- mean(waitAfter[[i]]$Choice) 
+  
+}
+
+for (i in seq(nSubsC)){
+  
+  # cognitive
+  tempPropB <- aggregate(cogBefore[[i]]$Choice, by = list(cogBefore[[i]]$Handling, cogBefore[[i]]$Reward), FUN = 'mean')
+  tempPropA <- aggregate(cogAfter[[i]]$Choice, by = list(cogAfter[[i]]$Handling, cogAfter[[i]]$Reward), FUN = 'mean')
+  cogB <- rbind(cogB,tempPropB)
+  cogA <- rbind(cogA,tempPropA)
+  cogBAll[i] <- mean(cogBefore[[i]]$Choice) 
+  cogAAll[i] <- mean(cogAfter[[i]]$Choice)   
+  
+}
+
+for (i in seq(nSubsP)){
+  
+  # physical
+  tempPropB <- aggregate(physBefore[[i]]$Choice, by = list(physBefore[[i]]$Handling, physBefore[[i]]$Reward), FUN = 'mean')
+  tempPropA <- aggregate(physAfter[[i]]$Choice, by = list(physAfter[[i]]$Handling, physAfter[[i]]$Reward), FUN = 'mean')
+  physB <- rbind(physB,tempPropB)
+  physA <- rbind(physA,tempPropA)
+  physBAll[i] <- mean(physBefore[[i]]$Choice) 
+  physAAll[i] <- mean(physAfter[[i]]$Choice) 
+  
+}
+
+for (i in seq(nSubsE)){
+  
+  # easy
+  tempPropB <- aggregate(easyBefore[[i]]$Choice, by = list(easyBefore[[i]]$Handling, easyBefore[[i]]$Reward), FUN = 'mean')
+  tempPropA <- aggregate(easyAfter[[i]]$Choice, by = list(easyAfter[[i]]$Handling, easyAfter[[i]]$Reward), FUN = 'mean')
+  easyB <- rbind(easyB,tempPropB)
+  easyA <- rbind(easyA,tempPropA)
+  easyBAll[i] <- mean(easyBefore[[i]]$Choice) 
+  easyAAll[i] <- mean(easyAfter[[i]]$Choice) 
+  
+}
+
+
+```
+
+```{r,echo=FALSE,fig.align="center",fig.width=5,fig.height=5, fig.cap="P-values for the pairwise permutation of before and after break performance, each plot showing each group"}
+# ## plotting p-values from permutation
+# plot(seq(nSubsW),
+#      waitABPval,
+#      main = "P-values for permuted pairwise comparisons before and after break",
+#      xlab = "Subjects",
+#      ylab = "P values",
+#      ylim = c(0,1),
+#      xlim = c(0,38),
+#      pch = 16,
+#      col = cols[1])
+# points(12:22,
+#        cogABPval,
+#        pch = 16,
+#        col = cols[2])
+# points(23:33,
+#        physABPval,
+#        pch = 16,
+#        col = cols[3])
+# # legend
+# legend("right",
+#        c("Wait","Cognitive","Physical"),
+#        fill = cols,
+#        cex = 0.8)
+
+## plots for the pre-post acceptance rate correspondence
+# per cell
+# plot(waitB$x,
+#      waitA$x, 
+#      xlim = c(0,1),
+#      ylim = c(0,1),     
+#      main = "Proportion accepted pre- and post-midpoint \n For each timing/reward combination",
+#      xlab = "Acceptance Rate Before",
+#      ylab = "Acceptance Rate After",
+#      pch = 16,
+#      col = cols[1])
+# points(cogB$x,
+#        cogA$x, 
+#        col = cols[2],
+#        pch = 16)
+# points(physB$x,
+#        physA$x, 
+#        col = cols[3],
+#        pch = 16)
+# lines(seq(0,1,length = 10),
+#       seq(0,1,length = 10))
+# legend("bottomright",
+#        c("Wait","Cognitive","Physical"),
+#        fill = cols,
+#        cex = 0.8)
+
+# overall proportion
+plot(waitBAll,
+     waitAAll,
+     xlim = c(0,1),
+     ylim = c(0,1),
+     main = "Proportion accepted pre- and post-midpoint",
+     xlab = "Acceptance Rate Before",
+     ylab = "Acceptance Rate After",     
+     col = cols[1],
+     pch = 16)
+points(cogBAll,
+       cogAAll, 
+       col = cols[2],
+       pch = 16)
+points(physBAll,
+       physAAll, 
+       col = cols[3],
+       pch = 16)
+points(easyBAll,
+       easyAAll, 
+       col = cols[4],
+       pch = 16)
+lines(seq(0,1,length = 10),
+      seq(0,1,length = 10))
+legend("bottomright",
+       lbls,
+       fill = cols,
+       cex = 0.8)
+
+# Another approach
+# This will just plot the density of the completed trials before/after, trying to get at the possible fatigue experienced in the physical effort condition.
+# Response patterns for each subject look pretty similar, with adequate optimality adaptation.
+#
+# for (i in 1:nSubs){
+# plot(density(which(physBefore[[i]]$Choice==1)),
+#      main = paste("Choices in time, before and after for subject:",i),
+#      xlab = "Trials (completed)")
+# lines(density(which(physAfter[[i]]$Choice==1)), col = "red")
+# }
+```
+
+
+### Logistic regression 
+The analyses above were meant to get a sense of performance differences between groups while assuming that all experimental parameters were relevant, but I was also interested in estimating the importance of each factor in predicting choice. Such predictions can often be done with linear models. However, due to the non-Gaussian nature of the proportion of choices, as well as the predictors, I decided to run a logistic regression to predict the proportion of trials per subject, using group, handling time, and reward amount as predictors *(using a quasi-binomial GLM)*. I used Akaike Information Criterion (AIC) to identify which combinations of predictors significantly reduced the -2 log-likelihood while penalizing the addition of predictors. Figure 9 shows the results.
+
+``` {r,echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+# just to make the logistic plotting comply with the function
+allProp2 <- allProp2[order(as.character(allProp2$Group), decreasing = F),]
+
+# logistic regression tests ($deviance for LRTs, if desired. AIC should be fine though)
+logisBase <- glm(propComplete ~ 1, family = "binomial", data = allProp2) # intercept only
+logisGroup <- glm(propComplete ~ factor(Group), family = "binomial", data = allProp2) 
+logisHand <- glm(propComplete ~ factor(Group) + Handling, family = "binomial", data = allProp2)
+logisRwd <- glm(propComplete ~ factor(Group) + Reward, family = "binomial", data = allProp2)
+logisComb <- glm(propComplete ~ factor(Group) + Handling + Reward, family = "binomial", data = allProp2)
+logisInt <- glm(propComplete ~ factor(Group) + Handling * Reward, family = "binomial", data = allProp2)
+logisIntAll <- glm(propComplete ~ factor(Group) * Handling * Reward, family = "binomial", data = allProp2)
+
+# Quasibinomial GLM versions (with proper proportion setup)
+totalQuit <- allProp2$totalTrials - allProp2$totalComplete
+testBinom <- cbind(allProp2$totalComplete,totalQuit)
+logisBase <- glm(testBinom ~ 1, family = "quasibinomial", data = allProp2) # intercept only
+logisGroup <- glm(testBinom ~ factor(Group), family = "quasibinomial", data = allProp2) 
+logisHand <- glm(testBinom ~ factor(Group) + Handling, family = "quasibinomial", data = allProp2)
+logisRwd <- glm(testBinom ~ factor(Group) + Reward, family = "quasibinomial", data = allProp2)
+logisComb <- glm(testBinom ~ factor(Group) + Handling + Reward, family = "quasibinomial", data = allProp2)
+logisInt <- glm(testBinom ~ factor(Group) + Handling * Reward, family = "quasibinomial", data = allProp2)
+logisIntAll <- glm(testBinom ~ factor(Group) * Handling * Reward, family = "quasibinomial", data = allProp2)
+
+# Using a mixed-model fitted with GLMER
+# Note: GLMER does not take quasi family distributions
+# ranef() to display the random intercepts, fixef() for the model coefficients
+
+# fit model
+mixLogisComb <-  glmer(testBinom ~ factor(Group) + Handling + Reward + (1 | SubjID), family = "binomial", data = allProp2)
+
+# Create CIs
+se <- sqrt(diag(vcov(mixLogisComb)))
+tab <- cbind(Est = fixef(mixLogisComb), LL = fixef(mixLogisComb) - 1.96 * se, UL = fixef(mixLogisComb) + 1.96 * se)
+
+# plot random intercepts in increasing order
+plot(ranef(mixLogisComb))
+
+# plot per subject (as expected, the intercepts are highest for those who accepted everythiing)
+plot(ranef(mixLogisComb)$SubjID[[1]])
+
+# Model selection (with interactions is better)---------- 
+# Results: using handling and rewards as factors decreased the likelihood, so I removed those models 
+# For the logistic one, the last meaningful decrease in likelihood happened with logisComb, which also goes against the ANOVA (since no-interactions are significant). I think this model will work best.
+# I also double checked this by looking at the progressive deviances. The difference in model deviance (or -2LL of the model) for each pair of models is evaluated using a chi-squared distribution (with df = diff in params). This difference in logs is analogous to a logged division of the likelihoods, which is an LRT (or R-squared), with the null model going in the denominator. Using this in a forward-selection way, I found again that the last model to significantly improve the fit was the logisComb. So, using the null deviance and AIC yielded the same conclusion.
+aicLogis <- AIC(logisBase,logisGroup,logisHand,logisRwd,logisComb,logisInt,logisIntAll)
+anovaLogis <- anova(logisBase,logisGroup,logisHand,logisRwd,logisComb,logisInt,logisIntAll,test = "Chisq")
+
+# effect size
+logisComb$Rsq <- 1 - (logisComb$deviance/200.239) # denominator is the null deviance
+
+```
+
+\bigskip
+
+``` {r,echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+    
+par(mar=c(5.1,2.1,2.1,2.1))    
+# plot the deviance for all models
+# ver 3
+modelLabels <- c('Intercept','G Only','H Only','R Only','G + H + R','G + H * R','G * H * R')
+plot(anovaLogis$`Resid. Dev`,
+     main = "Residual Deviance for All Models",
+     xlab = "",
+     ylab = "Res. Deviance",
+     pch = 16,
+     xaxt = "n")
+axis(1,at = 1:7, labels = F)
+text(1:7, 
+     par("usr")[3] - 22,
+     labels = modelLabels, 
+     srt = 45, 
+     pos = 1, 
+     xpd = TRUE)
+    
+```
+
+\bigskip
+
+``` {r}
+# mixed linear model table
+panderOptions("digits", 2)
+pander(logisComb, style = "rmarkdown")
+```
+
+``` {r,echo=FALSE,fig.align="center",fig.width=6,fig.height=6}
+par(mfrow=c(1,1))
+## Plotting the winning model (colors are messed up)
+rewards <- seq(1,20,length = 1000)
+# wait
+plotLogis(coeffs = logisComb$coefficients,
+          group = "Wait",
+          handling = 2, 
+          reward = rewards, 
+          plotType = plot, 
+          color = cols[1],
+          lType = 6)
+
+plotLogis(coeffs = logisComb$coefficients,
+          group = "Wait",          
+          handling = 10, 
+          reward = rewards, 
+          color = cols[1],
+          lType = 3)
+
+plotLogis(coeffs = logisComb$coefficients,
+          group = "Wait",          
+          handling = 14, 
+          reward = rewards, 
+          color = cols[1])
+
+
+# cognitive
+plotLogis(coeffs = logisComb$coefficients,
+          group = "Cognitive",
+          handling = 2, 
+          reward = rewards, 
+          color = cols[2],
+          lType = 6)
+
+plotLogis(coeffs = logisComb$coefficients,
+          group = "Cognitive",
+          handling = 10, 
+          reward = rewards, 
+          color = cols[2],
+          lType = 3)
+
+plotLogis(coeffs = logisComb$coefficients,
+          group = "Cognitive",
+          handling = 14, 
+          reward = rewards, 
+          color = cols[2])
+
+
+# physical
+plotLogis(coeffs = logisComb$coefficients,
+          group = "Phys",
+          handling = 2, 
+          reward = rewards, 
+          color = cols[3],
+          lType = 6)
+
+plotLogis(coeffs = logisComb$coefficients,
+          group = "Phys",
+          handling = 10, 
+          reward = rewards, 
+          color = cols[3],
+          lType = 3)
+
+plotLogis(coeffs = logisComb$coefficients,
+          group = "Phys",
+          handling = 14, 
+          reward = rewards, 
+          color = cols[3])
+
+# easy
+plotLogis(coeffs = logisComb$coefficients,
+          group = "Easy",
+          handling = 2, 
+          reward = rewards, 
+          color = cols[4],
+          lType = 6)
+
+plotLogis(coeffs = logisComb$coefficients,
+          group = "Easy",
+          handling = 10, 
+          reward = rewards, 
+          color = cols[4],
+          lType = 3)
+
+plotLogis(coeffs = logisComb$coefficients,
+          group = "Easy",
+          handling = 14, 
+          reward = rewards, 
+          color = cols[4])
+
+# title
+title("Probabilities for All Handling-Reward Combinations \n for Each Group")
+
+# x axis
+xticks <- c(0,min(rewards[rewards>4]),min(rewards[rewards>8]),20)
+axis(1,at = xticks,c(0,4,8,20))
+
+# legend
+legend("bottomright",
+       c("Wait: 2s","Wait: 10s","Wait: 14s",
+         "Cognitive: 2s","Cognitive: 10s","Cognitive: 14s",
+         "Physical: 2s","Physical: 10s","Physical: 14s",
+         "Easy: 2s","Easy: 10s","Easy: 14s"), 
+       fill = c(cols[1],cols[1],cols[1],cols[2],cols[2],cols[2],cols[3],cols[3],cols[3],cols[4],cols[4],cols[4]),
+       lty = rep(c(6,3,1,8),3),
+       cex = 0.8)
+
+
+# actual proportions (maybe, maybe not)
+# points(c(5,10,25),trueProp$propComplete[1:3], col = cols[1], pch=17) # wait
+# points(c(5,10,25),trueProp$propComplete[4:6], col = cols[1], pch=17)
+# points(c(5,10,25),trueProp$propComplete[7:9], col = cols[1], pch=17)
+# 
+# points(c(5,10,25),trueProp$propComplete[19:21], col = cols[2], pch=17) # cog effort
+# points(c(5,10,25),trueProp$propComplete[22:24], col = cols[2], pch=17)
+# points(c(5,10,25),trueProp$propComplete[25:27], col = cols[2], pch=17)
+# 
+# points(c(5,10,25),trueProp$propComplete[10:12], col = cols[3], pch=17) # phys effort
+# points(c(5,10,25),trueProp$propComplete[13:15], col = cols[3], pch=17)
+# points(c(5,10,25),trueProp$propComplete[16:18], col = cols[3], pch=17)
+
+# and the residuals--------------------------
+# plot(logisComb$residuals,
+#      main = "Residuals for the Logistic Regression",
+#      xlab = "trial",
+#      ylab = "Residuals")
+# -------------------------------------------
+```
+
+### Sequential effects
+Finally, I was curious whether there were sequential effects. For example, one could think that quitting too many times consecutively would increase the probability of accepting any reward (in fear of skipping too much and lowering the amount of points they get overall). I checked for this possible effect by creating a vector with the number of consecutive quits that happened before each trial, and used it as a regressor on a logistic regression analysis. The regression was performed on each subject separately, using choice (0,1) as the dependent variable and the quit-run vector as a predictor. 
+
+While sequential quits were significantly predictive of choice for a couple of subjects, the effect sizes were minimal. Deviances barely changed, if at all. This indicates that previous trials had little bearing on choices. Instead, as seen above, participants focused mainly on the experimental parameters.
+
+``` {r,echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+# Also consider using ARMA()
+# store the models, so each subject's can be summarized
+quitModelsW <- list()
+quitModelsC <- list()
+quitModelsP <- list()
+quitModelsE <- list()
+
+# Wait
+for (i in seq(nSubsW)){
+  
+    # subject data (y)
+    yW <- waitData[[i]]$Choice
+    
+    # lag data (x predictors)
+    xW <- seqQuits(yW)
+    
+    # models
+    quitModelsW[[i]] <- glm(yW ~ xW, family = "binomial")
+    
+}
+
+# Cognitive
+for (i in seq(nSubsC)){
+  
+    # subject data (y)
+    yC <- cogData[[i]]$Choice
+    
+    # lag data (x predictors)
+    xC <- seqQuits(yC)
+    
+    # models
+    quitModelsC[[i]] <- glm(yC ~ xC, family = "binomial")
+    
+}
+
+# Physical
+for (i in seq(nSubsP)){
+  
+    # subject data (y)
+    yP <- physData[[i]]$Choice
+    
+    # lag data (x predictors)
+    xP <- seqQuits(yP)
+    
+    # models
+    quitModelsP[[i]] <- glm(yP ~ xP, family = "binomial")
+    
+}
+
+# Easy
+for (i in seq(nSubsE)){
+  
+    # subject data (y)
+    yE <- easyData[[i]]$Choice
+    
+    # lag data (x predictors)
+    xE <- seqQuits(yE)
+    
+    # models
+    quitModelsE[[i]] <- glm(yE ~ xE, family = "binomial")
+    
+}
+  # Result notes: while a couple of participants had significant p-values, the effect sizes are tiny. Deviance barely moves. That means that the odds of acceptance are independent of how many trials they quit before the current trial. No reason to add it as a covariante in the linear models, but it's worth talking about it.
+  
+```
+
+\bigskip
+
+### Power considerations
+
+While the current results look promising, it is important to remember that this was a minimally-sampled pilot study. Because of that, I decided to run power analysis (based on Cohen, 1988) for the most important tests. For this, I took the sample size (n = 11), the effect size (R-squared and Cohen's D), and the resulting p-values for each test, and used the 'pwr' package to compute the power.
+
+``` {r,echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+
+# tutorial: https://www.statmethods.net/stats/power.html
+
+# proportion completed (overall, fine)
+propPower <- pwr.t.test(n = 11, d = propRsq, sig.level = 0.05, type = "two.sample") # medium power
+propSampleReq <- pwr.t.test(power = .8, d = propRsq, sig.level = 0.05, type = "two.sample") # estimating sample size needed for power = .8
+
+# logistic regression (not sure if this works)
+Fsq <- logisComb$Rsq / (1 - logisComb$Rsq)
+sumLogis <- summary(logisComb)
+#logisPower <- pwr.f2.test(u = sumLogis$df.residual, v = sumLogis$df.null, f2 = Fsq, sig.level = 0.0001) # impossible, way too high
+```
+
+The power analysis shows that, with the current parameters, my study has a medium power (`r propPower`). In order to reach a power level of 0.8 and still find the difference at the current effect size, I would need to increase my sample size to at least 17, as shown in the following plot. 
+
+``` {r,echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+
+# trying to plot the necessary sample size for every effect size (at the current p-val)
+# powerRange <- seq(0.1,0.9,by = 0.1)
+# sampleReq <- numeric()
+# 
+# for (i in 1:length(powerRange)){
+#   
+#     temp <-  pwr.t.test(power = powerRange[i], d = propRsq, sig.level = 0.05, type = "two.sample")
+#     sampleReq[i] <- temp$n
+#     
+# }
+# 
+# plot(powerRange,
+#      sampleReq,
+#      main = "Sample Size Needed For Each Power Level \n At the Current Significance Level",
+#      ylab = "Sample Size Needed",
+#      xlab = "Power level")    
+# 
+
+```
+
+Perhaps more importantly, even with sufficient power and low p-values, the current study still risks a high false positive rate if the prior odds of finding this difference are against the alternative hypothesis (Benjamin et al., 2017; Nuzzo, 2014). This is a complicated issue to solve at the moment, especially since the present findings go against a literature that expects cognitive effort to provoke fewer responses than passive delays. Finally, it is worth noting that the sample (college students) is unrepresentative of the population at large, thus reducing the generality of these findings. Future replication of this study with larger (and more diverse) sample sizes, as well as an expansion to a within-subjects design, will help us determine whether these results are true or not. Regardless, the current line of work seems promising given the current results.
+
+
+
+
+
+``` {r,echo=FALSE,fig.align="center",fig.width=9,fig.height=6}
+### THE PLOTS FOR YALE
+# Ggplot made plotting way easier than the previous version
+# This is in case you don't want to plot the easy condition (easier to see)
+
+a2 <- ggplot(data = trueProp, aes(x=interaction(Reward, Handling), y=propComplete, color=Group)) +
+        geom_point(size=3) +
+        geom_errorbar(aes(ymin=propComplete-SE, ymax=propComplete+SE), width=0.2, size=1) +
+        geom_line(aes(group = interaction(Handling, Group)), size=1) +
+        geom_point(aes(y=round(Optimal)), shape = 24, fill = "grey48", color = "grey48", size = 3, show.legend = F) +
+        scale_color_manual(values=cols) +
+        theme_classic()
+
+a2
+```
+
+
+
