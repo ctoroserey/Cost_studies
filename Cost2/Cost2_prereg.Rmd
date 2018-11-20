@@ -2,9 +2,10 @@
 title: "Effort and Delay Discounting in a Foraging Environment"
 author: "Claudio Toro Serey & Joseph T. McGuire"
 output:
+  pdf_document: default
   html_document: default
-  word_document: default
   fig_caption: yes
+  word_document: default
 ---
 
 # Pre-registration follow-up
@@ -970,25 +971,27 @@ pander(lmEarn, style = "rmarkdown")
   
 \bigskip
   
-  **16.1.4.**	*To determine the optimality of each group’s decisions, we will perform two-sided one-sample (*one-sample? wouldn't it be paired vs optimal?*) t-tests to see if the proportion of acceptances for each time/reward combination was significantly different from the optimal rate (see 11.2.). This will result in 36 independent tests (3 rewards amounts, 3 handling/travel time combinations, and 4 groups), so we will correct for multiple comparisons using False Discovery Rate (FDR).*
+  **16.1.4.**	*To determine the optimality of each group’s decisions, we will perform two-sided one-sample t-tests (with mu being the optimal proporion of acceptances-either 0 or 1) to see if the proportion of acceptances for each time/reward combination was significantly different from the optimal rate (see 11.2.). This will result in 36 independent tests (3 rewards amounts, 3 handling/travel time combinations, and 4 groups), so we will correct for multiple comparisons using False Discovery Rate (FDR).*
 
 ``` {r 16.1.4., echo=FALSE}
 # Split the data frame into every combination of parameters of interest
 splitData <- split(allProp2, list(allProp2$Reward, allProp2$Handling, allProp2$Group))
 
 # Perform a paired t-test on every combination of parameters
-splitData_tests <- sapply(splitData, function(data) t.test(data$propComplete, data$Optimal, paired = T)$p.value)
+# Given that 20 cent rewards demand constant acceptances, we expect the proportions to be constant for these choices
+# This gives an error in the t.test due to the lack of variability and normal errors, so we use try to bypass this issue
+splitData_tests <- sapply(splitData, function(data) try(t.test(data$propComplete, mu = unique(data$Optimal))$p.value))
 
 # Adjust for multiple comparisons using BY-FDR
 trueProp$Deviation_pval <- round(p.adjust(splitData_tests, method = "BY"), digits = 2)
-trueProp$Deviation_pval[is.nan(trueProp$Deviation_pval)] <- 1
+trueProp$Deviation_pval[is.na(trueProp$Deviation_pval)] <- 1
 # trueProp[trueProp$Deviation_pval < 0.05, ]
 
 # Proportion of significant deviations from optimality
 splitData_prop <- round(sum(trueProp$Deviation_pval < 0.05, na.rm = T) / 36, digits = 2)
 ```
 
-Of the 36 tests, around `r splitData_prop` were significantly deviant from optimality. Most of these were from effortful groups, as the wait group just showed deviations for 2 seconds handling/4 cent, and 10 seconds handling/8 cent offers (note to self: think about a way to properly .
+Of the 36 tests, around `r splitData_prop` were significantly deviant from optimality. Most of these were from effortful groups, as the wait group just showed deviations for 2 seconds handling/4 cent, and 10 seconds handling/8 cent offers (note to self: think about a way to properly visualize these).
 
 \bigskip
 
@@ -1741,7 +1744,7 @@ permuteOCTest$CvE <- permute(cogOC, easyOC)
 permuteOCTest$PvE <- permute(physOC, easyOC)
 ```
 
-The analysis of variance was significant (F = `r round(Fval, digits = 2)`, p = `r Pval`, R-squared = `r Rsquared_aov`). Pairwise post-hoc permutations showed significantly greater values for the wait group versus the cognitive (p = `r permuteOCTest$WvC$Pval`) and easy (p = `r permuteOCTest$WvE$Pval`) groups, as well as significantly greater gammas for the physical group and the cognitive group (p = `r permuteOCTest$CvP$Pval`). These results suggest that participants engaged in cognitively effortful demands experience significantly lower opportunity costs than those whose demands involve physical effort and pure delay. The reason for this is unclear, and we will work on it in the near future. 
+The analysis of variance was significant (F = `r round(Fval, digits = 2)`, p = `r ifelse(Pval < 0.001, "< 0.001", paste("=", round(Pval, digits = 2)))`, R-squared = `r Rsquared_aov`). Pairwise post-hoc permutations showed significantly greater values for the wait group versus the cognitive (p = `r ifelse(permuteOCTest$WvC$Pval < 0.001, "< 0.001", paste("=", round(permuteOCTest$WvC$Pval, digits = 2)))`) and easy (p = `r ifelse(permuteOCTest$WvE$Pval < 0.001, "< 0.001", paste("=", round(permuteOCTest$WvE$Pval, digits = 2)))`) groups, as well as significantly greater gammas for the physical group and the cognitive group (p = `r ifelse(permuteOCTest$CvP$Pval < 0.001, "< 0.001", paste("=", round(permuteOCTest$CvP$Pval, digits = 2)))`). These results suggest that participants engaged in cognitively effortful demands experience significantly lower opportunity costs than those whose demands involve physical effort and pure delay. The reason for this is unclear, and we will work on it in the near future. 
 
 \bigskip
 \bigskip
