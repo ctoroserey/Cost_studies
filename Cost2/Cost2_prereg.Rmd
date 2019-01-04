@@ -895,7 +895,7 @@ propAllsq <- summaryData$propComplete^2
 lmEarn <- lm(Earnings ~ propComplete + propAllsq, data = summaryData)
 summaryEarn <- summary(lmEarn)
 coeffsEarn <- lmEarn$coefficients
-summaryData$tempLine <- seq(0,1,length=84) # for plotting
+summaryData$tempLine <- seq(0,1,length=totalSubs) # for plotting
 summaryData$earnFitLine <- coeffsEarn[1] + coeffsEarn[2]*summaryData$tempLine + coeffsEarn[3]*(summaryData$tempLine^2)
   
 # plotting
@@ -1630,7 +1630,7 @@ Table: Predicting Post-mid acceptance from pre-mid choices: Coefficients and CI.
 
   **16.3.3.**	*To estimate the subjective opportunity cost (hypothesis 4.3.2.), we will use a logistic function to model each participant’s probability of completing a trial based on the difference between the delayed reward’s magnitude and the estimated opportunity cost (OC) for each cost type. OC will be computed as the product of a free parameter (gamma) and the handling time. Both gamma and the temperature parameter of the logistic function will be estimated at the subject level, independently for each subject.*
 
-The gamma optimization search space was bound by extreme choice values. For example, someone with an extremely high OC would not accept even the most beneficial offers, and would reject a 20 cent offer when the handling time was 2 seconds (or 25/2). Conversely, a participant experiencing low opportunity costs would accept the unbeneficial offer of 4 cents for a 14 second delay (or 4/14). The model was optimized to find the lowest value of gamma that significantly reduced the negative log likelihood. The resulting gamma values per participant are shown per group below (gray lines denote the rate of earnings under optimal behavior for all 3 timing contexts), and reflect what was seen in the previous sections: participants in the wait and physical conditions showed higher gamma values (and thus opportunity costs) than in the other two groups. Given the high variability of the easy condition, it might be worth modeling each timing context independently, or perhaps fitting the model on subgroups defined by a median split of the participants based on their acceptance rate.
+The gamma optimization search space was bound by extreme choice values. For example, someone with an extremely high OC would not accept even the most beneficial offers, and would reject a 20 cent offer when the handling time was 2 seconds (or 20/2). Conversely, a participant experiencing low opportunity costs would accept the unbeneficial offer of 4 cents for a 14 second delay (or 4/14). The model was optimized to find the lowest value of gamma that significantly reduced the negative log likelihood. The resulting gamma values per participant are shown per group below (gray lines denote the rate of earnings under optimal behavior for all 3 timing contexts), and reflect what was seen in the previous sections: participants in the wait and physical conditions showed higher gamma values (and thus opportunity costs) than in the other two groups. Given the high variability of the easy condition, it might be worth modeling each timing context independently, or perhaps fitting the model on subgroups defined by a median split of the participants based on their acceptance rate.
 
 ``` {r 16.3.3. OC modeling, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
 # Estimate gamma per subject for each group separately
