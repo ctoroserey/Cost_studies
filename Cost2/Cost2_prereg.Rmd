@@ -660,8 +660,8 @@ rm(temp,tempW,tempC,quitTrials,completeTrials,decisionTrials,subject)
 
 ``` {r Basic Prepping, echo=FALSE}  
 # params for reference
-handling <- c(2,10,14)
-cond <- c("Wait","Cognitive","Physical","Easy")
+handling <- c(2, 10, 14)
+cond <- c("Wait", "Cognitive", "Physical", "Easy")
 
 # create data frame with summary stats
 tempW <- summarizeData()
@@ -674,7 +674,7 @@ summaryData <- rbind(tempW,
                      tempP,
                      tempE)
 
-colnames(summaryData) <- c("Group","propComplete","Earnings","RT","forcedTravel")
+colnames(summaryData) <- c("Group", "propComplete", "Earnings", "RT", "forcedTravel")
 
 summaryData$Cols <- c(rep(cols[1],nSubsW), rep(cols[2],nSubsC), rep(cols[3],nSubsP), rep(cols[4],nSubsE))
 rm(tempW, tempC, tempP, tempE)
