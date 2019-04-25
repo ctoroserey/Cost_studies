@@ -422,26 +422,40 @@ optimizeOCModel <- function(Data, Algorithm = "NLOPT_LN_NEWUOA") {
 
 ``` {r Load Data, echo=FALSE}
 ### data loading and cleaning up
+setwd("./data")
+files <- dir(pattern = '_log.csv')
+nSubjs <- length(files)
 
-# load cognitive effort group
-setwd('./data/Cost2_data/cog')
-temp = list.files(pattern="*.csv")
-cogDataLong = lapply(temp, read.csv, header = FALSE)
+dataAll <- data_frame(SubjID = files) %>%
+  mutate(contents = map(SubjID, ~ read_csv(., col_types = cols())))  %>%
+  mutate(Cost = substring(SubjID, 5, 8),
+         Cost = case_when(Cost == "wait" ~ "Wait",
+                          Cost == "cogT" ~ "Cognitive",
+                          Cost == "phys" ~ "Physical",
+                          Cost == "phea" ~ "Easy"),
+         SubjID = substring(SubjID, 0, 3)) %>%
+  unnest() %>%
+  mutate(Half = ifelse(Block < 4, "Half_1", "Half_2")) 
 
-# load wait group
-setwd('../wait')
-temp = list.files(pattern="*.csv")
-waitDataLong = lapply(temp, read.csv, header = FALSE)
-
-# load physical group
-setwd('../phys')
-temp = list.files(pattern="*.csv")
-physDataLong = lapply(temp, read.csv, header = FALSE)
-
-# load pheasysical group
-setwd('../easy')
-temp = list.files(pattern="*.csv")
-easyDataLong = lapply(temp, read.csv, header = FALSE)
+# # load cognitive effort group
+# setwd('./data/Cost2_data/cog')
+# temp = list.files(pattern="*.csv")
+# cogDataLong = lapply(temp, read.csv, header = FALSE)
+# 
+# # load wait group
+# setwd('../wait')
+# temp = list.files(pattern="*.csv")
+# waitDataLong = lapply(temp, read.csv, header = FALSE)
+# 
+# # load physical group
+# setwd('../phys')
+# temp = list.files(pattern="*.csv")
+# physDataLong = lapply(temp, read.csv, header = FALSE)
+# 
+# # load pheasysical group
+# setwd('../easy')
+# temp = list.files(pattern="*.csv")
+# easyDataLong = lapply(temp, read.csv, header = FALSE)
 
 ### cleaning data
 # this will generate a simple list with only info about trials that participants quit or completed
@@ -688,6 +702,19 @@ indxPhys <- ((nSubsW + nSubsC) + 1):(nSubsW + nSubsC + nSubsP)
 indxPhysLong <- ((nSubsW * 9) + (nSubsC * 9) + 1):((nSubsW * 9) + (nSubsC * 9) + (nSubsP * 9))
 indxEasy <- ((nSubsW + nSubsC + nSubsP) + 1):totalSubs #(nSubsW + nSubsC + nSubsP + nSubsE)
 indxEasyLong <- ((nSubsW * 9) + (nSubsC * 9) + (nSubsP * 9) + 1):((nSubsW * 9) + (nSubsC * 9) + (nSubsP * 9) + (nSubsE * 9))
+
+
+# the other, just summarizing for all participants
+# Not sure if this is necessary anymore
+# allProp <- data.frame(Group = c(rep("Wait",nSubsW*3),
+#                                 rep("Cognitive",nSubsC*3),
+#                                 rep("Physical",nSubsP*3)),
+#                       Handling = c(rep(2,nSubsW), rep(10,nSubsW), rep(14,nSubsW),
+#                                    rep(2,nSubsC), rep(10,nSubsC), rep(14,nSubsC), 
+#                                    rep(2,nSubsP), rep(10,nSubsP), rep(14,nSubsP)),
+#                       FivePts = rep(NA,(nSubsW + nSubsC + nSubsP)*9),
+#                       TenPts = rep(NA,(nSubsW + nSubsC + nSubsP)*9),
+#                       TwntyfivePts = rep(NA,(nSubsW + nSubsC + nSubsP)*9))
 
 
 # Get the proportion completed per combination for GLMs
