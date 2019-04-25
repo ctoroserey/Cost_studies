@@ -433,6 +433,7 @@ dataAll <- data_frame(SubjID = files) %>%
                           Cost == "cogT" ~ "Cognitive",
                           Cost == "phys" ~ "Physical",
                           Cost == "phea" ~ "Easy"),
+         Cost = factor(Cost, levels = c("Physical", "Cognitive", "Wait", "Easy")),
          SubjID = substring(SubjID, 0, 3)) %>%
   unnest() %>%
   mutate(Half = ifelse(Block < 4, "Half_1", "Half_2")) 
@@ -1618,16 +1619,24 @@ legend("bottomright",
        fill = cols,
        cex = 0.8)
 
-# Another approach
-# This will just plot the density of the completed trials before/after, trying to get at the possible fatigue experienced in the physical effort condition.
-# Response patterns for each subject look pretty similar, with adequate optimality adaptation.
-#
-# for (i in 1:nSubs){
-# plot(density(which(physBefore[[i]]$Choice==1)),
-#      main = paste("Choices in time, before and after for subject:",i),
-#      xlab = "Trials (completed)")
-# lines(density(which(physAfter[[i]]$Choice==1)), col = "red")
-# }
+# dataAll %>%
+#   filter(Choice < 2) %>%
+#   group_by(SubjID) %>%
+#   #mutate(Block = do.call(c, lapply(c(2,4,6), function(x) {rep(x/2, sum(Block %in% c(x-1, x)))}))) %>%
+#   group_by(SubjID, Cost, Block) %>%
+#   summarise(propAccept_subj = mean(Choice)) %>%
+#   group_by(Cost, Block) %>%
+#   summarize(propAccept = mean(propAccept_subj),
+#             seAccept = sd(propAccept_subj)/sqrt(nSubjs)) %>%
+#   ggplot(aes(Block, propAccept, fill = Cost)) +
+#     geom_point(size = 2, pch = 21, color = "black") +
+#     geom_errorbar(aes(ymin=propAccept - seAccept, ymax=propAccept + seAccept, color = Cost), width = 0.1) +
+#     geom_line(aes(color = Cost)) +
+#     ylim(0.5, 1) +
+#     scale_x_continuous(breaks = seq(6)) +
+#     scale_color_manual(values = cols) +
+#     scale_fill_manual(values = cols) +
+#     theme_classic()
 ```
 
 The following table shows the coefficients and CI for each linear model, and show that pre-post acceptance rates were very similar for each condition (i.e. one is present in all confidence intervals).
