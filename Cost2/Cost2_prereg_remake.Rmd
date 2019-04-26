@@ -426,7 +426,7 @@ setwd("./data")
 files <- dir(pattern = '_log.csv')
 nSubjs <- length(files)
 
-dataAll <- data_frame(SubjID = files) %>%
+dataAll <- tibble(SubjID = files) %>%
   mutate(contents = map(SubjID, ~ read_csv(., col_types = cols())))  %>%
   mutate(Cost = substring(SubjID, 5, 8),
          Cost = case_when(Cost == "wait" ~ "Wait",
@@ -438,6 +438,7 @@ dataAll <- data_frame(SubjID = files) %>%
   unnest() %>%
   mutate(Half = ifelse(Block < 4, "Half_1", "Half_2")) 
 
+subjList <- unique(dataAll$SubjID)
 # # load cognitive effort group
 # setwd('./data/Cost2_data/cog')
 # temp = list.files(pattern="*.csv")
