@@ -41,6 +41,8 @@ This document follows the steps planned for the pre-registration (https://osf.io
 
 \bigskip
 
+## Analyses
+
 ```{r Global Options, include=FALSE}
 knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
 ```
@@ -439,380 +441,134 @@ dataAll <- tibble(SubjID = files) %>%
   mutate(Half = ifelse(Block < 4, "Half_1", "Half_2")) 
 
 subjList <- unique(dataAll$SubjID)
-# # load cognitive effort group
-# setwd('./data/Cost2_data/cog')
-# temp = list.files(pattern="*.csv")
-# cogDataLong = lapply(temp, read.csv, header = FALSE)
-# 
-# # load wait group
-# setwd('../wait')
-# temp = list.files(pattern="*.csv")
-# waitDataLong = lapply(temp, read.csv, header = FALSE)
-# 
-# # load physical group
-# setwd('../phys')
-# temp = list.files(pattern="*.csv")
-# physDataLong = lapply(temp, read.csv, header = FALSE)
-# 
-# # load pheasysical group
-# setwd('../easy')
-# temp = list.files(pattern="*.csv")
-# easyDataLong = lapply(temp, read.csv, header = FALSE)
-
-### cleaning data
-# this will generate a simple list with only info about trials that participants quit or completed
-# this is because cognitive logs also include within-trial task-specific information
-# for the wait condition, it will get rid of the break indicator 
-
-nSubsW <- length(waitDataLong)
-nSubsC <- length(cogDataLong)
-nSubsP <- length(physDataLong)
-nSubsE <- length(easyDataLong)
-totalSubs <- (nSubsW + nSubsC + nSubsP + nSubsE) 
-
-#  short lists
-cogData <- list()
-waitData <- list()
-physData <- list()
-easyData <- list()
-
-# For pre-post analysis
-cogBefore <- list()
-cogAfter <- list()
-waitBefore <- list()
-waitAfter <- list()
-physBefore <- list()
-physAfter <- list()
-easyBefore <- list()
-easyAfter <- list()
-
-# clean wait group data
-for (subject in seq(nSubsW)){
-  
-  # Before/after
-  breakW <- which(waitDataLong[[subject]]$V1 == 0)
-
-  waitBefore[[subject]] <- waitDataLong[[subject]][1:(breakW - 1),]
-  waitAfter[[subject]] <- waitDataLong[[subject]][(breakW + 1):length(waitDataLong[[subject]]$V1),] 
-
-  # assign header names
-  colnames(waitBefore[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")
-  colnames(waitAfter[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")
-    
-  
-  
-  # Overall data cleaning
-  tempW <- waitDataLong[[subject]]$V1 != 0
-  
-  # create a new list with only decision trials / without break
-  waitData[[subject]] <- waitDataLong[[subject]][tempW,]
-  
-  # assign header names
-  colnames(waitData[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")
-  
-}
-
-# clean cognitive group data
-for (subject in seq(nSubsC)){
-  
-  # Before/After
-  breakC <- which(cogDataLong[[subject]]$V1 == 0)
-  
-  cogBefore[[subject]] <- cogDataLong[[subject]][1:(breakC-1),]
-  temp <- cogBefore[[subject]]$V7 # trial outcome vector
-  quitTrials <- grep("Quit",temp)
-  completeTrials <- grep("Reward",temp)
-  decisionTrials <- sort(c(quitTrials,completeTrials))
-  cogBefore[[subject]] <- cogBefore[[subject]][decisionTrials,]
-  
-  cogAfter[[subject]] <- cogDataLong[[subject]][(breakC+1):length(cogDataLong[[subject]]$V1),]
-  temp <- cogAfter[[subject]]$V7 # trial outcome vector
-  quitTrials <- grep("Quit",temp)
-  completeTrials <- grep("Reward",temp)
-  decisionTrials <- sort(c(quitTrials,completeTrials))
-  cogAfter[[subject]] <- cogAfter[[subject]][decisionTrials,]
-  
-  
-  colnames(cogBefore[[subject]]) <- c("Handling","Reward","Choice","Task RT","Choice RT",
-                                      "Experiment Time","Trial Outcome","Task Type","Task Setup")
-  colnames(cogAfter[[subject]]) <- c("Handling","Reward","Choice","Task RT","Choice RT",
-                                     "Experiment Time","Trial Outcome","Task Type","Task Setup")
-  
-  # Overall data cleaning
-  # create an index for the trials in which a decision was made (completed, quit) 
-  temp <- cogDataLong[[subject]]$V7 # trial outcome vector
-  quitTrials <- grep("Quit",temp)
-  completeTrials <- grep("Reward",temp)
-  decisionTrials <- sort(c(quitTrials,completeTrials))
-  
-  # create a new list with only decision trials / without break
-  tempC <- cogDataLong[[subject]]$V1 != 0  
-  cogData[[subject]] <- cogDataLong[[subject]][decisionTrials,]
-  cogDataLong[[subject]] <- cogDataLong[[subject]][tempC,]  
-
-  colnames(cogData[[subject]]) <- c("Handling","Reward","Choice","Task RT","Choice RT",
-                                    "Experiment Time","Trial Outcome","Task Type","Task Setup")
-  colnames(cogDataLong[[subject]]) <- c("Handling","Reward","Choice","Task RT","Choice RT",
-                                        "Experiment Time","Trial Outcome","Task Type","Task Setup") # Long contains within-trial info
-  
-  
-}
-
-# clean physical group data
-for (subject in seq(nSubsP)){
-  
-  # Before/After
-  breakP <- which(physDataLong[[subject]]$V1 == 0)
-  
-  physBefore[[subject]] <- physDataLong[[subject]][1:(breakP - 1),]
-  physAfter[[subject]] <- physDataLong[[subject]][(breakP + 1):length(physDataLong[[subject]]$V1),] 
-  
-  colnames(physBefore[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")
-  colnames(physAfter[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")
-
-  # create a new list with only decision trials / without break  
-  tempP <- physDataLong[[subject]]$V1 != 0
-  physData[[subject]] <- physDataLong[[subject]][tempP,]
-  colnames(physData[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")  
-  
-}
 
 
-# clean pheaysical group data
-for (subject in seq(nSubsE)){
-  
-  # Before/After
-  breakE <- which(easyDataLong[[subject]]$V1 == 0)
-  
-  easyBefore[[subject]] <- easyDataLong[[subject]][1:(breakE - 1),]
-  easyAfter[[subject]] <- easyDataLong[[subject]][(breakE + 1):length(easyDataLong[[subject]]$V1),] 
-  
-  colnames(easyBefore[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")
-  colnames(easyAfter[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")
-
-  # create a new list with only decision trials / without break  
-  tempE <- easyDataLong[[subject]]$V1 != 0
-  easyData[[subject]] <- easyDataLong[[subject]][tempE,]
-  colnames(easyData[[subject]]) <- c("Handling","Reward","Choice","RT","Experiment Time")  
-  
-}
-
-
-# Combine before/after across subjects
-cBefore <- rbind(cogBefore[[1]],cogBefore[[2]]) 
-cAfter <- rbind(cogAfter[[1]],cogAfter[[2]]) 
-wBefore <- rbind(waitBefore[[1]],waitBefore[[2]]) 
-wAfter <- rbind(waitAfter[[1]],waitAfter[[2]]) 
-pBefore <- rbind(easyBefore[[1]],physBefore[[2]])
-pAfter <- rbind(physAfter[[1]],physAfter[[2]])
-eBefore <- rbind(easyBefore[[1]],easyBefore[[2]])
-eAfter <- rbind(easyAfter[[1]],easyAfter[[2]])
-
-for (i in 3:nSubsW){
-  
-    wBefore <- rbind(wBefore,waitBefore[[i]])
-    wAfter <- rbind(wAfter,waitAfter[[i]])
-    
-}
-
-for (i in 3:nSubsC){
-  
-    cBefore <- rbind(cBefore,cogBefore[[i]])  
-    cAfter <- rbind(cAfter,cogAfter[[i]])
-    
-}
-
-
-for (i in 3:nSubsP){
-  
-    pBefore <- rbind(pBefore,physBefore[[i]])
-    pAfter <- rbind(pAfter,physAfter[[i]])
-    
-}
-
-
-for (i in 3:nSubsE){
-  
-    eBefore <- rbind(eBefore,easyBefore[[i]])
-    eAfter <- rbind(eAfter,easyAfter[[i]])
-    
-}
-
-
-#rm(cogBefore,cogAfter,waitBefore,waitAfter)
-
-# aggregate ADD PHYS
-waitBeforeAll <- aggregate(wBefore$Choice,
-          by = list(wBefore$Reward, wBefore$Handling),
-          FUN = 'mean')
-waitAfterAll <- aggregate(wAfter$Choice,
-          by = list(wAfter$Reward, wAfter$Handling),
-          FUN = 'mean')
-cogBeforeAll <- aggregate(cBefore$Choice,
-          by = list(cBefore$Reward, cBefore$Handling),
-          FUN = 'mean')
-cogAfterAll <- aggregate(cAfter$Choice,
-          by = list(cAfter$Reward, cAfter$Handling),
-          FUN = 'mean')
-physBeforeAll <- aggregate(pBefore$Choice,
-          by = list(pBefore$Reward, pBefore$Handling),
-          FUN = 'mean')
-physAfterAll <- aggregate(pAfter$Choice,
-          by = list(pAfter$Reward, pAfter$Handling),
-          FUN = 'mean')
-easyBeforeAll <- aggregate(eBefore$Choice,
-          by = list(eBefore$Reward, eBefore$Handling),
-          FUN = 'mean')
-easyAfterAll <- aggregate(eAfter$Choice,
-          by = list(eAfter$Reward, eAfter$Handling),
-          FUN = 'mean')
-
-
-rm(cBefore,cAfter,wBefore,wAfter, pBefore, pAfter, eBefore, eAfter)
-
-# remove unnecessary variables
-rm(temp,tempW,tempC,quitTrials,completeTrials,decisionTrials,subject)
 ```
 
 ``` {r Basic Prepping, echo=FALSE}  
-# params for reference
-handling <- c(2, 10, 14)
-cond <- c("Wait", "Cognitive", "Physical", "Easy")
-
-# create data frame with summary stats
-tempW <- summarizeData()
-tempC <- summarizeData(Data = cogData, nSubs = nSubsC, type = "Cognitive")
-tempP <- summarizeData(Data = physData, nSubs = nSubsP, type = "Physical")
-tempE <- summarizeData(Data = easyData, nSubs = nSubsE, type = "Easy")
-
-summaryData <- rbind(tempW,
-                     tempC,
-                     tempP,
-                     tempE)
-
-colnames(summaryData) <- c("Group", "propComplete", "Earnings", "RT", "forcedTravel")
-
-summaryData$Cols <- c(rep(cols[1],nSubsW), rep(cols[2],nSubsC), rep(cols[3],nSubsP), rep(cols[4],nSubsE))
-rm(tempW, tempC, tempP, tempE)
-
-# Indexes for groups
-indxWait <- seq(nSubsW)
-indxWaitLong <- seq(nSubsW * 9) # 9 being the number of combinations
-indxCog <- (nSubsW + 1):(nSubsW + nSubsC)
-indxCogLong <- ((nSubsW * 9) + 1):((nSubsW * 9) + (nSubsC * 9))
-indxPhys <- ((nSubsW + nSubsC) + 1):(nSubsW + nSubsC + nSubsP)
-indxPhysLong <- ((nSubsW * 9) + (nSubsC * 9) + 1):((nSubsW * 9) + (nSubsC * 9) + (nSubsP * 9))
-indxEasy <- ((nSubsW + nSubsC + nSubsP) + 1):totalSubs #(nSubsW + nSubsC + nSubsP + nSubsE)
-indxEasyLong <- ((nSubsW * 9) + (nSubsC * 9) + (nSubsP * 9) + 1):((nSubsW * 9) + (nSubsC * 9) + (nSubsP * 9) + (nSubsE * 9))
-
-
-# the other, just summarizing for all participants
-# Not sure if this is necessary anymore
-# allProp <- data.frame(Group = c(rep("Wait",nSubsW*3),
-#                                 rep("Cognitive",nSubsC*3),
-#                                 rep("Physical",nSubsP*3)),
-#                       Handling = c(rep(2,nSubsW), rep(10,nSubsW), rep(14,nSubsW),
-#                                    rep(2,nSubsC), rep(10,nSubsC), rep(14,nSubsC), 
-#                                    rep(2,nSubsP), rep(10,nSubsP), rep(14,nSubsP)),
-#                       FivePts = rep(NA,(nSubsW + nSubsC + nSubsP)*9),
-#                       TenPts = rep(NA,(nSubsW + nSubsC + nSubsP)*9),
-#                       TwntyfivePts = rep(NA,(nSubsW + nSubsC + nSubsP)*9))
-
-
-# Get the proportion completed per combination for GLMs
-tempW <- propComplete()
-tempC <- propComplete(Data = cogData, nSubs = nSubsC, indx = indxCog, type = "Cognitive")
-tempP <- propComplete(Data = physData, nSubs = nSubsP, indx = indxPhys, type = "Physical")
-tempE <- propComplete(Data = easyData, nSubs = nSubsE, indx = indxEasy, type = "Easy")
-
-allProp2 <- rbind(tempW,
-                  tempC,
-                  tempP,
-                  tempE)  
-allProp2$totalComplete <- allProp2$propComplete * allProp2$totalTrials
-
-rm(tempW, tempC, tempP, tempE)
-
-# add optimal vector and difference from optimal
-wait <- c(rep(1,nSubsW*3),
-          c(rep(0,nSubsW), rep(1,nSubsW*2)),
-          c(rep(0,nSubsW*2), rep(1,nSubsW)))
-cog <- c(rep(1,nSubsC*3),
-          c(rep(0,nSubsC), rep(1,nSubsC*2)),
-          c(rep(0,nSubsC*2), rep(1,nSubsC)))
-phys <- c(rep(1,nSubsP*3),
-          c(rep(0,nSubsP), rep(1,nSubsP*2)),
-          c(rep(0,nSubsP*2), rep(1,nSubsP)))
-easy <- c(rep(1,nSubsE*3),
-          c(rep(0,nSubsE), rep(1,nSubsE*2)),
-          c(rep(0,nSubsE*2), rep(1,nSubsE)))
-allProp2$Optimal <- c(wait,cog,phys,easy)
-allProp2$Deviation <- allProp2$Optimal - allProp2$propComplete
-
-# sort by subject ID
-#allProp2 <- allProp2[order(allProp2$SubjID),]
-
-# actual proportions and standard errors, and the optimal summary for plotting
-trueProp <- aggregate(allProp2$propComplete,
-            by = list(allProp2$Reward, allProp2$Handling, allProp2$Group),
-            FUN = 'mean')
-
-trueSD <- aggregate(allProp2$propComplete,
-          by = list(allProp2$Reward, allProp2$Handling, allProp2$Group),
-          FUN = 'sd')
-colnames(trueProp) <- c("Reward","Handling","Group","propComplete")
-trueProp$SE[1:9] <- (trueSD$x[1:9])/(sqrt(nSubsW))
-trueProp$SE[10:18] <- (trueSD$x[10:18])/(sqrt(nSubsC))
-trueProp$SE[19:27] <- (trueSD$x[19:27])/(sqrt(nSubsP))
-trueProp$SE[28:36] <- (trueSD$x[28:36])/(sqrt(nSubsE))
-
-trueProp$Optimal <- aggregate(allProp2$Optimal,
-            by = list(allProp2$Reward, allProp2$Handling, allProp2$Group),
-            FUN = 'mean')$x
+# # params for reference
+# handling <- c(2, 10, 14)
+# cond <- c("Wait", "Cognitive", "Physical", "Easy")
+# 
+# # create data frame with summary stats
+# tempW <- summarizeData()
+# tempC <- summarizeData(Data = cogData, nSubs = nSubsC, type = "Cognitive")
+# tempP <- summarizeData(Data = physData, nSubs = nSubsP, type = "Physical")
+# tempE <- summarizeData(Data = easyData, nSubs = nSubsE, type = "Easy")
+# 
+# summaryData <- rbind(tempW,
+#                      tempC,
+#                      tempP,
+#                      tempE)
+# 
+# colnames(summaryData) <- c("Group", "propComplete", "Earnings", "RT", "forcedTravel")
+# 
+# summaryData$Cols <- c(rep(cols[1],nSubsW), rep(cols[2],nSubsC), rep(cols[3],nSubsP), rep(cols[4],nSubsE))
+# rm(tempW, tempC, tempP, tempE)
+# 
+# # Indexes for groups
+# indxWait <- seq(nSubsW)
+# indxWaitLong <- seq(nSubsW * 9) # 9 being the number of combinations
+# indxCog <- (nSubsW + 1):(nSubsW + nSubsC)
+# indxCogLong <- ((nSubsW * 9) + 1):((nSubsW * 9) + (nSubsC * 9))
+# indxPhys <- ((nSubsW + nSubsC) + 1):(nSubsW + nSubsC + nSubsP)
+# indxPhysLong <- ((nSubsW * 9) + (nSubsC * 9) + 1):((nSubsW * 9) + (nSubsC * 9) + (nSubsP * 9))
+# indxEasy <- ((nSubsW + nSubsC + nSubsP) + 1):totalSubs #(nSubsW + nSubsC + nSubsP + nSubsE)
+# indxEasyLong <- ((nSubsW * 9) + (nSubsC * 9) + (nSubsP * 9) + 1):((nSubsW * 9) + (nSubsC * 9) + (nSubsP * 9) + (nSubsE * 9))
+# 
+# 
+# # the other, just summarizing for all participants
+# # Not sure if this is necessary anymore
+# # allProp <- data.frame(Group = c(rep("Wait",nSubsW*3),
+# #                                 rep("Cognitive",nSubsC*3),
+# #                                 rep("Physical",nSubsP*3)),
+# #                       Handling = c(rep(2,nSubsW), rep(10,nSubsW), rep(14,nSubsW),
+# #                                    rep(2,nSubsC), rep(10,nSubsC), rep(14,nSubsC), 
+# #                                    rep(2,nSubsP), rep(10,nSubsP), rep(14,nSubsP)),
+# #                       FivePts = rep(NA,(nSubsW + nSubsC + nSubsP)*9),
+# #                       TenPts = rep(NA,(nSubsW + nSubsC + nSubsP)*9),
+# #                       TwntyfivePts = rep(NA,(nSubsW + nSubsC + nSubsP)*9))
+# 
+# 
+# # Get the proportion completed per combination for GLMs
+# tempW <- propComplete()
+# tempC <- propComplete(Data = cogData, nSubs = nSubsC, indx = indxCog, type = "Cognitive")
+# tempP <- propComplete(Data = physData, nSubs = nSubsP, indx = indxPhys, type = "Physical")
+# tempE <- propComplete(Data = easyData, nSubs = nSubsE, indx = indxEasy, type = "Easy")
+# 
+# allProp2 <- rbind(tempW,
+#                   tempC,
+#                   tempP,
+#                   tempE)  
+# allProp2$totalComplete <- allProp2$propComplete * allProp2$totalTrials
+# 
+# rm(tempW, tempC, tempP, tempE)
+# 
+# # add optimal vector and difference from optimal
+# wait <- c(rep(1,nSubsW*3),
+#           c(rep(0,nSubsW), rep(1,nSubsW*2)),
+#           c(rep(0,nSubsW*2), rep(1,nSubsW)))
+# cog <- c(rep(1,nSubsC*3),
+#           c(rep(0,nSubsC), rep(1,nSubsC*2)),
+#           c(rep(0,nSubsC*2), rep(1,nSubsC)))
+# phys <- c(rep(1,nSubsP*3),
+#           c(rep(0,nSubsP), rep(1,nSubsP*2)),
+#           c(rep(0,nSubsP*2), rep(1,nSubsP)))
+# easy <- c(rep(1,nSubsE*3),
+#           c(rep(0,nSubsE), rep(1,nSubsE*2)),
+#           c(rep(0,nSubsE*2), rep(1,nSubsE)))
+# allProp2$Optimal <- c(wait,cog,phys,easy)
+# allProp2$Deviation <- allProp2$Optimal - allProp2$propComplete
+# 
+# # sort by subject ID
+# #allProp2 <- allProp2[order(allProp2$SubjID),]
+# 
+# # actual proportions and standard errors, and the optimal summary for plotting
+# trueProp <- aggregate(allProp2$propComplete,
+#             by = list(allProp2$Reward, allProp2$Handling, allProp2$Group),
+#             FUN = 'mean')
+# 
+# trueSD <- aggregate(allProp2$propComplete,
+#           by = list(allProp2$Reward, allProp2$Handling, allProp2$Group),
+#           FUN = 'sd')
+# colnames(trueProp) <- c("Reward","Handling","Group","propComplete")
+# trueProp$SE[1:9] <- (trueSD$x[1:9])/(sqrt(nSubsW))
+# trueProp$SE[10:18] <- (trueSD$x[10:18])/(sqrt(nSubsC))
+# trueProp$SE[19:27] <- (trueSD$x[19:27])/(sqrt(nSubsP))
+# trueProp$SE[28:36] <- (trueSD$x[28:36])/(sqrt(nSubsE))
+# 
+# trueProp$Optimal <- aggregate(allProp2$Optimal,
+#             by = list(allProp2$Reward, allProp2$Handling, allProp2$Group),
+#             FUN = 'mean')$x
 ```
-
-## Analyses
 
 #### 16.1.	Tests of whether decision makers integrate delay and reward information. 
 
   **16.1.1.**	*To address hypothesis 4.1., A logistic regression will be fit for each participant in order to predict trial-wise acceptances, using handling time and reward amount as predictors. The resulting beta coefficients for handling time and reward will be pooled across all participants, and we will perform a one-sample rank-sum test on each set of coefficients to examine whether the they are significantly positive or negative (compared to 0). If the group coefficients are significantly positive, it would mean that a predictor reliably increases the likelihood of acceptance. This will allow us to determine whether increments in handling time and reward amounts increased and decreased the likelihood of acceptance for each participant, respectively.* 
   
-``` {r 16.1.1., fig.align="center", fig.width=4, fig.height=4, echo=FALSE}
-# Add an AR predictor based on the number of quits
-waitData <- lapply(waitData, function(data) data %>% mutate(AR = seqQuits(Choice)))
-cogData <- lapply(cogData, function(data) data %>% mutate(AR = seqQuits(Choice)))
-physData <- lapply(physData, function(data) data %>% mutate(AR = seqQuits(Choice)))
-easyData <- lapply(easyData, function(data) data %>% mutate(AR = seqQuits(Choice)))
+``` {r 16.1.1., fig.align="center", fig.width = 4, fig.height = 4, echo = FALSE}
+# filterout errors and compute R + H logistic per subject, then get coefficients
+logisRH <- dataAll %>%
+  filter(Choice < 2) %>%
+  plyr::dlply("SubjID", identity) %>%
+  lapply(function(data) {glm(Choice ~ Handling + Reward, data = data, family = "binomial")}) %>%
+  sapply(coefficients)
 
-# Logistic fits
-waitLogis <- lapply(waitData, function(data) glm(Choice ~ Handling + Reward, data = data, family = "binomial"))
-cogLogis <- lapply(cogData, function(data) glm(Choice ~ Handling + Reward, data = data, family = "binomial"))
-physLogis <- lapply(physData, function(data) glm(Choice ~ Handling + Reward, data = data, family = "binomial"))
-easyLogis <- lapply(easyData, function(data) glm(Choice ~ Handling + Reward, data = data, family = "binomial"))
-
-# Coefficients
-waitLogis_coeffs <- t(sapply(waitLogis, "[[", "coefficients"))
-cogLogis_coeffs <- t(sapply(cogLogis, "[[", "coefficients"))
-physLogis_coeffs <- t(sapply(physLogis, "[[", "coefficients"))
-easyLogis_coeffs <- t(sapply(easyLogis, "[[", "coefficients"))
-allLogis_coeffs <- rbind(waitLogis_coeffs,
-                         cogLogis_coeffs,
-                         physLogis_coeffs,
-                         easyLogis_coeffs)
-  
-# Rank sums
-rankHand <- wilcox.test(allLogis_coeffs[,2])
-rankReward <- wilcox.test(allLogis_coeffs[,3])
+# Rank sum tests
+rankHand <- wilcox.test(logisRH["Handling", ])
+rankReward <- wilcox.test(logisRH["Reward", ])
 
 # Plot coeffs
-temp <- melt(allLogis_coeffs[,2:3])
-qplot(data = temp, x = Var2, y = value, geom = "boxplot") + 
+temp <- melt(logisRH[c("Handling", "Reward"), ])
+qplot(data = temp, x = Var1, y = value, geom = "boxplot") + 
   labs(title = "Handling and Reward Coefficients", x = "", y = "Coefficients") +
-  geom_hline(yintercept = 0, alpha = 0.5) +
-  theme_classic()
-
-rm(waitLogis, cogLogis, physLogis, easyLogis)
-
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  theme(legend.position = c(0.9, 0.7),
+       panel.grid.major = element_blank(), 
+       panel.grid.minor = element_blank(), 
+       panel.background = element_blank(), 
+       axis.line = element_line(colour = "black"),
+       text = element_text(size = 16))
 ```
 
 The plot shows the pooled coefficients across subjects for the effect of each predictor. The results show the expected discounting effect of increasing the handling time, as well as the increase in acceptance likelihood as a function of reward increments. We found that these coefficients were significantly different from zero for both handling (V = `r rankHand$statistic`, p `r ifelse(rankHand$p.value < 0.001, "< 0.001", paste("=", round(rankHand$p.value, digits = 2)))`) and reward (V = `r rankReward$statistic`, p `r ifelse(rankReward$p.value < 0.001, "< 0.001", paste("=", round(rankHand$p.value, digits = 2)))`) regardless of cost condition.
@@ -821,78 +577,27 @@ The plot shows the pooled coefficients across subjects for the effect of each pr
 
   **16.1.2.**	*We will perform an extension of the logistic regression from 16.1.1., this time adding an autoregressive covariate containing the number of consecutive quits prior to a given trial. In this way, we will examine the possibility that participant choices were governed by recent quitting history rather than the experimental parameters (see 11.1.3.). Coefficients not significantly different from 0 will denote that a participant did not rely on recent quitting history.*
   
-``` {r 16.1.2., echo=FALSE, fig.align="center"}
-# Logistic fits
-waitLogis <- lapply(waitData, function(data) glm(Choice ~ Handling + Reward + AR, data = data, family = "binomial"))
-cogLogis <- lapply(cogData, function(data) glm(Choice ~ Handling + Reward + AR, data = data, family = "binomial"))
-physLogis <- lapply(physData, function(data) glm(Choice ~ Handling + Reward + AR, data = data, family = "binomial"))
-easyLogis <- lapply(easyData, function(data) glm(Choice ~ Handling + Reward + AR, data = data, family = "binomial"))
-
-# Coefficients
-waitLogis_coeffs <- t(sapply(waitLogis, "[[", "coefficients"))
-cogLogis_coeffs <- t(sapply(cogLogis, "[[", "coefficients"))
-physLogis_coeffs <- t(sapply(physLogis, "[[", "coefficients"))
-easyLogis_coeffs <- t(sapply(easyLogis, "[[", "coefficients"))
-allLogis_coeffs <- rbind(waitLogis_coeffs,
-                         cogLogis_coeffs,
-                         physLogis_coeffs,
-                         easyLogis_coeffs)
-
-#waitLogis_coeffs <- sapply(waitLogis, function(data) (confint(data)[4,1] < 0 & confint(data)[4,2] > 0))
+``` {r 16.1.2., echo = FALSE, include = FALSE}
+# add an AR regressor to track recent quits
+logisRHAR <- dataAll %>%
+  filter(Choice < 2) %>%
+  group_by(SubjID) %>%
+  mutate(AR = seqQuits(Choice)) %>%
+  plyr::dlply("SubjID", identity) %>%
+  lapply(function(data) {glm(Choice ~ Handling + Reward + AR, data = data, family = "binomial")}) 
   
 # Rank sums
-rankAR <- wilcox.test(allLogis_coeffs[,4])
+rankAR <- logisRHAR %>% 
+  sapply(coefficients) %>%
+  wilcox.test(.["AR", ])
 
-# Plot coeffs
-temp <- melt(allLogis_coeffs[,2:4])
-
-
-# The ugliest code, to check the existence of 0 on the CIs
-AR_CIs <- data.frame(Subj = NULL, Low = NULL, High = NULL)
-temp <- data.frame(Subj = seq(nSubsW), Low = rep(-0.1,nSubsW), High = rep(0,nSubsW))
-for (i in seq(length(waitLogis))) {
-  test <- tryCatch(round(confint(waitLogis[[i]]), digits = 2)[4,], error=function(e){})
-  if(!is.null(test)) {
-    temp$Low[i] <- test[1]
-    temp$High[i] <- test[2]
-  }
-}
-AR_CIs <- rbind(AR_CIs, temp)
-temp <- data.frame(Subj = seq(nSubsC), Low = rep(0,nSubsC), High = rep(0,nSubsC))
-for (i in seq(length(cogLogis))) {
-  test <- tryCatch(round(confint(cogLogis[[i]]), digits = 2)[4,], error=function(e){})
-  if(!is.null(test)) {
-    temp$Low[i] <- test[1]
-    temp$High[i] <- test[2]
-  }
-}
-AR_CIs <- rbind(AR_CIs, temp)
-temp <- data.frame(Subj = seq(nSubsP), Low = rep(0,nSubsP), High = rep(0,nSubsP))
-for (i in seq(length(physLogis))) {
-  test <- tryCatch(round(confint(physLogis[[i]]), digits = 2)[4,], error=function(e){})
-  if(!is.null(test)) {
-    temp$Low[i] <- test[1]
-    temp$High[i] <- test[2]
-  }
-}
-AR_CIs <- rbind(AR_CIs, temp)
-temp <- data.frame(Subj = seq(nSubsE), Low = rep(0,nSubsE), High = rep(0,nSubsE))
-for (i in seq(length(easyLogis))) {
-  test <- tryCatch(round(confint(easyLogis[[i]]), digits = 2)[4,], error=function(e){})
-  if(!is.null(test)) {
-    temp$Low[i] <- test[1]
-    temp$High[i] <- test[2]
-  }
-}
-AR_CIs <- rbind(AR_CIs, temp)
-AR_CIs$High[is.na(AR_CIs$High)] <- 0.1
-AR_CIs$AR_Effect <- apply(AR_CIs,1, function(x) !(x[2] <= 0 & x[3] >= 0))
+AR_CIs <- sapply(logisRHAR, function(x) {tryCatch(confint(x)[4, ], error = function(e){c(0, 0)})}) %>%
+  replace_na(0) %>%
+  t() %>% 
+  apply(1, function(x) !(x[1] <= 0 & x[2] >= 0))
 
 # Around 10% seemed to have been influenced by previous quitting
-propAR_effects <- (sum(AR_CIs$AR_Effect) / totalSubs) * 100
-
-rm(temp,waitLogis, cogLogis, physLogis, easyLogis)
-
+propAR_effects <- mean(AR_CIs) * 100
 ```
 
 To measure the significance of each subject's autoregressive coefficient, we computed its CI and checked how many contained zero. By this measure, around `r round(propAR_effects)` percent of our participants seemed to have been influenced by recent quitting. However, the autoregressive predictor did not preclude the effect of the remaininig experimental parameters.
