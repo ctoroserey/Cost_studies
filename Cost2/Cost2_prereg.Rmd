@@ -424,23 +424,20 @@ optimizeOCModel <- function(Data, Algorithm = "NLOPT_LN_NEWUOA") {
 ### data loading and cleaning up
 
 # load cognitive effort group
-setwd('./data/Cost2_data/cog')
-temp = list.files(pattern="*.csv")
+setwd('./data/')
+temp = list.files(pattern="cogTask")
 cogDataLong = lapply(temp, read.csv, header = FALSE)
 
 # load wait group
-setwd('../wait')
-temp = list.files(pattern="*.csv")
+temp = list.files(pattern="wait")
 waitDataLong = lapply(temp, read.csv, header = FALSE)
 
 # load physical group
-setwd('../phys')
-temp = list.files(pattern="*.csv")
+temp = list.files(pattern="phys")
 physDataLong = lapply(temp, read.csv, header = FALSE)
 
 # load pheasysical group
-setwd('../easy')
-temp = list.files(pattern="*.csv")
+temp = list.files(pattern="pheasy")
 easyDataLong = lapply(temp, read.csv, header = FALSE)
 
 ### cleaning data
