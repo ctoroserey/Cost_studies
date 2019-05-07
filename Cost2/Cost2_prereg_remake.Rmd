@@ -597,87 +597,40 @@ AR_CIs <- sapply(logisRHAR, function(x) {tryCatch(confint(x)[4, ], error = funct
   apply(1, function(x) !(x[1] <= 0 & x[2] >= 0))
 
 # Around 10% seemed to have been influenced by previous quitting
-propAR_effects <- mean(AR_CIs) * 100
+prcntAR_effects <- mean(AR_CIs) * 100
 ```
 
-To measure the significance of each subject's autoregressive coefficient, we computed its CI and checked how many contained zero. By this measure, around `r round(propAR_effects)` percent of our participants seemed to have been influenced by recent quitting. However, the autoregressive predictor did not preclude the effect of the remaininig experimental parameters.
+To measure the significance of each subject's autoregressive coefficient, we computed its CI and checked how many contained zero. By this measure, around `r round(prcntAR_effects)` percent of our participants seemed to have been influenced by recent quitting. However, the autoregressive predictor did not preclude the effect of the remaininig experimental parameters.
 
 \bigskip
 
   **16.1.3.**	*A general linear model with constant, linear, and quadratic terms will be used to estimate the correspondence between proportion accepted (independent variable) and total earnings (dependent variable). No other covariates will be used, as this analysis is to confirm that over and under accepting are detrimental to total earnings. The quadratic term will be defined as the squared deviation from the optimal overall acceptance rate.*
   
 ``` {r 16.1.3. Earnings, echo=FALSE,fig.align="center",fig.width=5,fig.height=4}
-# Pairwise comparison
-# earningsPerm <- permute(summaryData$Earnings[indxWait], summaryData$Earnings[indxCog]) # I believe this more
-# earningsRsq <- cohenD(summaryData$Earnings[indxWait], summaryData$Earnings[indxCog])
+# calculate the proportions and earnings per subject, while keeping group info
+temp <- dataAll %>%
+  filter(Choice < 2) %>%
+  group_by(SubjID, Cost) %>%
+  summarise(Earnings = sum(Reward[Choice == 1] / 100),
+            pComplete = mean(Choice)) %>%
+  mutate(pComplete2 = pComplete^2) %>%
+  ungroup()
 
-# linear model (think of doing a Poisson Regression instead, since earnings are not normally distributed [although bootstrapped they're fine])
-propAllsq <- summaryData$propComplete^2 
-lmEarn <- lm(Earnings ~ propComplete + propAllsq, data = summaryData)
-summaryEarn <- summary(lmEarn)
-coeffsEarn <- lmEarn$coefficients
-summaryData$tempLine <- seq(0,1,length=totalSubs) # for plotting
-summaryData$earnFitLine <- coeffsEarn[1] + coeffsEarn[2]*summaryData$tempLine + coeffsEarn[3]*(summaryData$tempLine^2)
-  
-# plotting
-# boxplot(summaryData$Earnings[indxWait],
-#         summaryData$Earnings[indxCog],
-#         summaryData$Earnings[indxPhys],
-#         summaryData$Earnings[indxEasy],
-#         names = lbls,
-#         main = "Total Earnings for Each Group",
-#         ylab = "Total Earnings (pts)",
-#         xlab = "Group",
-#         col = cols)
-# earnBoxplot <- ggplot(data = summaryData, aes(Group, Earnings, fill = Group)) +
-#         geom_boxplot(show.legend = F) +
-#         scale_fill_manual(values = cols) +
-#         labs(title = "Total Earned per Group", y = "Total Earnings (Cents)", x = "") +
-#         theme_classic()
+# linear fit of earnings x prop accept
+lmEarn <- lm(Earnings ~ pComplete + pComplete2, data = temp)
 
-# earnings (inverse-U, which makes sense because either over or under accepting are detrimental to earnings)
-# plot(summaryData$propComplete[indxWait],
-#      summaryData$Earnings[indxWait],
-#      main = "Total Earnings as a Function of Proportion Accepted",
-#      xlab = "Total Proportion Completed",
-#      ylab = "Total Earned",
-#      col=cols[1],
-#      xlim=c(0.2,1),
-#      ylim = c(1000,2000),
-#      pch=16,
-#      cex = lthick - 0.5)
-# points(summaryData$propComplete[indxCog],
-#        summaryData$Earnings[indxCog],
-#        col=cols[2],
-#        pch=16,
-#        cex = lthick - 0.5)
-# points(summaryData$propComplete[indxPhys],
-#        summaryData$Earnings[indxPhys],
-#        col=cols[3],
-#        pch=16,
-#        cex = lthick - 0.5)
-# points(summaryData$propComplete[indxEasy],
-#        summaryData$Earnings[indxEasy],
-#        col=cols[4],
-#        pch=16,
-#        cex = lthick - 0.5)
-# legend("topright",
-#        lbls,
-#        fill = cols,
-#        cex = 0.8)
-# lines(x, coeffsEarn[1] + coeffsEarn[2]*x + coeffsEarn[3]*(x^2),
-#        col="black",
-#       lwd = lthick)
-
-earnFitplot <- ggplot(data = summaryData, aes(propComplete, Earnings)) + 
-         geom_point(aes(color = Group), size = 2, show.legend = F) + 
-         geom_line(aes(tempLine, earnFitLine), size = 1.5, alpha = 0.7) +
+# plot
+(earnFitplot <- ggplot(data = temp, aes(pComplete, Earnings)) + 
          scale_color_manual(values = cols) + 
-         xlim(0.2,1) +
-         labs(title = "Earnings as a Function of Acceptances", x = "Proportion Accepted", y = "") +
-         theme_classic()
-
-earnFitplot
+         geom_point(aes(fill = Cost), pch = 21, color = "black", size = 3, show.legend = T) + 
+         stat_smooth(aes(y = Earnings), method = "lm", formula = y ~ x + I(x^2), color = "grey30") +
+         labs(x = "Proportion Accepted", y = "Total Earnings (dollars)") +
+         scale_fill_manual(values = cols) +
+         theme(panel.grid.major = element_blank(), 
+           panel.grid.minor = element_blank(), 
+           panel.background = element_blank(), 
+           axis.line = element_line(colour = "black"),
+           text = element_text(size = 16)))
 
 ```
 
@@ -692,24 +645,35 @@ pander(lmEarn, style = "rmarkdown")
   
 \bigskip
   
-  **16.1.4.**	*To determine the optimality of each group’s decisions, we will perform two-sided one-sample t-tests (with mu being the optimal proporion of acceptances-either 0 or 1) to see if the proportion of acceptances for each time/reward combination was significantly different from the optimal rate (see 11.2.). This will result in 36 independent tests (3 rewards amounts, 3 handling/travel time combinations, and 4 groups), so we will correct for multiple comparisons using False Discovery Rate (FDR).*
+  **16.1.4.**	*To determine the optimality of each group’s decisions, we will perform two-sided one-sample t-tests (with mu being the optimal proporion of acceptances--either 0 or 1) to see if the proportion of acceptances for each time/reward combination was significantly different from the optimal rate (see 11.2.). This will result in 36 independent tests (3 rewards amounts, 3 handling/travel time combinations, and 4 groups), so we will correct for multiple comparisons using False Discovery Rate (FDR).*
 
 ``` {r 16.1.4., echo=FALSE}
-# Split the data frame into every combination of parameters of interest
-splitData <- split(allProp2, list(allProp2$Reward, allProp2$Handling, allProp2$Group))
+# in order
+# clean data, 
+# calculate each individual's prop. accept,
+# calculate t.tests with optimality as null mean,
+# correct pvalues with FDR
+temp <- dataAll %>%
+  filter(Choice < 2) %>%
+  group_by(SubjID, Handling, Reward, Cost) %>%
+  summarise(pComplete = mean(Choice)) %>%
+  mutate(optimal = case_when(
+          (Handling == 10 & Reward < 8) ~ 0,
+          (Handling == 14 & Reward < 20) ~ 0,
+          TRUE ~ 1
+        )) %>% 
+  group_by(Handling, Reward, Cost) %>%
+  summarise(meanAccept = mean(pComplete),
+            sdAccept = sd(pComplete),
+            optimal = unique(optimal),
+            pvals = tryCatch(t.test(pComplete, mu = unique(optimal))$p.value, error = function(e) {1})) %>%
+  mutate(FDR = p.adjust(pvals, method = "BY"),
+         significant = FDR < 0.05)
 
-# Perform a paired t-test on every combination of parameters
-# Given that 20 cent rewards demand constant acceptances, we expect the proportions to be constant for these choices
-# This gives an error in the t.test due to the lack of variability and normal errors, so we use try to bypass this issue
-splitData_tests <- sapply(splitData, function(data) try(t.test(data$propComplete, mu = unique(data$Optimal))$p.value))
 
-# Adjust for multiple comparisons using BY-FDR
-trueProp$Deviation_pval <- round(p.adjust(splitData_tests, method = "BY"), digits = 2)
-trueProp$Deviation_pval[is.na(trueProp$Deviation_pval)] <- 1
-# trueProp[trueProp$Deviation_pval < 0.05, ]
-
-# Proportion of significant deviations from optimality
-splitData_prop <- round(sum(trueProp$Deviation_pval < 0.05, na.rm = T) / 36, digits = 2)
+# proportion of significant ones
+# eventually find a way to plot this
+splitData_prop <- mean(temp$significant, na.rm = T)
 ```
 
 Of the 36 tests, around `r splitData_prop` were significantly deviant from optimality. Most of these were from effortful groups, as the wait group just showed deviations for 2 seconds handling/4 cent, and 10 seconds handling/8 cent offers (note to self: think about a way to properly visualize these).
