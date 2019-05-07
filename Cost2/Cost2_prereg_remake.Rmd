@@ -68,7 +68,7 @@ lthick = 2 # line thickness for plots
 
 ## Functions
 # Permutation for 2 groups
-permute <- function(group1 = 1, group2 = 2, statType = mean, nPerms = 5000, paired = FALSE){
+permute <- function(group1 = 1, group2 = 2, statType = mean, nPerms = 5000, paired = FALSE, simple = FALSE){
   
     # prep data
     summaryPerm <- list()
@@ -112,7 +112,16 @@ permute <- function(group1 = 1, group2 = 2, statType = mean, nPerms = 5000, pair
     if (length(unique(abs(summaryPerm$jointDist))) == 1) {summaryPerm$Pval <- 1} # if the difference is always the same, then p = 1
     summaryPerm$Observed <- observed
     
-    return(summaryPerm)
+    # return the results
+    if (simple) {
+      
+      return(summaryPerm$Pval)
+      
+    } else if (!simple) {
+      
+      return(summaryPerm)
+      
+    }
     
 }
 
@@ -685,112 +694,80 @@ Of the 36 tests, around `r splitData_prop` were significantly deviant from optim
   **16.2.1.**	*To compare preferences (hypothesis 4.2.), we will first perform a one-way ANOVA on the proportion of trials accepted using group as a factor. In addition, we will do pairwise comparisons on the proportion completed among all 4 groups using non-parametric permutation contrasts (6 tests). The same approach will be used for total earnings. This will give us an initial glimpse on the potential differences in cost among conditions.*
 
 ``` {r 16.2.1. Overall Proportion/Earnings,fig.align="center",fig.width=10,fig.height=4, echo=FALSE}  
-## prop complete
-# ecdfs
-wait <- ecdf(summaryData$propComplete[indxWait])
-cog <- ecdf(summaryData$propComplete[indxCog])
-phys <- ecdf(summaryData$propComplete[indxPhys])
-easy <- ecdf(summaryData$propComplete[indxEasy])
-range <- seq(0,1,by=0.01)
+## ECDF of proportion completed per cost type
+temp <- dataAll %>%
+        filter(Choice < 2) %>%
+        mutate(Cost = factor(Cost, levels = list("Physical", "Cognitive", "Wait", "Easy"))) %>%
+        group_by(SubjID, Cost) %>%
+        summarise(Earnings = sum(Reward[Choice == 1] / 100),
+                  pComplete = mean(Choice))
 
-test <- data.frame(range = range,
-                   ecdf = c(wait(range),cog(range),phys(range),easy(range)),
-                   Group = factor(c(rep("Wait",101),rep("Cognitive",101),rep("Physical",101),rep("Easy", 101)), levels = c("Wait","Cognitive","Physical","Easy")))
-
-p1 <- ggplot(test, aes(x=range,y=ecdf, group=Group, color=Group))
-p1 <- p1 + geom_line(show.legend = F, size = 1.5) +
-    scale_color_manual(values = cols) +
-    labs(title = "ECDF of Acceptances per Group", y="ECDF", x = "Proportion Accepted") +
-    theme_classic()
-
-# problem is, data is not normal, so we're going to bootstrap it and DEFINITELY permute
-# Bootstrap nonparametric
-B <- 5000
-meanBootW <- bootstrap(summaryData$propComplete[indxWait],B = B) #rep(0,B)
-meanBootC <- bootstrap(summaryData$propComplete[indxCog], B = B) #rep(0,B)
-meanBootP <- bootstrap(summaryData$propComplete[indxPhys], B = B)
-meanBootE <- bootstrap(summaryData$propComplete[indxEasy], B = B)
-
-#CIs wait
-meanW <- mean(meanBootW)
-upperW <- quantile(meanBootW,0.975) # meanBoot?
-lowerW <- quantile(meanBootW,0.025)
-
-#CIs effort
-meanC <- mean(meanBootC)
-upperC <- quantile(meanBootC,0.975) # meanBoot?
-lowerC <- quantile(meanBootC,0.025)
-
-#CIs physical
-meanP <- mean(meanBootP)
-upperP <- quantile(meanBootP,0.975) # meanBoot?
-lowerP <- quantile(meanBootP,0.025)
-
-#CIs easy
-meanE <- mean(meanBootE)
-upperE <- quantile(meanBootE,0.975) # meanBoot?
-lowerE <- quantile(meanBootE,0.025)
-
-# formal testing 
+## formal testing 
 # proportion completed
-propAov <- aov(propComplete ~ factor(Group), data = summaryData)
+propAov <- aov(pComplete ~ factor(Cost), data = temp)
 
-# effect size (get the one for anovas)
-# propRsq <- cohenD(summaryData$propComplete[indxWait],summaryData$propComplete[indxCog])
+propTests <- temp %>% 
+  plyr::dlply("Cost", identity) %>%
+  sapply("[[", "pComplete") %>%
+  as.data.frame() %>%
+  combn(2, simplify = F) %>%
+  sapply(function(x) {
+    c(contrast = paste(colnames(x), collapse = "vs"), 
+      permPval = round(permute(x[, 1], x[, 2], simple = T), digits = 3),
+      cohenD = round(cohenD(x[, 1], x[, 2]), digits = 3))
+  }) %>% 
+  t()
 
-# post-hoc
-temp <- do.call(cbind, lapply(split(summaryData, summaryData$Group),"[[","propComplete"))
-temp2 <- t(combn(colnames(temp),2))
-
-propTests <- data.frame(Comparison = paste(temp2[,1], temp2[,2]),
-                        T_pval = rep(1,6),
-                        CohenD = rep(0,6))
-                        
-for (i in seq(nrow(temp2))) {
-  
-  propTests$T_pval[i] <- round(permute(temp[,temp2[i,1]], temp[,temp2[i,2]])$Pval, digits = 2)
-  propTests$CohenD[i] <- round(cohenD(temp[,temp2[i,1]], temp[,temp2[i,2]]), digits = 2)
-  
-}
+# pairwise.wilcox.test(temp$pComplete, temp$Cost)
 
 # earnings
-earnAov <- aov(Earnings ~ factor(Group), data = summaryData)
+earnAov <- aov(Earnings ~ factor(Cost), data = temp)
 
-# effect size
-# earnRsq <- cohenD(summaryData$propComplete[indxWait],summaryData$propComplete[indxCog])
+earnTests <- temp %>% 
+  plyr::dlply("Cost", identity) %>%
+  sapply("[[", "Earnings") %>%
+  as.data.frame() %>%
+  combn(2, simplify = F) %>%
+  sapply(function(x) {
+    c(contrast = paste(colnames(x), collapse = "vs"), 
+      permPval = round(permute(x[, 1], x[, 2], simple = T), digits = 3),
+      cohenD = round(cohenD(x[, 1], x[, 2]), digits = 3))
+  }) %>% 
+  t()
 
-# post-hoc
-temp <- do.call(cbind, lapply(split(summaryData, summaryData$Group),"[[","Earnings"))
-temp2 <- t(combn(colnames(temp),2))
+# plots
+p1 <- ggplot(aes(pComplete, color = Cost), data = temp) +
+        stat_ecdf(lwd = 1.2, show.legend = F) +
+        scale_color_manual(values = cols) +
+        xlim(0, 1) +
+        labs(y="ECDF", x = "Proportion Accepted") +
+        theme(panel.grid.major = element_blank(), 
+              panel.grid.minor = element_blank(), 
+              panel.background = element_blank(), 
+              axis.line = element_line(colour = "black"),
+              text = element_text(size = 16))
 
-earnTests <- data.frame(Comparison = paste(temp2[,1], temp2[,2]),
-                        T_pval = rep(1,6),
-                        CohenD = rep(0,6))
-                        
-for (i in seq(nrow(temp2))) {
-  
-  earnTests$T_pval[i] <- round(permute(temp[,temp2[i,1]], temp[,temp2[i,2]])$Pval, digits = 2)
-  earnTests$CohenD[i] <- round(cohenD(temp[,temp2[i,1]], temp[,temp2[i,2]]), digits = 2)
-  
-}
-
-
-rm(B,cog,wait,phys,easytemp,temp2)
-
-# plot
-p2 <- ggplot(summaryData, aes(x=Group, y=propComplete, fill = Group))
-p2 <- p2 + geom_boxplot(show.legend = F) +
-    scale_fill_manual(values = cols) +
-    ylim(c(0,1)) +
-    labs(title = "Proportion Completed by Group", y="Proportion Completed") +
-    theme_classic()
+p2 <- ggplot(temp, aes(Cost, pComplete, fill = Cost)) + 
+        geom_boxplot(show.legend = F) +
+        scale_fill_manual(values = cols) +
+        ylim(c(0, 1)) +
+        labs(y = "Proportion Completed") +
+        theme(panel.grid.major = element_blank(), 
+            panel.grid.minor = element_blank(), 
+            panel.background = element_blank(), 
+            axis.line = element_line(colour = "black"),
+            text = element_text(size = 16))
 
 
-p3 <- ggplot(summaryData, aes(x=Group, y=Earnings, fill = Group))
-p3 <- p3 + geom_boxplot(show.legend = F) +
-    scale_fill_manual(values = cols) +
-    labs(title = "Earnings by Group", y="Total Earnings (Cents)") +
-    theme_classic()
+p3 <- ggplot(temp, aes(Cost, Earnings, fill = Cost)) + 
+        geom_boxplot(show.legend = F) +
+        scale_fill_manual(values = cols) +
+        labs(y = "Total Earnings (dollars)") +
+        theme(panel.grid.major = element_blank(), 
+            panel.grid.minor = element_blank(), 
+            panel.background = element_blank(), 
+            axis.line = element_line(colour = "black"),
+            text = element_text(size = 16))
 
 grid.arrange(p1, p2, p3, ncol = 3)
 ```
