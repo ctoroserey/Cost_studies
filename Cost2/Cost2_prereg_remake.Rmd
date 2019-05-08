@@ -1118,46 +1118,34 @@ This plot shows the AIC for every model. The figure below shows AIC and BIC for 
 
   **16.3.1.**	*Response times (RT) for quit responses will be presented in a descriptive manner in order to examine whether participants tended to quit early or late within individual trials. Each cost group’s response time distribution will contain the pooled RT across its corresponding participants, and we will display the empirical cumulative distribution functions for each condition. Short RT would suggest confident and stable decisions (in support of 4.3.1.).*
   
-We can see in the ECDFs below that most decisions to quit happened within the first second into the handling time. The reason why the physical and easy condition show slightly lagged responses is that the experiment allowed a one second grace period for participants to begin gripping. This results in some of them choosing to wait for that second to indicate an offer rejection.
+The ECDF below shows the proportion of quits and acceptances occurring as the trial advanced. Drastic changes indicate the end of one of the possible handling times, and sccessful receipt of a reward. This shows that there were no quits during the handling time, and displays the proportion of acceptances (1 - the y axis here) for each cost at each handling/travel time combination. We can see in the ECDFs below that most decisions to quit happened within the first second into the handling time. The reason why the physical and easy condition show slightly lagged responses is that the experiment allowed a one second grace period for participants to begin gripping. This results in some of them choosing to wait for that second to indicate an offer rejection.
 
 ``` {r 16.3.1. RTs, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
-# RTs
-# let's try to do some survival curves
-RTW <- unlist(lapply(waitData, function(data) {data$RT[data$Choice==0]})) # vector of all decision-related RTs for the wait group
-RTC <- unlist(lapply(cogData, function(data) {data$`Choice RT`[data$Choice==0]})) # same for the cog group
-RTP <- unlist(lapply(physData, function(data) {data$RT[data$Choice==0]}))
-RTE <- unlist(lapply(easyData, function(data) {data$RT[data$Choice==0]}))
 
-# create a data frame for plotting
-RTgroups <- c(rep("Wait",length(RTW)), rep("Effort",length(RTC)), rep("Physical",length(RTP)), rep("Easy",length(RTE)))
-RTall <- c(RTW,RTC,RTP,RTE)
-RTframe <- data.frame(RTgroups, RTall)
+# Proportion of forced travels per subject and cost type
+propFails <- dataAll %>% 
+  filter(Cost != "Wait") %>% 
+  group_by(SubjID, Cost) %>% 
+  summarise(propFails = mean(Choice == 2)) %>%
+  group_by(Cost) %>% 
+  summarise(meanQuit = mean(propFails))
 
-# plot
-ggplot(RTframe, aes(RTall, color = RTgroups)) + 
-  stat_ecdf(lwd = 1) + 
-  scale_color_manual(values = cols) + 
-  scale_x_continuous(breaks = seq(14)) +
-  labs(title = "ECDFs for the Response Times", x = "Seconds", y = "ECDF") +
-  theme_classic()
+# Reaction times ECDFs including offer and in-trial quits
+(RTs <- dataAll %>%
+  #mutate(RT = ifelse(Choice != 0, RT + 2, RT)) %>%
+  filter(Choice < 2) %>% # change this to 1 to reproduce the original plot, since it would only plot the cdf of quits
+  ggplot(aes(RT, color = Cost)) + 
+    stat_ecdf(lwd = 1.2) +
+    geom_vline(xintercept = 1, lty = 2) + # end of the grace period for physical trials
+    scale_color_manual(values = cols) +
+    scale_x_continuous(breaks = seq(14)) +
+    theme(panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.background = element_blank(),
+      axis.line = element_line(colour = "black"),
+      text = element_text(size = 16)))
 
-# # and CIs for each (unnecessary unless I end up plotting)
-# CIC <- bootstrap(group = RTC, statType = median)  #qt(.975,nSubs-1)*(sd(RTC)/sqrt(nSubs))
-# CIC <- median(CIC) - (quantile(CIC,0.025))
-# CIW <- bootstrap(group = RTW, statType = median)  #qt(.975,nSubs-1)*(sd(RTW)/sqrt(nSubs))
-# CIW <- median(CIW) - (quantile(CIW,0.025))
-# CIP <- bootstrap(group = RTP, statType = median)  #qt(.975,nSubs-1)*(sd(RTW)/sqrt(nSubs))
-# CIP <- median(CIP) - (quantile(CIP,0.025))
-# CIE <- bootstrap(group = RTE, statType = median)  #qt(.975,nSubs-1)*(sd(RTW)/sqrt(nSubs))
-# CIE <- median(CIE) - (quantile(CIE,0.025))
-# lines(range,ecdfC(range) + CIC,col = cols[2], lty = 2, lwd = lthick)
-# lines(range,ecdfC(range) - CIC,col = cols[2], lty = 2, lwd = lthick) 
-# lines(range,ecdfW(range) + CIW,col = cols[1], lty = 2, lwd = lthick)
-# lines(range,ecdfW(range) - CIW,col = cols[1], lty = 2, lwd = lthick)
-# lines(range,ecdfP(range) + CIP,col = cols[3], lty = 2, lwd = lthick)
-# lines(range,ecdfP(range) - CIP,col = cols[3], lty = 2, lwd = lthick)
-# lines(range,ecdfE(range) + CIE,col = cols[4], lty = 2, lwd = lthick)
-# lines(range,ecdfE(range) - CIE,col = cols[4], lty = 2, lwd = lthick)
+
 
 ```
 
