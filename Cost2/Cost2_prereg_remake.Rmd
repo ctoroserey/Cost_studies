@@ -148,7 +148,7 @@ bootstrap <- function(group = 1, statType = mean, B = 5000){
 plotLogis <- function(coeffs = 1, group = "Cognitive", handling = 1:14, reward = 1:20, xAxis = "Reward", plotType = lines, color = "black", lType = 1, pchType = 16){
   
     
-    # divide into relevant coefficients (assumes logisComb was the best model)
+    # divide into relevant coefficients (assumes logisComb was the best model)
     intercept <- coeffs[1]
     cogBeta <- coeffs[2]    
     physBeta <- coeffs[3]
@@ -802,10 +802,7 @@ prop.aov <- with(temp, aov(pComplete ~ factor(Cost) * Handling * Reward +
 The plot below shows the mean proportion of acceptances (± SEM) per combination of handling time, reward, and condition (optimal acceptance rate indicated by the gray triangles). Visually, the graph confirms a couple of important intuitions. First, as the handling time increases, the proportion of acceptances decreases. Second, this discounting did not affect the 20 cent offers, as is expected from the present foraging environment. Lastly, and similar to the previous point, as the value of the offers increases so does the willingness to accept a trial. Beyond these general features, it is clear that the cognitive effort group accepted more than the other groups, regardless of the combination of experimental parameters. Notably, the optimality of this greater acceptance rate is determined by the timing context (e.g. optimal at 2 second handling time, but detrimental at 14 seconds).      
 
 ``` {r 16.2.2. rmANOVA plot, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
-### THE PLOTS FOR YALE
-# Ggplot made plotting way easier than the previous version
-# This is in case you don't want to plot the easy condition (easier to see)
-
+# prep data to plot the p(accept) based on reward, handling time and cost type
 trueProp <- dataAll %>%
         filter(Choice < 2) %>%
         group_by(SubjID, Cost, Handling, Reward, optimal) %>%
@@ -814,6 +811,7 @@ trueProp <- dataAll %>%
         summarise(meanComplete = mean(pComplete),
                   SE = sd(pComplete) / sqrt(length(pComplete)))
 
+# and plot
 (a1 <- ggplot(data = trueProp, aes(interaction(Reward, Handling), meanComplete, color = Cost)) + 
         geom_point(size = 3) + 
         geom_errorbar(aes(ymin = meanComplete - SE, ymax = meanComplete + SE), width = 0.2, size = 1) +
@@ -869,8 +867,9 @@ mixLogis_main$Easy <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling 
 
 
 # matrix of coefficients
-temp <- lapply(mixLogis_main, function(model) {coefficients(model)$SubjID[1, 2:4]})
-mixCoeffs <- bind_rows(temp) #reduce(temp, full_join) 
+# 
+temp <- lapply(mixLogis_main, function(model) {as.list(summary(model)$coefficients[2:4, 1])})
+mixCoeffs <- as.matrix(bind_rows(temp)) #reduce(temp, full_join) 
 dimnames(mixCoeffs) <- list(names(temp), substr(colnames(mixCoeffs), 5, 20))
 mixCoeffs <- as.matrix(mixCoeffs[, match(rownames(mixCoeffs), colnames(mixCoeffs))])
 mixCoeffs[is.na(mixCoeffs)] <- 1
@@ -883,6 +882,7 @@ dimnames(mixPvals) <- list(names(temp), substr(colnames(mixPvals), 5, 20))
 mixPvals <- as.matrix(mixPvals[, match(rownames(mixPvals), colnames(mixPvals))])
 rownames(mixPvals) <- colnames(mixPvals)
 mixPvals <- mixPvals[c("Cognitive", "Physical", "Wait", "Easy"), c("Cognitive", "Physical", "Wait", "Easy")]
+diag(mixPvals) <- 1
 
 # plot coefficients and pvalues in a matrix
 # invert colors
@@ -915,7 +915,7 @@ temp <- ranef(mixLogis_main$Wait)$SubjID %>%
   gather(key = Cost, value = RandEffects, colnames(.)) 
 
 (RI1 <- ggplot(data = temp, aes(Cost, RandEffects, fill = Cost)) + 
-  geom_hline(yintercept = 0, alpha = 0.7) + 
+  geom_hline(yintercept = 0, alpha = 0.7, linetype = "dashed") + 
   geom_boxplot(show.legend = F) +
   scale_fill_manual(values = cols) + 
   labs(x = "") +
@@ -925,11 +925,9 @@ temp <- ranef(mixLogis_main$Wait)$SubjID %>%
               axis.line = element_line(colour = "black"),
               text = element_text(size = 16)))
 
-
-
 ```
 
-As predicted, the model showed significant main effects of handling time (Beta = `r mixLogis_main$Summary$coefficients[5,1]`, SE = `r mixLogis_main$Summary$coefficients[5,2]`, p < 0.001) and reward (Beta = `r mixLogis_main$Summary$coefficients[6,1]`, SE = `r mixLogis_main$Summary$coefficients[6,2]`, p < 0.001). In order to show the comparisons among all conditions, the following plot portrays the coefficients (color scale), and p-values (numbers within squares) that resulted from switching the reference condition. Specifically, each entry shows how much more likely was the reference group to accept an offer than the comparison group (the darker the cell, the greater the odds). Based on this, we can see that the cognitive group was significantly more likely to accept any offer than the physical and wait groups, but not the easy group.
+As predicted, the model showed significant main effects of handling time (Beta = `r mixLogis_main$Summary$coefficients[5,1]`, SE = `r mixLogis_main$Summary$coefficients[5,2]`, p < 0.001) and reward (Beta = `r mixLogis_main$Summary$coefficients[6,1]`, SE = `r mixLogis_main$Summary$coefficients[6,2]`, p < 0.001). In order to show the comparisons among all conditions, the following plot portrays the coefficients (color scale), and p-values (numbers within squares) that resulted from switching the reference condition. Specifically, each entry shows how much more likely was the reference group to accept an offer than the comparison group. Based on this, we can see that the cognitive group was significantly more likely to accept any offer than the physical and wait groups, but not the easy group.
 
 ``` {r 16.2.3. Mixed Effects Model plot group coefficients, echo=FALSE,fig.align="center",fig.width=5,fig.height=5}
 # plot coefficient matrix (show pvals!)
@@ -945,8 +943,6 @@ corrplot(abs(mixLogis_mainBetas),
          cl.length = 3)
 mtext("Comparison", side = 2, line = 1.5, cex = 1.5)
 mtext("Reference Group", side = 3, line = 1, cex = 1.5, at = 2.5)
-
-rm(temp,t1,t2,t3,t4)
 
 ```
 
@@ -1082,45 +1078,36 @@ rm(temp,t1,t2,t3,t4)
 
   **16.2.4.**	*Next, we will examine whether the a priori model from 16.2.3. outperforms both simpler and more complex models. Unlike the individual logistic regression fits in 16.1.1., a mixed-effects approach gives us a better goodness of fit measure for model comparisons. We will determine the best model (combination of predictors) using Akaike’s Information Criterion (AIC) to determine the model that minimizes the negative log-likelihood while penalizing the addition of parameters. The regression with each combination of predictors will be fitted in the following order: 1) intercept only; 2) condition only; 3) handling time only; 4) reward only; 5) condition, handling, and reward main effects (from 16.2.3.); 6) adding a handling-by-reward interaction; and 7) adding all three possible two-way interactions. We predict that model 5 will have the lowest AIC.*
 
-This plot shows the AIC for every model. The last model to make significant fit contributions under the parameter penalty was indeed number 5. 
 
 ``` {r 16.2.4. Model comparison, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
 # Quasibinomial GLM versions (with proper proportion setup)
 mixLogis_compare <- list()
-mixLogis_compare$Base <- glmer(testBinom ~ 1 + (1 | SubjID), family = "binomial", data = allProp2) # intercept only
-mixLogis_compare$Group <- glmer(testBinom ~ factor(Group) + (1 | SubjID), family = "binomial", data = allProp2) 
-mixLogis_compare$Handling <- glmer(testBinom ~ factor(Group) + Handling + (1 | SubjID), family = "binomial", data = allProp2)
-mixLogis_compare$Reward <- glmer(testBinom ~ factor(Group) + Reward + (1 | SubjID), family = "binomial", data = allProp2)
-mixLogis_compare$AllMain <- mixLogis_main$Easy
-mixLogis_compare$HRInteraction <- glmer(testBinom ~ factor(Group) + Handling * Reward + (1 | SubjID), family = "binomial", data = allProp2)
-mixLogis_compare$AllInteractions <- glmer(testBinom ~ factor(Group) * Handling * Reward + (1 | SubjID), family = "binomial", data = allProp2)
+mixLogis_compare$Base <- glmer(cbind(totalAccepted, totalQuits) ~ 1 + (1 | SubjID), family = "binomial", data = mixData) # intercept only
+mixLogis_compare$Cost <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_compare$Handling <- glmer(cbind(totalAccepted, totalQuits) ~ Handling + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_compare$Reward <- glmer(cbind(totalAccepted, totalQuits) ~ Reward + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_compare$AllMain <- mixLogis_main$Wait
+mixLogis_compare$Interaction <- glmer(cbind(totalAccepted, totalQuits) ~ Cost * Reward + (Cost | SubjID), family = "binomial", data = mixData)
 
 # Model selection 
-aicLogis_compare <- sapply(mixLogis_compare, AIC)
-
+abicLogis_compare <- data.frame(Model = names(mixLogis_compare),
+                                AIC = sapply(mixLogis_compare, AIC),
+                                BIC = sapply(mixLogis_compare, BIC))
+  
 # effect size
 mixLogis_compare$Rsq <- 1 - (deviance(mixLogis_compare$AllMain)/deviance(mixLogis_compare$Base)) # denominator is the null deviance
 ```
 
+This plot shows the AIC for every model. The figure below shows AIC and BIC for all the models. As predicted, the model with all main effects reduced the deviance the most ($R^2$ = `r round(mixLogis_compare$Rsq, digits = 2`).
+
 ``` {r 16.2.4. Plot Deviance comparison, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
-    
-par(mar=c(5.1,2.1,2.1,2.1))    
-# plot the deviance for all models
-# ver 3
-modelLabels <- c('Intercept','G Only','H Only','R Only','G + H + R','G + H * R','G * H * R')
-plot(aicLogis_compare,
-     main = "AIC for All Models",
-     xlab = "",
-     ylab = "AIC",
-     pch = 16,
-     xaxt = "n")
-axis(1, at = 1:7, labels = F)
-text(1:7, 
-     par("usr")[3] - 22,
-     labels = modelLabels, 
-     srt = 45, 
-     pos = 1, 
-     xpd = TRUE)
+# plot AIC and BIC
+(mixLogis_compare$plot <- abicLogis_compare %>% 
+  gather(Comparison, Value, AIC:BIC) %>%
+  mutate(Model = factor(Model, levels = names(mixLogis_compare))) %>%
+  ggplot(aes(Model, Value, fill = Comparison)) +
+    geom_point(color = "black", pch = 21, size = 3) +
+    theme_classic())
     
 ```
 
@@ -1454,11 +1441,6 @@ The analysis of variance was significant (F = `r round(Fval, digits = 2)`, p = `
 \bigskip
 \bigskip
 
-## Notes
-
-- Update the AIC, RT ECDF, pre-post plots with ggplot.
-
-- This plot is just to show participant-specific behavior for all groups.
 
 ``` {r Testing grounds, echo=FALSE,fig.align="center",fig.width=10,fig.height=8}
 cond <- as.character(unique(summaryData$Group))
