@@ -32,7 +32,7 @@ Single-option, accept/reject decisions will be influenced by within-subject mani
  
  **4.1.2.**	The tendency to reject low-reward prospects will be greater in environments where rewards are associated with longer delays (handling times).
 
-#### 4.2.	
+### 4.2.	
 
 Prospect acceptance rates will differ across four between-subject conditions, in which the delays associated with rewards (a) are unfilled, (b) include a cognitive effort requirement, (c) include a physical effort requirement, or (d) require a trivial level of physical effort but have matched visual stimuli to the physical effort condition.
 
@@ -42,7 +42,7 @@ Prospect acceptance rates will differ across four between-subject conditions, in
   
   **4.2.3.**	In the trivial effort condition, acceptance rates will be equivalent to the unfilled-delay condition, and lower than in the physical effort and cognitive effort conditions.
 
-#### 4.3.	
+### 4.3.	
 
 Choices will be well fit by a computational model in which the subjective opportunity cost of time is free to vary across the four between-subject conditions.
 
