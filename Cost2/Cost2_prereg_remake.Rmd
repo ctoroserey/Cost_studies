@@ -609,13 +609,12 @@ lmEarn <- lm(Earnings ~ pComplete + pComplete2, data = temp)
 
 ```
 
-The figure shows that participants that over and unceraccepted earned less money overall, as predicted. This is supported by a significant quadratic term from the linear model (F = `r round(summaryEarn$fstatistic[1], digits = 2)`, Beta = `r summaryEarn$coefficients[3,1]`, SE = `r round(summaryEarn$coefficients[3,2], digits = 2)`, R-squared = `r round(summaryEarn$r.squared, digits = 2)`; black line shows the fit). The following table shows all the results from the model.
+The figure shows that participants that over and unceraccepted earned less money overall, as predicted. This is supported by a significant quadratic term from the linear model (F = `r round(summary(lmEarn)$fstatistic[1], digits = 2)`, Beta = `r summary(lmEarn)$coefficients[3,1]`, SE = `r round(summary(lmEarn)$coefficients[3,2], digits = 2)`, R-squared = `r round(summary(lmEarn)$r.squared, digits = 2)`; black line shows the fit). The following table shows all the results from the model.
 
 ``` {r 16.1.3. Earnings table, echo=FALSE,fig.align="center",fig.width=9,fig.height=5}
 # Summary table for the linear model
 panderOptions("digits", 2)
 pander(lmEarn, style = "rmarkdown")
-
 ```  
   
 \bigskip
@@ -1174,7 +1173,8 @@ summaryOC <- list()
 summaryOC$all <- dataAll %>%
                  filter(Choice < 2) %>%
                  group_by(Cost, SubjID) %>%
-                 do(optimizeOCModel(., simplify = T)) 
+                 do(optimizeOCModel(., simplify = T)) %>%
+                 ungroup()
 
 # plot
 (summaryOC$plot <- ggplot(summaryOC$all, aes(Cost, Gamma, fill = Cost)) +
@@ -1238,22 +1238,57 @@ summaryOC$predicted <- dataAll %>%
 
 ``` {r 16.3.5. OC comparisons, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
 # ANOVA
-anovaOC <- summary(aov(Gamma ~ Group, data = summaryOC))
-Fval <- anovaOC[[1]]$`F value`[1]
-Pval <- anovaOC[[1]]$`Pr(>F)`[1]
-Rsquared_aov <- round(anovaOC[[1]]$`Sum Sq`[1] / sum(anovaOC[[1]]$`Sum Sq`), digits = 2)
+OCanova <- list()
+OCanova$aov <- summary(aov(Gamma ~ Cost, data = summaryOC$all))
+Fval <- OCanova$aov[[1]]$`F value`[1]
+Pval <- OCanova$aov[[1]]$`Pr(>F)`[1]
+Rsquared_aov <- round(OCanova$aov[[1]]$`Sum Sq`[1] / sum(OCanova$aov[[1]]$`Sum Sq`), digits = 2)
   
 # Post-hoc pairwise tests
-permuteOCTest <- list()
-permuteOCTest$WvC <- permute(waitOC, cogOC)
-permuteOCTest$WvP <- permute(waitOC, physOC)
-permuteOCTest$WvE <- permute(waitOC, easyOC)
-permuteOCTest$CvP <- permute(cogOC, physOC)
-permuteOCTest$CvE <- permute(cogOC, easyOC)
-permuteOCTest$PvE <- permute(physOC, easyOC)
+OCanova$perms <- summaryOC$all %>%
+  select(Cost, Gamma) %>%
+  plyr::dlply("Cost", identity) %>%
+  do.call(cbind, .) %>%
+  select_if(is.numeric) %>%
+  rename(Physical = Physical.Gamma,
+         Cognitive = Cognitive.Gamma,
+         Wait = Wait.Gamma,
+         Easy = Easy.Gamma) %>%
+  outer(., ., FUN = Vectorize(permute), simple = T)
+diag(OCanova$perms) <- 1
+
+OCanova$ES <- summaryOC$all %>%
+  select(Cost, Gamma) %>%
+  plyr::dlply("Cost", identity) %>%
+  do.call(cbind, .) %>%
+  select_if(is.numeric) %>%
+  rename(Physical = Physical.Gamma,
+         Cognitive = Cognitive.Gamma,
+         Wait = Wait.Gamma,
+         Easy = Easy.Gamma) %>%
+  outer(., ., FUN = Vectorize(cohenD)) %>%
+  abs()
 ```
 
-The analysis of variance was significant (F = `r round(Fval, digits = 2)`, p = `r ifelse(Pval < 0.001, "< 0.001", paste("=", round(Pval, digits = 2)))`, R-squared = `r Rsquared_aov`). Pairwise post-hoc permutations showed significantly greater values for the wait group versus the cognitive (p = `r ifelse(permuteOCTest$WvC$Pval < 0.001, "< 0.001", paste("=", round(permuteOCTest$WvC$Pval, digits = 2)))`) and easy (p = `r ifelse(permuteOCTest$WvE$Pval < 0.001, "< 0.001", paste("=", round(permuteOCTest$WvE$Pval, digits = 2)))`) groups, as well as significantly greater gammas for the physical group and the cognitive group (p = `r ifelse(permuteOCTest$CvP$Pval < 0.001, "< 0.001", paste("=", round(permuteOCTest$CvP$Pval, digits = 2)))`). These results suggest that participants engaged in cognitively effortful demands experience significantly lower opportunity costs than those whose demands involve physical effort and pure delay. The reason for this is unclear, and we will work on it in the near future. 
+The analysis of variance was significant (F = `r round(Fval, digits = 2)`, p = `r ifelse(Pval < 0.001, "< 0.001", paste("=", round(Pval, digits = 2)))`, R-squared = `r Rsquared_aov`). Pairwise post-hoc permutations are shown in the following matrix. These results suggest that participants engaged in cognitively effortful demands experience significantly lower opportunity costs than those whose demands involve physical effort and pure delay. The reason for this is unclear, and we will work on it in the near future. 
+
+``` {r 16.3.5. corrplot, echo = FALSE, fig.align="center", fig.width=5, fig.height=5}
+# plot all pairwise comparisons
+corrplot(OCanova$ES,
+         is.corr = F, 
+         p.mat = OCanova$perms,
+         type = "upper",
+         insig = "p-value",
+         sig.level = -1,
+         na.label = "square",
+         na.label.col = "grey",
+         method = "color", 
+         tl.col = "black", 
+         tl.cex = 0.8,
+         outline = T)
+```
+
+
 
 \bigskip
 \bigskip
@@ -1263,50 +1298,50 @@ The analysis of variance was significant (F = `r round(Fval, digits = 2)`, p = `
 
 
 ``` {r Testing grounds, echo=FALSE,fig.align="center",fig.width=10,fig.height=8}
-cond <- as.character(unique(summaryData$Group))
-
-i <- 1
-test <- allProp2[allProp2$Group == cond[i], ]
-test2 <- trueProp[trueProp$Group == cond[i], ]
-t1 <- ggplot(data = test, aes(x=interaction(Reward, Handling), y=propComplete)) + 
-  geom_line(aes(group = interaction(Handling, SubjID)), size=1, color = cols[i], alpha = 0.5) +
-  geom_point(size=3, color = cols[i]) +
-  geom_point(data = test2, aes(group = interaction(Reward, Handling), y = propComplete), size = 3.5, color = "black", fill = "grey60", pch=24) +
-  labs(title = paste("Acceptance rates for all subjects in the", cond[i], "group")) +
-  theme_classic()
-
-i <- 2
-test <- allProp2[allProp2$Group == cond[i], ]
-test2 <- trueProp[trueProp$Group == cond[i], ]
-t2 <- ggplot(data = test, aes(x=interaction(Reward, Handling), y=propComplete)) + 
-  geom_line(aes(group = interaction(Handling, SubjID)), size=1, color = cols[i], alpha = 0.5) +
-  geom_point(size=3, color = cols[i]) +
-  geom_point(data = test2, aes(group = interaction(Reward, Handling), y = propComplete), size = 3.5, color = "black", fill = "grey60", pch=24) +
-  labs(title = paste("Acceptance rates for all subjects in the", cond[i], "group")) +
-  theme_classic()
-
-i <- 3
-test <- allProp2[allProp2$Group == cond[i], ]
-test2 <- trueProp[trueProp$Group == cond[i], ]
-t3 <- ggplot(data = test, aes(x=interaction(Reward, Handling), y=propComplete)) + 
-  geom_line(aes(group = interaction(Handling, SubjID)), size=1, color = cols[i], alpha = 0.5) +
-  geom_point(size=3, color = cols[i]) +
-  geom_point(data = test2, aes(group = interaction(Reward, Handling), y = propComplete), size = 3.5, color = "black", fill = "grey60", pch=24) +
-  labs(title = paste("Acceptance rates for all subjects in the", cond[i], "group")) +
-  theme_classic()
-
-i <- 4
-test <- allProp2[allProp2$Group == cond[i], ]
-test2 <- trueProp[trueProp$Group == cond[i], ]
-t4 <- ggplot(data = test, aes(x=interaction(Reward, Handling), y=propComplete)) + 
-  geom_line(aes(group = interaction(Handling, SubjID)), size=1, color = cols[i], alpha = 0.5) +
-  geom_point(size=3, color = cols[i]) +
-  geom_point(data = test2, aes(group = interaction(Reward, Handling), y = propComplete), size = 3.5, color = "black", fill = "grey60", pch=24) +
-  labs(title = paste("Acceptance rates for all subjects in the", cond[i], "group")) +
-  theme_classic()
-
-
-grid.arrange(t1,t3,t2,t4, ncol = 2)
+# cond <- as.character(unique(summaryData$Group))
+# 
+# i <- 1
+# test <- allProp2[allProp2$Group == cond[i], ]
+# test2 <- trueProp[trueProp$Group == cond[i], ]
+# t1 <- ggplot(data = test, aes(x=interaction(Reward, Handling), y=propComplete)) + 
+#   geom_line(aes(group = interaction(Handling, SubjID)), size=1, color = cols[i], alpha = 0.5) +
+#   geom_point(size=3, color = cols[i]) +
+#   geom_point(data = test2, aes(group = interaction(Reward, Handling), y = propComplete), size = 3.5, color = "black", fill = "grey60", pch=24) +
+#   labs(title = paste("Acceptance rates for all subjects in the", cond[i], "group")) +
+#   theme_classic()
+# 
+# i <- 2
+# test <- allProp2[allProp2$Group == cond[i], ]
+# test2 <- trueProp[trueProp$Group == cond[i], ]
+# t2 <- ggplot(data = test, aes(x=interaction(Reward, Handling), y=propComplete)) + 
+#   geom_line(aes(group = interaction(Handling, SubjID)), size=1, color = cols[i], alpha = 0.5) +
+#   geom_point(size=3, color = cols[i]) +
+#   geom_point(data = test2, aes(group = interaction(Reward, Handling), y = propComplete), size = 3.5, color = "black", fill = "grey60", pch=24) +
+#   labs(title = paste("Acceptance rates for all subjects in the", cond[i], "group")) +
+#   theme_classic()
+# 
+# i <- 3
+# test <- allProp2[allProp2$Group == cond[i], ]
+# test2 <- trueProp[trueProp$Group == cond[i], ]
+# t3 <- ggplot(data = test, aes(x=interaction(Reward, Handling), y=propComplete)) + 
+#   geom_line(aes(group = interaction(Handling, SubjID)), size=1, color = cols[i], alpha = 0.5) +
+#   geom_point(size=3, color = cols[i]) +
+#   geom_point(data = test2, aes(group = interaction(Reward, Handling), y = propComplete), size = 3.5, color = "black", fill = "grey60", pch=24) +
+#   labs(title = paste("Acceptance rates for all subjects in the", cond[i], "group")) +
+#   theme_classic()
+# 
+# i <- 4
+# test <- allProp2[allProp2$Group == cond[i], ]
+# test2 <- trueProp[trueProp$Group == cond[i], ]
+# t4 <- ggplot(data = test, aes(x=interaction(Reward, Handling), y=propComplete)) + 
+#   geom_line(aes(group = interaction(Handling, SubjID)), size=1, color = cols[i], alpha = 0.5) +
+#   geom_point(size=3, color = cols[i]) +
+#   geom_point(data = test2, aes(group = interaction(Reward, Handling), y = propComplete), size = 3.5, color = "black", fill = "grey60", pch=24) +
+#   labs(title = paste("Acceptance rates for all subjects in the", cond[i], "group")) +
+#   theme_classic()
+# 
+# 
+# grid.arrange(t1,t3,t2,t4, ncol = 2)
 
 ```
 
