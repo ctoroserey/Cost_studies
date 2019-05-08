@@ -844,6 +844,7 @@ pander(x, style = "rmarkdown", split.table = 110)
   **16.2.3.**	*We will compute the probability of accepting a trial with a mixed-effects logistic regression. Based on the task structure and our main question, our a priori model of interest will include cost condition, handling time, and reward amount as fixed main effects, and subject ID as a random effect. Cost condition will be modeled with three categorical terms, with the fourth condition as the reference condition. We will run three versions of the model with different reference conditions, in order to test all pairwise differences among the four cost conditions. As with 16.2.2., we anticipate significant main effects (coefficients different than zero) of handling time, reward, and cost condition. We hypothesize that the differences among cost conditions will follow the pattern described in 4.2.*
 
 ``` {r 16.2.3. Mixed Effects Model, echo=FALSE,fig.align="center",fig.width=5,fig.height=4}
+# clean the data so the total acceptances and quits per subj x handling x reward are ready for modeling
 mixLogis_main <- list()
 mixData <- dataAll %>%
   filter(Choice < 2) %>%
@@ -855,19 +856,19 @@ mixData <- dataAll %>%
   ungroup()
 
 
-testBinom <- cbind(mixData$totalAccepted, mixData$totalQuits)
-
+# model with a random intercept and cost-type slope, then relevel the cost to get all pairwise comparisons
+# the correct way to model a logistic with proportions as dependent vars is by prividing n of hits and quits as a matrix
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait"))
-mixLogis_main$Wait <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_main$Wait <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Cognitive"))
-mixLogis_main$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_main$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
-mixLogis_main$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_main$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Easy"))
-mixLogis_main$Easy <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_main$Easy <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
 
 
-
+# matrix of coefficients
 temp <- lapply(mixLogis_main, function(model) {coefficients(model)$SubjID[1, 2:4]})
 mixCoeffs <- bind_rows(temp) #reduce(temp, full_join) 
 dimnames(mixCoeffs) <- list(names(temp), substr(colnames(mixCoeffs), 5, 20))
@@ -875,52 +876,32 @@ mixCoeffs <- as.matrix(mixCoeffs[, match(rownames(mixCoeffs), colnames(mixCoeffs
 mixCoeffs[is.na(mixCoeffs)] <- 1
 mixCoeffs <- mixCoeffs[c("Cognitive", "Physical", "Wait", "Easy"), c("Cognitive", "Physical", "Wait", "Easy")]
 
-# # just to make the logistic plotting comply with the function
-# allProp2 <- allProp2[order(as.character(allProp2$Group), decreasing = F), ]
-# 
-# # This transformation is necessary for a proper binomial fit of proportion data
-# totalQuit <- allProp2$totalTrials - allProp2$totalComplete
-# testBinom <- cbind(allProp2$totalComplete,totalQuit)
-# 
-# # Using a mixed-model fitted with GLMER
-# # Note: GLMER does not take quasi family distributions
-# # ranef() to display the random intercepts, fixef() for the model coefficients
-# 
-# # fit model
-# mixLogis_main <- list()
-# allProp2 <- within(allProp2, Group <- relevel(Group, ref = "Wait"))
-# mixLogis_main$Wait <-  glmer(testBinom ~ Group + Handling + Reward + (1 | SubjID), family = "binomial", data = allProp2)
-# allProp2 <- within(allProp2, Group <- relevel(Group, ref = "Cognitive"))
-# mixLogis_main$Cognitive <-  glmer(testBinom ~ Group + Handling + Reward + (1 | SubjID), family = "binomial", data = allProp2)
-# allProp2 <- within(allProp2, Group <- relevel(Group, ref = "Physical"))
-# mixLogis_main$Physical <-  glmer(testBinom ~ Group + Handling + Reward + (1 | SubjID), family = "binomial", data = allProp2)
-# allProp2 <- within(allProp2, Group <- relevel(Group, ref = "Easy"))
-# mixLogis_main$Easy <-  glmer(testBinom ~ Group + Handling + Reward + (1 | SubjID), family = "binomial", data = allProp2)
-# 
-# # Summarize model 
-# mixLogis_main$Summary <- summary(mixLogis_main$Wait)
-# 
-# # Coefficient matrices for all reference combos
-# t1 <- c(summary(mixLogis_main$Wait)$coefficients[2:4,1], GroupWait = 0)
-# t2 <- c(summary(mixLogis_main$Cognitive)$coefficients[2:4,1], GroupCognitive = 0)
-# t3 <- c(summary(mixLogis_main$Physical)$coefficients[2:4,1], GroupPhysical = 0)
-# t4 <- c(summary(mixLogis_main$Easy)$coefficients[2:4,1], GroupEasy = 0)
-# mixLogis_mainBetas <- cbind(merge(t1,t2, by = 0), merge(t1,t3,by=0)[,3], merge(t1,t4,by=0)[,3])
-# dimnames(mixLogis_mainBetas) <- list(cond[c(2,4,3,1)],c("Group",cond))
-# mixLogis_mainBetas <- as.matrix(mixLogis_mainBetas[,c(3,5,4,2)])
-# 
-# # And their respective p-values
-# t1 <- c(summary(mixLogis_main$Wait)$coefficients[2:4,4], GroupWait = 1)
-# t2 <- c(summary(mixLogis_main$Cognitive)$coefficients[2:4,4], GroupCognitive = 1)
-# t3 <- c(summary(mixLogis_main$Physical)$coefficients[2:4,4], GroupPhysical = 1)
-# t4 <- c(summary(mixLogis_main$Easy)$coefficients[2:4,4], GroupEasy = 1)
-# mixLogis_mainPvals <- cbind(merge(t1,t2, by = 0), merge(t1,t3,by=0)[,3], merge(t1,t4,by=0)[,3])
-# dimnames(mixLogis_mainPvals) <- list(cond[c(2,4,3,1)],c("Group",cond))
-# mixLogis_mainPvals <- as.matrix(mixLogis_mainPvals[,c(3,5,4,2)])
-# 
-# # Create CIs
-# sd <- sqrt(diag(vcov(mixLogis_main$Wait)))
-# mixLogisCI <- cbind(Est = fixef(mixLogis_main$Wait), LL = fixef(mixLogis_main$Wait) - 1.96 * sd, UL = fixef(mixLogis_main$Wait) + 1.96 * sd)
+# matrix of pvals
+temp <- lapply(mixLogis_main, function(model) {as.list(summary(model)$coefficients[2:4, 4])})
+mixPvals <- as.matrix(bind_rows(temp)) 
+dimnames(mixPvals) <- list(names(temp), substr(colnames(mixPvals), 5, 20))
+mixPvals <- as.matrix(mixPvals[, match(rownames(mixPvals), colnames(mixPvals))])
+rownames(mixPvals) <- colnames(mixPvals)
+mixPvals <- mixPvals[c("Cognitive", "Physical", "Wait", "Easy"), c("Cognitive", "Physical", "Wait", "Easy")]
+
+# plot coefficients and pvalues in a matrix
+# invert colors
+col2 <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0", "#FFFFFF", "#FDDBC7", "#F4A582", "#D6604D", "#B2182B", "#67001F"))
+
+corrplot(mixCoeffs, 
+         is.corr = F, 
+         p.mat = mixPvals, 
+         type = "upper",
+         outline = T,
+         insig = "p-value",
+         sig.level = -1, 
+         na.label = "square", 
+         na.label.col = "grey",
+         method = "color", 
+         tl.col = "black",
+         tl.cex = 0.8,
+         col = col2(200))
+
 ```
 
 The plot below shows the distribution of random intercepts across participants of each group. Participants in the easy condition show much more variability than the other groups, potentially suggesting a bias in choices in this condition. Nonetheless, the intercepts per group are centered around zero.
@@ -930,19 +911,22 @@ The plot below shows the distribution of random intercepts across participants o
 #RI1 <- qplot(seq(83), sort(ranef(mixLogis_main$Wait)$SubjID[,1]), color = cols[1], show.legend = F) + theme_classic()
 
 # plot per subject (as expected, the intercepts are highest for those who accepted everythiing)
-temp <- cbind(summaryData$Group, 
-              ranef(mixLogis_main$Wait)$SubjID)#, 
-              #Colors = c(rep(cols[1],nSubsW),rep(cols[2],nSubsC),rep(cols[3],nSubsP),rep(cols[4],nSubsE)))
-colnames(temp) <- list("Group", "RandIntercept")
-RI1 <- ggplot(data = temp, aes(x = Group, y = RandIntercept, fill = Group)) + 
+temp <- ranef(mixLogis_main$Wait)$SubjID %>%
+  gather(key = Cost, value = RandEffects, colnames(.)) 
+
+(RI1 <- ggplot(data = temp, aes(Cost, RandEffects, fill = Cost)) + 
   geom_hline(yintercept = 0, alpha = 0.7) + 
   geom_boxplot(show.legend = F) +
   scale_fill_manual(values = cols) + 
-  labs(title = "Random Intercepts per Group", x = "") +
-  theme_classic() 
+  labs(x = "") +
+  theme(panel.grid.major = element_blank(), 
+              panel.grid.minor = element_blank(), 
+              panel.background = element_blank(), 
+              axis.line = element_line(colour = "black"),
+              text = element_text(size = 16)))
 
 
-RI1
+
 ```
 
 As predicted, the model showed significant main effects of handling time (Beta = `r mixLogis_main$Summary$coefficients[5,1]`, SE = `r mixLogis_main$Summary$coefficients[5,2]`, p < 0.001) and reward (Beta = `r mixLogis_main$Summary$coefficients[6,1]`, SE = `r mixLogis_main$Summary$coefficients[6,2]`, p < 0.001). In order to show the comparisons among all conditions, the following plot portrays the coefficients (color scale), and p-values (numbers within squares) that resulted from switching the reference condition. Specifically, each entry shows how much more likely was the reference group to accept an offer than the comparison group (the darker the cell, the greater the odds). Based on this, we can see that the cognitive group was significantly more likely to accept any offer than the physical and wait groups, but not the easy group.
