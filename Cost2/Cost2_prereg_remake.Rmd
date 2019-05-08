@@ -291,51 +291,6 @@ summarizeData <- function(Data = waitData, nSubs = nSubsW, type = "Wait"){
   
 }
 
-# Summarize the proportion complete for GLMs
-propComplete <- function(Data = waitData, nSubs = nSubsW, indx = indxWait, type = "Wait") {
-    
-    tempProp <- data.frame(SubjID = rep(indx,9),
-                           Group = rep(type,nSubs*9),
-                           Handling = c(rep(2,nSubs*3), 
-                                        rep(10,nSubs*3), 
-                                        rep(14,nSubs*3)),
-                           Reward = rep(c(rep(4,nSubs),rep(8,nSubs),rep(20,nSubs)),3),
-                           propComplete = rep(NA,length(indx)*9),
-                           totalTrials = rep(NA,length(indx)*9),
-                           totalComplete = rep(NA,length(indx)*9))                         
-                           
-    for (subj in seq(nSubs)){  
-      
-      # handling of 2s
-      tempProp$propComplete[subj] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==2 & Data[[subj]]$Reward==4])
-      tempProp$propComplete[subj+nSubs] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==2 & Data[[subj]]$Reward==8])
-      tempProp$propComplete[subj+(nSubs*2)] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==2 & Data[[subj]]$Reward==20])
-      tempProp$totalTrials[subj] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==2 & Data[[subj]]$Reward==4])
-      tempProp$totalTrials[subj+nSubs] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==2 & Data[[subj]]$Reward==8])
-      tempProp$totalTrials[subj+(nSubs*2)] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==2 & Data[[subj]]$Reward==20])
-  
-      # handling of 10s
-      tempProp$propComplete[subj+(nSubs*3)] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==10 & Data[[subj]]$Reward==4])
-      tempProp$propComplete[subj+(nSubs*4)] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==10 & Data[[subj]]$Reward==8])
-      tempProp$propComplete[subj+(nSubs*5)] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==10 & Data[[subj]]$Reward==20])
-      tempProp$totalTrials[subj+(nSubs*3)] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==10 & Data[[subj]]$Reward==4])
-      tempProp$totalTrials[subj+(nSubs*4)] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==10 & Data[[subj]]$Reward==8])
-      tempProp$totalTrials[subj+(nSubs*5)] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==10 & Data[[subj]]$Reward==20])    
-      
-      # handling of 14s
-      tempProp$propComplete[subj+(nSubs*6)] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==14 & Data[[subj]]$Reward==4])
-      tempProp$propComplete[subj+(nSubs*7)] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==14 & Data[[subj]]$Reward==8])
-      tempProp$propComplete[subj+(nSubs*8)] <- mean(Data[[subj]]$Choice[Data[[subj]]$Handling==14 & Data[[subj]]$Reward==20])
-      tempProp$totalTrials[subj+(nSubs*6)] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==14 & Data[[subj]]$Reward==4])
-      tempProp$totalTrials[subj+(nSubs*7)] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==14 & Data[[subj]]$Reward==8])
-      tempProp$totalTrials[subj+(nSubs*8)] <- length(Data[[subj]]$Choice[Data[[subj]]$Handling==14 & Data[[subj]]$Reward==20])
-    
-    }
-      
-    return(tempProp)
-    
-}
-
 # OC-specific computation of the negative log likelihood for model optimization
 negLogLik <- function(params, choice, handling, reward) {
   gamma <- exp(params[2]) * handling
@@ -351,7 +306,7 @@ negLogLik <- function(params, choice, handling, reward) {
 }
 
 # minimize the negative log likelihood
-optimizeOCModel <- function(Data, Algorithm = "NLOPT_LN_NEWUOA") {
+optimizeOCModel <- function(Data, Algorithm = "NLOPT_LN_NEWUOA", simplify = F) {
   # Prep data
   handling <- Data$Handling
   reward <- Data$Reward
@@ -425,6 +380,11 @@ optimizeOCModel <- function(Data, Algorithm = "NLOPT_LN_NEWUOA") {
     out$p <- rep(0, length(choice))
   } 
   
+  # if doing this with dplyr::do(), return a simplified data.frame instead with the important parameters
+  if (simplify) {
+    out <- data.frame(out[c(seq(8), 12)])
+  }   
+  
   return(out)
 
 }
@@ -444,10 +404,10 @@ dataAll <- tibble(SubjID = files) %>%
                           Cost == "cogT" ~ "Cognitive",
                           Cost == "phys" ~ "Physical",
                           Cost == "phea" ~ "Easy"),
-         Cost = factor(Cost, levels = c("Physical", "Cognitive", "Wait", "Easy")),
          SubjID = as.integer(substring(SubjID, 0, 3))) %>%
   unnest() %>%
   mutate(Half = ifelse(Block < 4, "Half_1", "Half_2"),
+         Cost = factor(Cost, levels = c("Physical", "Cognitive", "Wait", "Easy")),
          optimal = case_when(
           (Handling == 10 & Reward < 8) ~ 0,
           (Handling == 14 & Reward < 20) ~ 0,
@@ -1121,7 +1081,6 @@ This plot shows the AIC for every model. The figure below shows AIC and BIC for 
 The ECDF below shows the proportion of quits and acceptances occurring as the trial advanced. Drastic changes indicate the end of one of the possible handling times, and sccessful receipt of a reward. This shows that there were no quits during the handling time, and displays the proportion of acceptances (1 - the y axis here) for each cost at each handling/travel time combination. We can see in the ECDFs below that most decisions to quit happened within the first second into the handling time. The reason why the physical and easy condition show slightly lagged responses is that the experiment allowed a one second grace period for participants to begin gripping. This results in some of them choosing to wait for that second to indicate an offer rejection.
 
 ``` {r 16.3.1. RTs, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
-
 # Proportion of forced travels per subject and cost type
 propFails <- dataAll %>% 
   filter(Cost != "Wait") %>% 
@@ -1135,10 +1094,12 @@ propFails <- dataAll %>%
   #mutate(RT = ifelse(Choice != 0, RT + 2, RT)) %>%
   filter(Choice < 2) %>% # change this to 1 to reproduce the original plot, since it would only plot the cdf of quits
   ggplot(aes(RT, color = Cost)) + 
-    stat_ecdf(lwd = 1.2) +
+    #stat_ecdf(lwd = 1.2, geom = "smooth") +
+    geom_line(aes(y = 1 - ..y..), stat = 'ecdf', lwd = 1.5) +
     geom_vline(xintercept = 1, lty = 2) + # end of the grace period for physical trials
     scale_color_manual(values = cols) +
     scale_x_continuous(breaks = seq(14)) +
+    labs(x = "Reaction Time", y = "Proportion Accepted") +
     theme(panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
       panel.background = element_blank(),
@@ -1154,154 +1115,52 @@ propFails <- dataAll %>%
   **16.3.2.**	*In order to further examine choice stability (hypothesis 4.3.1.), we will compute each participant’s total proportion of acceptances pre- and post-midpoint. For each cost condition separately, we will fit a linear model that predicts post-midpoint acceptance from before-midpoint rates. We will report the slopes and 95% confidence intervals (CI) for each cost group. CIs containing 1 will denote that participants in that group produced consistent choices.*
   
 ``` {r 16.3.2. Pre/Post Break, echo=FALSE,fig.align="center",fig.width=5,fig.height=5}
-# THIS CODE CAN BE VASTLY IMPROVED, BUT RIGHT NOW IT WORKS SO I WON'T CARE
-# This one just plots the correlation between pre-post acceptance rates, both overall and per cell
-# The overall acceptance looks great, with mostly consistent rates, and with the physical group accepting slightly less post-break
-# However, the per-cell distribution looks messy, although you can still tell that there's a linear relationship
-# If I do a linear model predicting post with pre using cell-specific data, the betas are close to 1 and significant (also good R2s). That's good.
 
-# create vdata frames that store acceptance data per combination cell pre-post break
-waitB <- data.frame()
-waitA <- data.frame()
-cogB <- data.frame()
-cogA <- data.frame()
-physB <- data.frame()
-physA <- data.frame()
-easyB <- data.frame()
-easyA <- data.frame()
+temp <- dataAll %>%
+  filter(Choice < 2) %>%
+  group_by(SubjID, Cost, Half) %>%
+  summarise(pAccepted = mean(Choice)) %>%
+  ungroup() %>%
+  spread(Half, pAccepted)
 
-# and for overall proportion accepted
-waitBAll <- numeric()
-waitAAll <- numeric()
-cogBAll <- numeric()
-cogAAll <- numeric()
-physBAll <- numeric()
-physAAll <- numeric() 
-easyBAll <- numeric()
-easyAAll <- numeric()
+# separate by cost type and compute a linear model to predict half 2 from 1
+sep <- temp %>% plyr::dlply("Cost", identity)
+prepost$LM <- lapply(sep, function(data) {lm(data$Half_2 ~ data$Half_1)})
 
-
-for (i in seq(nSubsW)){
-  
-  # wait
-  tempPropB <- aggregate(waitBefore[[i]]$Choice, by = list(waitBefore[[i]]$Handling, waitBefore[[i]]$Reward), FUN = 'mean')
-  tempPropA <- aggregate(waitAfter[[i]]$Choice, by = list(waitAfter[[i]]$Handling, waitAfter[[i]]$Reward), FUN = 'mean')
-  waitB <- rbind(waitB,tempPropB)
-  waitA <- rbind(waitA,tempPropA)
-  waitBAll[i] <- mean(waitBefore[[i]]$Choice) 
-  waitAAll[i] <- mean(waitAfter[[i]]$Choice) 
-  
-}
-
-for (i in seq(nSubsC)){
-  
-  # cognitive
-  tempPropB <- aggregate(cogBefore[[i]]$Choice, by = list(cogBefore[[i]]$Handling, cogBefore[[i]]$Reward), FUN = 'mean')
-  tempPropA <- aggregate(cogAfter[[i]]$Choice, by = list(cogAfter[[i]]$Handling, cogAfter[[i]]$Reward), FUN = 'mean')
-  cogB <- rbind(cogB,tempPropB)
-  cogA <- rbind(cogA,tempPropA)
-  cogBAll[i] <- mean(cogBefore[[i]]$Choice) 
-  cogAAll[i] <- mean(cogAfter[[i]]$Choice)   
-  
-}
-
-for (i in seq(nSubsP)){
-  
-  # physical
-  tempPropB <- aggregate(physBefore[[i]]$Choice, by = list(physBefore[[i]]$Handling, physBefore[[i]]$Reward), FUN = 'mean')
-  tempPropA <- aggregate(physAfter[[i]]$Choice, by = list(physAfter[[i]]$Handling, physAfter[[i]]$Reward), FUN = 'mean')
-  physB <- rbind(physB,tempPropB)
-  physA <- rbind(physA,tempPropA)
-  physBAll[i] <- mean(physBefore[[i]]$Choice) 
-  physAAll[i] <- mean(physAfter[[i]]$Choice) 
-  
-}
-
-for (i in seq(nSubsE)){
-  
-  # easy
-  tempPropB <- aggregate(easyBefore[[i]]$Choice, by = list(easyBefore[[i]]$Handling, easyBefore[[i]]$Reward), FUN = 'mean')
-  tempPropA <- aggregate(easyAfter[[i]]$Choice, by = list(easyAfter[[i]]$Handling, easyAfter[[i]]$Reward), FUN = 'mean')
-  easyB <- rbind(easyB,tempPropB)
-  easyA <- rbind(easyA,tempPropA)
-  easyBAll[i] <- mean(easyBefore[[i]]$Choice) 
-  easyAAll[i] <- mean(easyAfter[[i]]$Choice) 
-  
-}
-
-# Pre-post linear models
-prepostLM <- list()
-prepostLM$Wait <- lm(waitBAll ~ waitAAll)
-prepostLM$Cognitive <- lm(cogBAll ~ cogAAll)
-prepostLM$Physical <- lm(physBAll ~ physAAll)
-prepostLM$Easy <- lm(easyBAll ~ easyAAll)
-
-prepostSummary <- do.call(rbind, lapply(prepostLM, function(data) c(coef(data)[2], confint(data)[2,])))
-
+# get the coefficients and confidence intervals
+# and concatenate
+prepost$summary <- as.data.frame(cbind(t(sapply(prepost$LM, coefficients)), t(sapply(prepost$LM, confint))))
+colnames(summary_prepost) <- c("Intercept", "Coefficient", "Int_CI-low", "Int_CI-high", "Beta_CI-low", "Beta_CI-high")
 ```
 
 The plot below shows that acceptance rates before and after the mid-point were mostly consistent, although it was more likely for participants to accept less in the second half of the experiment.
 
 ``` {r 16.3.2. Plot Pre/Post, echo=FALSE,fig.align="center",fig.width=5,fig.height=5}
-
-# overall proportion
-plot(waitBAll,
-     waitAAll,
-     xlim = c(0,1),
-     ylim = c(0,1),
-     main = "Proportion accepted pre- and post-midpoint",
-     xlab = "Acceptance Rate Before",
-     ylab = "Acceptance Rate After",     
-     col = cols[1],
-     pch = 16)
-points(cogBAll,
-       cogAAll, 
-       col = cols[2],
-       pch = 16)
-points(physBAll,
-       physAAll, 
-       col = cols[3],
-       pch = 16)
-points(easyBAll,
-       easyAAll, 
-       col = cols[4],
-       pch = 16)
-lines(seq(0,1,length = 10),
-      seq(0,1,length = 10))
-legend("bottomright",
-       lbls,
-       fill = cols,
-       cex = 0.8)
-
-# dataAll %>%
-#   filter(Choice < 2) %>%
-#   group_by(SubjID) %>%
-#   #mutate(Block = do.call(c, lapply(c(2,4,6), function(x) {rep(x/2, sum(Block %in% c(x-1, x)))}))) %>%
-#   group_by(SubjID, Cost, Block) %>%
-#   summarise(propAccept_subj = mean(Choice)) %>%
-#   group_by(Cost, Block) %>%
-#   summarize(propAccept = mean(propAccept_subj),
-#             seAccept = sd(propAccept_subj)/sqrt(nSubjs)) %>%
-#   ggplot(aes(Block, propAccept, fill = Cost)) +
-#     geom_point(size = 2, pch = 21, color = "black") +
-#     geom_errorbar(aes(ymin=propAccept - seAccept, ymax=propAccept + seAccept, color = Cost), width = 0.1) +
-#     geom_line(aes(color = Cost)) +
-#     ylim(0.5, 1) +
-#     scale_x_continuous(breaks = seq(6)) +
-#     scale_color_manual(values = cols) +
-#     scale_fill_manual(values = cols) +
-#     theme_classic()
+prepost$plot <- dataAll %>%
+                filter(Choice < 2) %>%
+                group_by(SubjID, Cost) %>%
+                summarise(propAccept_1 = mean(Choice[Half=="Half_1"]),
+                          propAccept_2 = mean(Choice[Half=="Half_2"])) %>%
+                ggplot(aes(propAccept_1, propAccept_2, fill = Cost)) +
+                geom_point(size = 3, pch = 21, color = "black") +
+                scale_fill_manual(values = cols) +
+                xlim(0,1) +
+                ylim(0,1) +
+                geom_abline(slope = 1, intercept = 0, lty = 2) +
+                theme(panel.grid.major = element_blank(),
+                    panel.grid.minor = element_blank(),
+                    panel.background = element_blank(),
+                    axis.line = element_line(colour = "black"),
+                    text = element_text(size = 16)))
 ```
 
 The following table shows the coefficients and CI for each linear model, and show that pre-post acceptance rates were very similar for each condition (i.e. one is present in all confidence intervals).
 
-| Condition   |            Beta           |          CI-Low           |          CI-High          |
-| :---------- | :-----------------------: | ------------------------: | ------------------------: |
-| Wait        | $`r prepostSummary[1,1]`$ | $`r prepostSummary[1,2]`$ | $`r prepostSummary[1,3]`$ |
-| Cognitive   | $`r prepostSummary[2,1]`$ | $`r prepostSummary[2,2]`$ | $`r prepostSummary[2,3]`$ |
-| Physical    | $`r prepostSummary[3,1]`$ | $`r prepostSummary[3,2]`$ | $`r prepostSummary[3,3]`$ |
-| Easy        | $`r prepostSummary[4,1]`$ | $`r prepostSummary[4,2]`$ | $`r prepostSummary[4,3]`$ |
-Table: Predicting Post-mid acceptance from pre-mid choices: Coefficients and CI.
+
+``` {r 16.3.2. prepost table, pander}
+panderOptions("digits", 2)
+pander(prepost$summary, style = "rmarkdown", split.table = 110)
+```
 
 \bigskip
 
@@ -1310,27 +1169,27 @@ Table: Predicting Post-mid acceptance from pre-mid choices: Coefficients and CI.
 The gamma optimization search space was bound by extreme choice values. For example, someone with an extremely high OC would not accept even the most beneficial offers, and would reject a 20 cent offer when the handling time was 2 seconds (or 20/2). Conversely, a participant experiencing low opportunity costs would accept the unbeneficial offer of 4 cents for a 14 second delay (or 4/14). The model was optimized to find the lowest value of gamma that significantly reduced the negative log likelihood. The resulting gamma values per participant are shown per group below (gray lines denote the rate of earnings under optimal behavior for all 3 timing contexts), and reflect what was seen in the previous sections: participants in the wait and physical conditions showed higher gamma values (and thus opportunity costs) than in the other two groups. Given the high variability of the easy condition, it might be worth modeling each timing context independently, or perhaps fitting the model on subgroups defined by a median split of the participants based on their acceptance rate.
 
 ``` {r 16.3.3. OC modeling, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
-# Estimate gamma per subject for each group separately
-waitOC <- sapply(waitData, function(Data) {optimizeOCModel(Data)$Gamma})
-cogOC <- sapply(cogData, function(Data) {optimizeOCModel(Data)$Gamma})
-physOC <- sapply(physData, function(Data) {optimizeOCModel(Data)$Gamma})
-easyOC <- sapply(easyData, function(Data) {optimizeOCModel(Data)$Gamma})
-
-# Summarize for plotting
-summaryOC <- data.frame(Group = rep(cond, each = nSubsC),
-                        Gamma = c(waitOC, cogOC, physOC, easyOC))
-summaryOC$Group <- factor(summaryOC$Group, levels = cond, ordered = T)
+# group
+summaryOC <- list()
+summaryOC$all <- dataAll %>%
+                 filter(Choice < 2) %>%
+                 group_by(Cost, SubjID) %>%
+                 do(optimizeOCModel(., simplify = T)) 
 
 # plot
-ggplot(summaryOC, aes(Group, Gamma, fill = Group)) +
-  geom_hline(yintercept = 0.64, alpha = 0.9, color = "gray20", size = 1) +
-  geom_hline(yintercept = 0.7, alpha = 0.9, color = "gray40", size = 1) +
-  geom_hline(yintercept = 0.9, alpha = 0.9, color = "gray60", size = 1) +
-  geom_dotplot(stackdir = 'center', binaxis = 'y', show.legend = F) +
-  ylim(0,1.5) +
-  labs(title = "Gamma Values per Group", x = "") +
-  scale_fill_manual(values = cols) +
-  theme_classic()
+(summaryOC$plot <- ggplot(summaryOC$all, aes(Cost, Gamma, fill = Cost)) +
+                      geom_hline(yintercept = 0.64, alpha = 0.9, color = "gray20", size = 1) +
+                      geom_hline(yintercept = 0.7, alpha = 0.9, color = "gray40", size = 1) +
+                      geom_hline(yintercept = 0.9, alpha = 0.9, color = "gray60", size = 1) +
+                      geom_dotplot(stackdir = 'center', binaxis = 'y', show.legend = F) +
+                      ylim(0,1.5) +
+                      labs(title = "Gamma Values per Group", x = "") +
+                      scale_fill_manual(values = cols) +
+                      theme(panel.grid.major = element_blank(),
+                        panel.grid.minor = element_blank(),
+                        panel.background = element_blank(),
+                        axis.line = element_line(colour = "black"),
+                        text = element_text(size = 16)))
 
 ```
 
@@ -1342,62 +1201,35 @@ As can be seen below, the gamma parameter from the OC model was able to predict 
 
 ``` {r 16.3.4. OC cross-validation, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
 # Compute the OC for pre-midpoint
-waitOCbefore <- sapply(waitBefore, function(Data) {optimizeOCModel(Data)$Gamma})
-cogOCbefore <- sapply(cogBefore, function(Data) {optimizeOCModel(Data)$Gamma})
-physOCbefore <- sapply(physBefore, function(Data) {optimizeOCModel(Data)$Gamma})
-easyOCbefore <- sapply(easyBefore, function(Data) {optimizeOCModel(Data)$Gamma})
+summaryOC$pre <- dataAll %>%
+                 filter(Choice < 2, Half == "Half_1") %>%
+                 group_by(Cost, SubjID) %>%
+                 do(optimizeOCModel(., simplify = T)) %>%
+                 ungroup() %>%
+                 select(SubjID, Gamma)
 
-# Percent correctly predicted by pre-midpoint gamma
-# Wait
-predictOCWait <- numeric()
-for (i in seq(nSubsW)) {
-  temp <- (waitAfter[[i]]$Reward > (waitOCbefore[i] * waitAfter[[i]]$Handling))
-  temp[temp == TRUE] <- 1
-  predictOCWait[i] <- (sum(temp==waitAfter[[i]]$Choice) / length(waitAfter[[i]]$Choice)) * 100 
-}
-
-# Cognitive
-predictOCCog <- numeric()
-for (i in seq(nSubsC)) {
-  temp <- (cogAfter[[i]]$Reward > (cogOCbefore[i] * cogAfter[[i]]$Handling))
-  temp[temp == TRUE] <- 1
-  predictOCCog[i] <- (sum(temp==cogAfter[[i]]$Choice) / length(cogAfter[[i]]$Choice)) * 100 
-}
-
-# Physical
-predictOCPhys <- numeric()
-for (i in seq(nSubsW)) {
-  temp <- (physAfter[[i]]$Reward > (physOCbefore[i] * physAfter[[i]]$Handling))
-  temp[temp == TRUE] <- 1
-  predictOCPhys[i] <- (sum(temp==physAfter[[i]]$Choice) / length(physAfter[[i]]$Choice)) * 100 
-}
-
-# Easy
-predictOCEasy <- numeric()
-for (i in seq(nSubsW)) {
-  temp <- (easyAfter[[i]]$Reward > (easyOCbefore[i] * easyAfter[[i]]$Handling))
-  temp[temp == TRUE] <- 1
-  predictOCEasy[i] <- (sum(temp==easyAfter[[i]]$Choice) / length(easyAfter[[i]]$Choice)) * 100 
-}
-
-
-# Summarize for plotting
-summaryOCPredict <- data.frame(Group = rep(cond, each = nSubsC),
-                        percentPredicted = c(predictOCWait, predictOCCog, predictOCPhys, predictOCEasy))
-summaryOCPredict$Group <- factor(summaryOCPredict$Group, levels = cond, ordered = T)
-
-meanOCPredict <- aggregate(percentPredicted ~ Group, data = summaryOCPredict,FUN = 'mean')
-
+# let's add the gammas to the second half data and estimate prop predicted on the second half
+summaryOC$predicted <- dataAll %>%
+                 filter(Choice < 2, Half == "Half_2") %>%
+                 group_by(Cost, SubjID) %>%
+                 left_join(summaryOC$pre) %>%
+                 mutate(OC = Handling * Gamma,
+                        predicted = Reward > OC) %>% 
+                 summarise(percentPredicted = mean(predicted == Choice) * 100)
 
 # plot
-ggplot(summaryOCPredict, aes(Group, percentPredicted, fill = Group)) +
-  #geom_dotplot(stackdir = 'center', binaxis = 'y', show.legend = F) +
-  labs(title = "Percent of Choices Correctly Predicted by Gamma per Group", x = "") +
-  geom_boxplot(show.legend = F) +
-  scale_fill_manual(values = cols) +
-  labs(y = "Percent Predicted") +
-  ylim(0,100) +
-  theme_classic()
+(summaryOC$predictPlot <- ggplot(summaryOC$predicted, aes(Cost, percentPredicted, fill = Cost)) +
+                          labs(x = "") +
+                          geom_boxplot(show.legend = F) +
+                          scale_fill_manual(values = cols) +
+                          labs(y = "Percent Predicted") +
+                          ylim(0,100) +
+                          theme(panel.grid.major = element_blank(),
+                          panel.grid.minor = element_blank(),
+                          panel.background = element_blank(),
+                          axis.line = element_line(colour = "black"),
+                          text = element_text(size = 16)))
+
 ```
 
 \bigskip
