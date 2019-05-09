@@ -777,7 +777,7 @@ col2 <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0"
 corrplot(mixCoeffs, 
          is.corr = F, 
          p.mat = mixPvals, 
-         #type = "upper",
+         type = "upper",
          outline = T,
          insig = "p-value",
          sig.level = -1, 
@@ -815,136 +815,6 @@ temp <- ranef(mixLogis_main$Wait)$SubjID %>%
 
 As predicted, the model showed significant main effects of handling time (Beta = `r mixLogis_main$Summary$coefficients[5,1]`, SE = `r mixLogis_main$Summary$coefficients[5,2]`, p < 0.001) and reward (Beta = `r mixLogis_main$Summary$coefficients[6,1]`, SE = `r mixLogis_main$Summary$coefficients[6,2]`, p < 0.001). In order to show the comparisons among all conditions, the following plot portrays the coefficients (color scale), and p-values (numbers within squares) that resulted from switching the reference condition. Specifically, each entry shows how much more likely was the reference group to accept an offer than the comparison group. Based on this, we can see that the cognitive group was significantly more likely to accept any offer than the physical and wait groups, but not the easy group.
 
-
-``` {r 16.2.3. Plot logistic model, echo=FALSE,fig.align="center",fig.width=6,fig.height=6}
-# par(mfrow=c(1,1))
-# ## Plotting the winning model (colors are messed up)
-# rewards <- seq(1,20,length = 1000)
-# # wait
-# plotLogis(coeffs = logisComb$coefficients,
-#           group = "Wait",
-#           handling = 2, 
-#           reward = rewards, 
-#           plotType = plot, 
-#           color = cols[1],
-#           lType = 6)
-# 
-# plotLogis(coeffs = logisComb$coefficients,
-#           group = "Wait",          
-#           handling = 10, 
-#           reward = rewards, 
-#           color = cols[1],
-#           lType = 3)
-# 
-# plotLogis(coeffs = logisComb$coefficients,
-#           group = "Wait",          
-#           handling = 14, 
-#           reward = rewards, 
-#           color = cols[1])
-# 
-# 
-# # cognitive
-# plotLogis(coeffs = logisComb$coefficients,
-#           group = "Cognitive",
-#           handling = 2, 
-#           reward = rewards, 
-#           color = cols[2],
-#           lType = 6)
-# 
-# plotLogis(coeffs = logisComb$coefficients,
-#           group = "Cognitive",
-#           handling = 10, 
-#           reward = rewards, 
-#           color = cols[2],
-#           lType = 3)
-# 
-# plotLogis(coeffs = logisComb$coefficients,
-#           group = "Cognitive",
-#           handling = 14, 
-#           reward = rewards, 
-#           color = cols[2])
-# 
-# 
-# # physical
-# plotLogis(coeffs = logisComb$coefficients,
-#           group = "Phys",
-#           handling = 2, 
-#           reward = rewards, 
-#           color = cols[3],
-#           lType = 6)
-# 
-# plotLogis(coeffs = logisComb$coefficients,
-#           group = "Phys",
-#           handling = 10, 
-#           reward = rewards, 
-#           color = cols[3],
-#           lType = 3)
-# 
-# plotLogis(coeffs = logisComb$coefficients,
-#           group = "Phys",
-#           handling = 14, 
-#           reward = rewards, 
-#           color = cols[3])
-# 
-# # easy
-# plotLogis(coeffs = logisComb$coefficients,
-#           group = "Easy",
-#           handling = 2, 
-#           reward = rewards, 
-#           color = cols[4],
-#           lType = 6)
-# 
-# plotLogis(coeffs = logisComb$coefficients,
-#           group = "Easy",
-#           handling = 10, 
-#           reward = rewards, 
-#           color = cols[4],
-#           lType = 3)
-# 
-# plotLogis(coeffs = logisComb$coefficients,
-#           group = "Easy",
-#           handling = 14, 
-#           reward = rewards, 
-#           color = cols[4])
-# 
-# # title
-# title("Probabilities for All Handling-Reward Combinations \n for Each Group")
-# 
-# # x axis
-# xticks <- c(0,min(rewards[rewards>4]),min(rewards[rewards>8]),20)
-# axis(1,at = xticks,c(0,4,8,20))
-# 
-# # legend
-# legend("bottomright",
-#        c("Wait: 2s","Wait: 10s","Wait: 14s",
-#          "Cognitive: 2s","Cognitive: 10s","Cognitive: 14s",
-#          "Physical: 2s","Physical: 10s","Physical: 14s",
-#          "Easy: 2s","Easy: 10s","Easy: 14s"), 
-#        fill = c(cols[1],cols[1],cols[1],cols[2],cols[2],cols[2],cols[3],cols[3],cols[3],cols[4],cols[4],cols[4]),
-#        lty = rep(c(6,3,1,8),3),
-#        cex = 0.8)
-# 
-# 
-# # actual proportions (maybe, maybe not)
-# # points(c(5,10,25),trueProp$propComplete[1:3], col = cols[1], pch=17) # wait
-# # points(c(5,10,25),trueProp$propComplete[4:6], col = cols[1], pch=17)
-# # points(c(5,10,25),trueProp$propComplete[7:9], col = cols[1], pch=17)
-# # 
-# # points(c(5,10,25),trueProp$propComplete[19:21], col = cols[2], pch=17) # cog effort
-# # points(c(5,10,25),trueProp$propComplete[22:24], col = cols[2], pch=17)
-# # points(c(5,10,25),trueProp$propComplete[25:27], col = cols[2], pch=17)
-# # 
-# # points(c(5,10,25),trueProp$propComplete[10:12], col = cols[3], pch=17) # phys effort
-# # points(c(5,10,25),trueProp$propComplete[13:15], col = cols[3], pch=17)
-# # points(c(5,10,25),trueProp$propComplete[16:18], col = cols[3], pch=17)
-# 
-# # and the residuals
-# # plot(logisComb$residuals,
-# #      main = "Residuals for the Logistic Regression",
-# #      xlab = "trial",
-# #      ylab = "Residuals")
-# # 
-```  
 
 ###  16.2.4.
 
@@ -1029,7 +899,7 @@ propFails <- dataAll %>%
 *In order to further examine choice stability (hypothesis 4.3.1.), we will compute each participant’s total proportion of acceptances pre- and post-midpoint. For each cost condition separately, we will fit a linear model that predicts post-midpoint acceptance from before-midpoint rates. We will report the slopes and 95% confidence intervals (CI) for each cost group. CIs containing 1 will denote that participants in that group produced consistent choices.*
   
 ``` {r 16.3.2. Pre/Post Break, echo=FALSE,fig.align="center",fig.width=5,fig.height=5}
-
+# divide the data into proportion accepted before/after the break (one per column)
 temp <- dataAll %>%
   filter(Choice < 2) %>%
   group_by(SubjID, Cost, Half) %>%
@@ -1050,23 +920,53 @@ colnames(prepost$summary) <- c("Intercept", "Coefficient", "Int_CI-low", "Int_CI
 
 The plot below shows that acceptance rates before and after the mid-point were mostly consistent, although it was more likely for participants to accept less in the second half of the experiment.
 
-``` {r 16.3.2. Plot Pre/Post, echo=FALSE, fig.align = "center", fig.width = 6, fig.height = 5}
-(prepost$plot <- dataAll %>%
+``` {r 16.3.2. Plot Pre/Post, echo=FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
+# scatter plot of pre/post acceptances
+prepost$scatterplot <- dataAll %>%
                 filter(Choice < 2) %>%
                 group_by(SubjID, Cost) %>%
                 summarise(propAccept_1 = mean(Choice[Half=="Half_1"]),
                           propAccept_2 = mean(Choice[Half=="Half_2"])) %>%
                 ggplot(aes(propAccept_1, propAccept_2, fill = Cost)) +
-                geom_point(size = 3, pch = 21, color = "black") +
-                scale_fill_manual(values = cols) +
-                xlim(0,1) +
-                ylim(0,1) +
-                geom_abline(slope = 1, intercept = 0, lty = 2) +
-                theme(panel.grid.major = element_blank(),
-                      panel.grid.minor = element_blank(),
-                      panel.background = element_blank(),
-                      axis.line = element_line(colour = "black"),
-                      text = element_text(size = 16)))
+                  geom_point(size = 3, pch = 21, color = "black", show.legend = F) +
+                  scale_fill_manual(values = cols) +
+                  xlim(0,1) +
+                  ylim(0,1) +
+                  labs(x = "Proportion Accepted - 1st Half", y = "Proportion Accepted - 2nd Half") +
+                  geom_abline(slope = 1, intercept = 0, lty = 2) +
+                  theme(panel.grid.major = element_blank(),
+                        panel.grid.minor = element_blank(),
+                        panel.background = element_blank(),
+                        axis.line = element_line(colour = "black"),
+                        text = element_text(size = 16))
+
+# acceptances per cost across blocks
+# note that because the same handling/travel time combos repeat in the same order pre/post, 1/4-2/4-3/6 are direct comparisons
+prepost$propBlocks <- dataAll %>%
+ filter(Choice < 2) %>%
+ group_by(SubjID, Cost, Block) %>%
+ summarise(propAccept_subj = mean(Choice)) %>%
+ group_by(Cost, Block) %>%
+ summarize(propAccept = mean(propAccept_subj),
+           seAccept = sd(propAccept_subj)/sqrt(nSubjs)) %>%
+ ggplot(aes(Block, propAccept, fill = Cost)) +
+   geom_point(size = 2, pch = 21, color = "black") +
+   geom_errorbar(aes(ymin=propAccept - seAccept, ymax=propAccept + seAccept, color = Cost), width = 0.1) +
+   geom_line(aes(color = Cost)) +
+   ylim(0, 1) +
+   labs(y = "Proportion Acccepted") +
+   scale_x_continuous(breaks = seq(6)) +
+   scale_color_manual(values = cols) +
+   scale_fill_manual(values = cols) +
+   theme(legend.key = element_blank(),
+         legend.position = c(0.8, 0.25),
+         panel.grid.major = element_blank(),
+         panel.grid.minor = element_blank(),
+         panel.background = element_blank(),
+         axis.line = element_line(colour = "black"),
+         text = element_text(size = 16))
+
+grid.arrange(prepost$scatterplot, prepost$propBlocks, ncol = 2)
 ```
 
 The following table shows the coefficients and CI for each linear model, and show that pre-post acceptance rates were very similar for each condition (i.e. one is present in all confidence intervals).
