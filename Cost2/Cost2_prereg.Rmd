@@ -685,7 +685,7 @@ prop.aov <- with(temp, aov(pComplete ~ factor(Cost) * Handling * Reward +
 
 The plot below shows the mean proportion of acceptances (± SEM) per combination of handling time, reward, and condition (optimal acceptance rate indicated by the gray triangles). Visually, the graph confirms a couple of important intuitions. First, as the handling time increases, the proportion of acceptances decreases. Second, this discounting did not affect the 20 cent offers, as is expected from the present foraging environment. Lastly, and similar to the previous point, as the value of the offers increases so does the willingness to accept a trial. Beyond these general features, it is clear that the cognitive effort group accepted more than the other groups, regardless of the combination of experimental parameters. Notably, the optimality of this greater acceptance rate is determined by the timing context (e.g. optimal at 2 second handling time, but detrimental at 14 seconds).      
 
-``` {r 16.2.2. rmANOVA plot, echo = FALSE, fig.align = "center", fig.width = 10, fig.height = 4}
+``` {r 16.2.2. rmANOVA plot, echo = FALSE, fig.align = "center", fig.width = 10, fig.height = 6}
 # prep data to plot the p(accept) based on reward, handling time and cost type
 trueProp <- dataAll %>%
         filter(Choice < 2) %>%
@@ -703,7 +703,8 @@ trueProp <- dataAll %>%
         geom_point(aes(y = round(optimal)), shape = 21, fill = "grey75", color = "grey30", size = 3, show.legend = F) +
         labs(x = "Reward.Handling", y = "Proportion Accepted") +
         scale_color_manual(values = cols) +
-        theme(panel.grid.major = element_blank(), 
+        theme(legend.key = element_blank(),
+              panel.grid.major = element_blank(), 
               panel.grid.minor = element_blank(), 
               panel.background = element_blank(), 
               axis.line = element_line(colour = "black"),
@@ -977,6 +978,70 @@ panderOptions("digits", 2)
 pander(prepost$summary, style = "rmarkdown", split.table = 110)
 ```
 
+Now let's divide them by reward and handling amounts. The plots below show that the overall rates of acceptances remain mostly consistent across first and second halves of the experimental session.
+
+``` {r 16.3.2. Plot Pre/Post reward x handling, echo=FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
+# pre
+t1 <- dataAll %>%
+  filter(Choice < 2, Half == "Half_1") %>%
+  group_by(SubjID) %>%
+  filter(Handling == 10) %>%
+  group_by(SubjID, Cost, Reward) %>%
+  summarise(pAccept = mean(Choice)) %>%
+  group_by(Cost, Reward) %>%
+  summarise(propAccept = mean(pAccept),
+            SE = sd(pAccept) / sqrt(nSubjs)) %>%
+  ungroup() %>%
+  mutate(Reward = ifelse(Reward == 20, 12, Reward)) %>%
+  ggplot(aes(Reward, propAccept, color = Cost)) +
+    geom_point(size = 3, show.legend = F) +
+    geom_line(show.legend = F) +
+    scale_color_manual(values = cols) +
+    scale_fill_manual(values = cols) +
+    geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = T) +
+    scale_y_continuous(limits = c(-0.1, 1.1), breaks = c(0, 0.5, 1)) +
+    scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
+    labs(y = "Proportion Accepted", title = "First Half") +
+    theme(legend.key = element_blank(),
+          legend.position = c(0.8, 0.25),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 16))
+
+# post half
+t2 <- dataAll %>%
+  filter(Choice < 2, Half == "Half_2") %>%
+  group_by(SubjID) %>%
+  filter(Handling == 10) %>%
+  group_by(SubjID, Cost, Reward) %>%
+  summarise(pAccept = mean(Choice)) %>%
+  group_by(Cost, Reward) %>%
+  summarise(propAccept = mean(pAccept),
+            SE = sd(pAccept) / sqrt(nSubjs)) %>%
+  ungroup() %>%
+  mutate(Reward = ifelse(Reward == 20, 12, Reward)) %>%
+  ggplot(aes(Reward, propAccept, color = Cost)) +
+    geom_point(size = 3, show.legend = F) +
+    geom_line(show.legend = F) +
+    scale_color_manual(values = cols) +
+    scale_fill_manual(values = cols) +
+    geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = F) +
+    scale_y_continuous(limits = c(-0.1, 1.1), breaks = c(0, 0.5, 1)) +
+    scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
+    labs(y = "", title = "Second Half") +
+    theme(legend.position = c(0.8, 0.2),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 16))
+
+
+
+grid.arrange(t1, t2, ncol = 2)
+```
 \bigskip
 
 ### 16.3.3.
