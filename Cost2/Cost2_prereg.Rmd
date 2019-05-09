@@ -685,7 +685,7 @@ prop.aov <- with(temp, aov(pComplete ~ factor(Cost) * Handling * Reward +
 
 The plot below shows the mean proportion of acceptances (± SEM) per combination of handling time, reward, and condition (optimal acceptance rate indicated by the gray triangles). Visually, the graph confirms a couple of important intuitions. First, as the handling time increases, the proportion of acceptances decreases. Second, this discounting did not affect the 20 cent offers, as is expected from the present foraging environment. Lastly, and similar to the previous point, as the value of the offers increases so does the willingness to accept a trial. Beyond these general features, it is clear that the cognitive effort group accepted more than the other groups, regardless of the combination of experimental parameters. Notably, the optimality of this greater acceptance rate is determined by the timing context (e.g. optimal at 2 second handling time, but detrimental at 14 seconds).      
 
-``` {r 16.2.2. rmANOVA plot, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+``` {r 16.2.2. rmANOVA plot, echo = FALSE, fig.align = "center", fig.width = 10, fig.height = 4}
 # prep data to plot the p(accept) based on reward, handling time and cost type
 trueProp <- dataAll %>%
         filter(Choice < 2) %>%
