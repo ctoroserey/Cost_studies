@@ -358,6 +358,8 @@ optimizeOCModel <- function(Data, Algorithm = "NLOPT_LN_NEWUOA", simplify = F) {
 
 ``` {r Load Data, echo=FALSE}
 ### data loading and cleaning up
+# recent addition: turning forced travels to acceptances, as they reflect a preference for that trial
+# rawChoice will be used to compute the # of mistakes
 setwd("./data")
 files <- dir(pattern = '_log.csv')
 nSubjs <- length(files)
@@ -371,7 +373,9 @@ dataAll <- tibble(SubjID = files) %>%
                           Cost == "phea" ~ "Easy"),
          SubjID = as.integer(substring(SubjID, 0, 3))) %>%
   unnest() %>%
-  mutate(Half = ifelse(Block < 4, "Half_1", "Half_2"),
+  mutate(rawChoice = Choice,
+         Choice = ifelse(Choice == 2, 1, Choice),
+         Half = ifelse(Block < 4, "Half_1", "Half_2"),
          Cost = factor(Cost, levels = c("Physical", "Cognitive", "Wait", "Easy")),
          optimal = case_when(
           (Handling == 10 & Reward < 8) ~ 0,
@@ -503,7 +507,7 @@ To measure the significance of each subject's autoregressive coefficient, we com
 ``` {r 16.1.3. Earnings, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
 # calculate the proportions and earnings per subject, while keeping group info
 temp <- dataAll %>%
-  filter(Choice < 2) %>%
+  filter(rawChoice < 2) %>%
   group_by(SubjID, Cost) %>%
   summarise(Earnings = sum(Reward[Choice == 1] / 100),
             pComplete = mean(Choice)) %>%
@@ -518,7 +522,7 @@ lmEarn <- lm(Earnings ~ pComplete + pComplete2, data = temp)
          scale_color_manual(values = cols) + 
          geom_point(aes(fill = Cost), pch = 21, color = "black", size = 3, show.legend = T) + 
          stat_smooth(aes(y = Earnings), method = "lm", formula = y ~ x + I(x^2), color = "grey30") +
-         labs(x = "Proportion Accepted", y = "Total Earnings (dollars)") +
+         labs(x = "Proportion Completed", y = "Total Earnings (dollars)") +
          scale_fill_manual(values = cols) +
          theme(panel.grid.major = element_blank(), 
            panel.grid.minor = element_blank(), 
@@ -551,17 +555,17 @@ pander(lmEarn, style = "rmarkdown")
 temp <- dataAll %>%
   filter(Choice < 2) %>%
   group_by(SubjID, Handling, Reward, Cost) %>%
-  summarise(pComplete = mean(Choice)) %>%
+  summarise(pAccept = mean(Choice)) %>%
   mutate(optimal = case_when(
           (Handling == 10 & Reward < 8) ~ 0,
           (Handling == 14 & Reward < 20) ~ 0,
           TRUE ~ 1
         )) %>% 
   group_by(Handling, Reward, Cost) %>%
-  summarise(meanAccept = mean(pComplete),
-            sdAccept = sd(pComplete),
+  summarise(meanAccept = mean(pAccept),
+            sdAccept = sd(pAccept),
             optimal = unique(optimal),
-            pvals = tryCatch(t.test(pComplete, mu = unique(optimal))$p.value, error = function(e) {1})) %>%
+            pvals = tryCatch(t.test(pAccept, mu = unique(optimal))$p.value, error = function(e) {1})) %>%
   mutate(FDR = p.adjust(pvals, method = "BY"),
          significant = FDR < 0.05)
 
@@ -587,16 +591,16 @@ temp <- dataAll %>%
         filter(Choice < 2) %>%
         mutate(Cost = factor(Cost, levels = list("Physical", "Cognitive", "Wait", "Easy"))) %>%
         group_by(SubjID, Cost) %>%
-        summarise(Earnings = sum(Reward[Choice == 1] / 100),
-                  pComplete = mean(Choice))
+        summarise(Earnings = sum(Reward[rawChoice == 1] / 100),
+                  pAccept = mean(Choice))
 
 ## formal testing 
 # proportion completed
-propAov <- aov(pComplete ~ factor(Cost), data = temp)
+propAov <- aov(pAccept ~ factor(Cost), data = temp)
 
 propTests <- temp %>% 
   plyr::dlply("Cost", identity) %>%
-  sapply("[[", "pComplete") %>%
+  sapply("[[", "pAccept") %>%
   as.data.frame() %>%
   combn(2, simplify = F) %>%
   sapply(function(x) {
@@ -623,8 +627,9 @@ earnTests <- temp %>%
   }) %>% 
   t()
 
-# plots
-p1 <- ggplot(aes(pComplete, color = Cost), data = temp) +
+## plots
+# ECDF pAcceptd
+p1 <- ggplot(aes(pAccept, color = Cost), data = temp) +
         stat_ecdf(lwd = 1.2, show.legend = F) +
         scale_color_manual(values = cols) +
         xlim(0, 1) +
@@ -635,18 +640,19 @@ p1 <- ggplot(aes(pComplete, color = Cost), data = temp) +
               axis.line = element_line(colour = "black"),
               text = element_text(size = 16))
 
-p2 <- ggplot(temp, aes(Cost, pComplete, fill = Cost)) + 
+# pAccepted
+p2 <- ggplot(temp, aes(Cost, pAccept, fill = Cost)) + 
         geom_boxplot(show.legend = F) +
         scale_fill_manual(values = cols) +
         ylim(c(0, 1)) +
-        labs(y = "Proportion Completed") +
+        labs(y = "Proportion Accepted") +
         theme(panel.grid.major = element_blank(), 
             panel.grid.minor = element_blank(), 
             panel.background = element_blank(), 
             axis.line = element_line(colour = "black"),
             text = element_text(size = 16))
 
-
+# earnings
 p3 <- ggplot(temp, aes(Cost, Earnings, fill = Cost)) + 
         geom_boxplot(show.legend = F) +
         scale_fill_manual(values = cols) +
@@ -672,11 +678,11 @@ The plots show that subjects in the wait condition accepted the least and earned
 temp <- dataAll %>%
         filter(Choice < 2) %>%
         group_by(SubjID, Cost, Handling, Reward) %>%
-        summarise(pComplete = mean(Choice))
+        summarise(pAccept = mean(Choice))
 
 ## REPEATED MEASURES ANOVA
 # I think I like this the most
-prop.aov <- with(temp, aov(pComplete ~ factor(Cost) * Handling * Reward + 
+prop.aov <- with(temp, aov(pAccept ~ factor(Cost) * Handling * Reward + 
                                  Error(SubjID / (Handling * Reward))))
 
 ## NOTES ON RESULTS
@@ -690,10 +696,10 @@ The plot below shows the mean proportion of acceptances (± SEM) per combination
 trueProp <- dataAll %>%
         filter(Choice < 2) %>%
         group_by(SubjID, Cost, Handling, Reward, optimal) %>%
-        summarise(pComplete = mean(Choice)) %>%
+        summarise(pAccept = mean(Choice)) %>%
         group_by(Cost, Handling, Reward, optimal) %>%
-        summarise(meanComplete = mean(pComplete),
-                  SE = sd(pComplete) / sqrt(length(pComplete)))
+        summarise(meanComplete = mean(pAccept),
+                  SE = sd(pAccept) / sqrt(length(pAccept)))
 
 # and plot
 (a1 <- ggplot(data = trueProp, aes(interaction(Reward, Handling), meanComplete, color = Cost)) + 
@@ -870,14 +876,14 @@ The ECDF below shows the proportion of quits and acceptances occurring as the tr
 propFails <- dataAll %>% 
   filter(Cost != "Wait") %>% 
   group_by(SubjID, Cost) %>% 
-  summarise(propFails = mean(Choice == 2)) %>%
+  summarise(propFails = mean(rawChoice == 2)) %>%
   group_by(Cost) %>% 
-  summarise(meanQuit = mean(propFails))
+  summarise(meanFT = mean(propFails))
 
 # Reaction times ECDFs including offer and in-trial quits
 (RTs <- dataAll %>%
   #mutate(RT = ifelse(Choice != 0, RT + 2, RT)) %>%
-  filter(Choice < 2) %>% # change this to 1 to reproduce the original plot, since it would only plot the cdf of quits
+  filter(rawChoice < 2) %>% # change this to 1 to reproduce the original plot, since it would only plot the cdf of quits
   ggplot(aes(RT, color = Cost)) + 
     #stat_ecdf(lwd = 1.2, geom = "smooth") +
     geom_line(aes(y = 1 - ..y..), stat = 'ecdf', lwd = 1.5) +
@@ -892,6 +898,7 @@ propFails <- dataAll %>%
       text = element_text(size = 16)))
 
 ```
+
 
 \bigskip
 
