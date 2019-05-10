@@ -451,7 +451,7 @@ rankReward <- wilcox.test(logisRH["Reward", ])
 # Plot coeffs
 temp <- melt(logisRH[c("Handling", "Reward"), ])
 qplot(data = temp, x = Var1, y = value, geom = "boxplot") + 
-  labs(y = "Coefficients") +
+  labs(x = "", y = "Coefficients") +
   geom_hline(yintercept = 0, linetype = "dashed") +
   theme(legend.position = c(0.9, 0.7),
        panel.grid.major = element_blank(), 
