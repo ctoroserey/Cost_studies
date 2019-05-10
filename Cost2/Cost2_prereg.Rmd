@@ -890,7 +890,7 @@ propFails <- dataAll %>%
     geom_vline(xintercept = 1, lty = 2) + # end of the grace period for physical trials
     scale_color_manual(values = cols) +
     scale_x_continuous(breaks = seq(14)) +
-    labs(x = "Reaction Time", y = "Proportion Accepted") +
+    labs(x = "Time in Trial", y = "Proportion Completed") +
     theme(panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
       panel.background = element_blank(),
@@ -926,53 +926,70 @@ prepost$summary <- as.data.frame(cbind(t(sapply(prepost$LM, coefficients)), t(sa
 colnames(prepost$summary) <- c("Intercept", "Coefficient", "Int_CI-low", "Int_CI-high", "Beta_CI-low", "Beta_CI-high")
 ```
 
-The plot below shows that acceptance rates before and after the mid-point were mostly consistent, although it was more likely for participants to accept less in the second half of the experiment.
+The plot below shows that acceptance rates before and after the mid-point were mostly consistent, although it was more likely for participants to accept less in the second half of the experiment. **NOTE: The lines of means in the scatterplot are calculated by first computing the mean acceptances per block, then averaging those for blocks pre/post break. That's how they match the second half of the right plot, but the linear model is computed with the overall proportion acceptances pre-post, which gives slightly different mean estimates (which is also the reason for slight mean differences in proportion accepted between these and the boxplot in 16.2.1.)**
 
 ``` {r 16.3.2. Plot Pre/Post, echo=FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
 # scatter plot of pre/post acceptances
+# BIG CAVEAT: THE 
+# first calculate the mean acceptances per cost/half to draw horizontal and vertical lines on the plot
+df_mean <- dataAll %>%
+            group_by(SubjID, Cost, Block, Half) %>%
+            summarise(propAccept = mean(Choice)) %>%
+            group_by(SubjID, Cost, Half) %>%
+            summarise(propAccept = mean(propAccept)) %>%
+            spread(Half, propAccept) %>%
+            group_by(Cost) %>%
+            summarise(propAccept_1 = mean(Half_1),
+                      propAccept_2 = mean(Half_2))
+
+
+# and plot
 prepost$scatterplot <- dataAll %>%
-                filter(Choice < 2) %>%
-                group_by(SubjID, Cost) %>%
-                summarise(propAccept_1 = mean(Choice[Half=="Half_1"]),
-                          propAccept_2 = mean(Choice[Half=="Half_2"])) %>%
-                ggplot(aes(propAccept_1, propAccept_2, fill = Cost)) +
-                  geom_point(size = 3, pch = 21, color = "black", show.legend = F) +
-                  scale_fill_manual(values = cols) +
-                  xlim(0,1) +
-                  ylim(0,1) +
-                  labs(x = "Proportion Accepted - 1st Half", y = "Proportion Accepted - 2nd Half") +
-                  geom_abline(slope = 1, intercept = 0, lty = 2) +
-                  theme(panel.grid.major = element_blank(),
-                        panel.grid.minor = element_blank(),
-                        panel.background = element_blank(),
-                        axis.line = element_line(colour = "black"),
-                        text = element_text(size = 16))
+                        filter(Choice < 2) %>%
+                        group_by(SubjID, Cost) %>%
+                        summarise(propAccept_1 = mean(Choice[Half == "Half_1"]),
+                                  propAccept_2 = mean(Choice[Half == "Half_2"])) %>%
+                        ggplot(aes(propAccept_1, propAccept_2, fill = Cost)) +
+                          geom_point(size = 3, pch = 21, color = "black", show.legend = F) +
+                          scale_fill_manual(values = cols) +
+                          scale_color_manual(values = cols) +
+                          xlim(0, 1) +
+                          ylim(0, 1) +
+                          labs(x = "Proportion Accepted - 1st Half", y = "Proportion Accepted - 2nd Half") +
+                          geom_abline(slope = 1, intercept = 0, lty = 2) +
+                          geom_hline(data = df_mean, aes(yintercept = propAccept_2, color = Cost), linetype="dashed", show.legend = F) +
+                          geom_vline(data = df_mean, aes(xintercept = propAccept_1, color = Cost), linetype="dashed", show.legend = F) +
+                          theme(panel.grid.major = element_blank(),
+                                panel.grid.minor = element_blank(),
+                                panel.background = element_blank(),
+                                axis.line = element_line(colour = "black"),
+                                text = element_text(size = 16))
 
 # acceptances per cost across blocks
 # note that because the same handling/travel time combos repeat in the same order pre/post, 1/4-2/4-3/6 are direct comparisons
 prepost$propBlocks <- dataAll %>%
- filter(Choice < 2) %>%
- group_by(SubjID, Cost, Block) %>%
- summarise(propAccept_subj = mean(Choice)) %>%
- group_by(Cost, Block) %>%
- summarize(propAccept = mean(propAccept_subj),
-           seAccept = sd(propAccept_subj)/sqrt(nSubjs)) %>%
- ggplot(aes(Block, propAccept, fill = Cost)) +
-   geom_point(size = 2, pch = 21, color = "black") +
-   geom_errorbar(aes(ymin=propAccept - seAccept, ymax=propAccept + seAccept, color = Cost), width = 0.1) +
-   geom_line(aes(color = Cost)) +
-   ylim(0, 1) +
-   labs(y = "Proportion Acccepted") +
-   scale_x_continuous(breaks = seq(6)) +
-   scale_color_manual(values = cols) +
-   scale_fill_manual(values = cols) +
-   theme(legend.key = element_blank(),
-         legend.position = c(0.8, 0.25),
-         panel.grid.major = element_blank(),
-         panel.grid.minor = element_blank(),
-         panel.background = element_blank(),
-         axis.line = element_line(colour = "black"),
-         text = element_text(size = 16))
+                         filter(Choice < 2) %>%
+                         group_by(SubjID, Cost, Block) %>%
+                         summarise(propAccept_subj = mean(Choice)) %>%
+                         group_by(Cost, Block) %>%
+                         summarize(propAccept = mean(propAccept_subj),
+                                   seAccept = sd(propAccept_subj)/sqrt(nSubjs)) %>%
+                         ggplot(aes(Block, propAccept, fill = Cost)) +
+                           geom_point(size = 2, pch = 21, color = "black") +
+                           geom_errorbar(aes(ymin=propAccept - seAccept, ymax=propAccept + seAccept, color = Cost), width = 0.1) +
+                           geom_line(aes(color = Cost)) +
+                           ylim(0, 1) +
+                           labs(y = "Proportion Acccepted") +
+                           scale_x_continuous(breaks = seq(6)) +
+                           scale_color_manual(values = cols) +
+                           scale_fill_manual(values = cols) +
+                           theme(legend.key = element_blank(),
+                                 legend.position = c(0.8, 0.25),
+                                 panel.grid.major = element_blank(),
+                                 panel.grid.minor = element_blank(),
+                                 panel.background = element_blank(),
+                                 axis.line = element_line(colour = "black"),
+                                 text = element_text(size = 16))
 
 grid.arrange(prepost$scatterplot, prepost$propBlocks, ncol = 2)
 ```
