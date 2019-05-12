@@ -1023,7 +1023,7 @@ t1 <- dataAll %>%
     scale_color_manual(values = cols) +
     scale_fill_manual(values = cols) +
     geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = T) +
-    scale_y_continuous(limits = c(-0.1, 1.1), breaks = c(0, 0.5, 1)) +
+    scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
     scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
     labs(y = "Proportion Accepted", title = "First Half") +
     theme(legend.key = element_blank(),
@@ -1202,58 +1202,61 @@ corrplot(OCanova$ES,
 
 
 \bigskip
-\bigskip
-\bigskip
-\bigskip
-\bigskip
 
+### Testing grounds
 
-``` {r Testing grounds, echo=FALSE,fig.align="center",fig.width=10,fig.height=8}
-# cond <- as.character(unique(summaryData$Group))
-# 
-# i <- 1
-# test <- allProp2[allProp2$Group == cond[i], ]
-# test2 <- trueProp[trueProp$Group == cond[i], ]
-# t1 <- ggplot(data = test, aes(x=interaction(Reward, Handling), y=propComplete)) + 
-#   geom_line(aes(group = interaction(Handling, SubjID)), size=1, color = cols[i], alpha = 0.5) +
-#   geom_point(size=3, color = cols[i]) +
-#   geom_point(data = test2, aes(group = interaction(Reward, Handling), y = propComplete), size = 3.5, color = "black", fill = "grey60", pch=24) +
-#   labs(title = paste("Acceptance rates for all subjects in the", cond[i], "group")) +
-#   theme_classic()
-# 
-# i <- 2
-# test <- allProp2[allProp2$Group == cond[i], ]
-# test2 <- trueProp[trueProp$Group == cond[i], ]
-# t2 <- ggplot(data = test, aes(x=interaction(Reward, Handling), y=propComplete)) + 
-#   geom_line(aes(group = interaction(Handling, SubjID)), size=1, color = cols[i], alpha = 0.5) +
-#   geom_point(size=3, color = cols[i]) +
-#   geom_point(data = test2, aes(group = interaction(Reward, Handling), y = propComplete), size = 3.5, color = "black", fill = "grey60", pch=24) +
-#   labs(title = paste("Acceptance rates for all subjects in the", cond[i], "group")) +
-#   theme_classic()
-# 
-# i <- 3
-# test <- allProp2[allProp2$Group == cond[i], ]
-# test2 <- trueProp[trueProp$Group == cond[i], ]
-# t3 <- ggplot(data = test, aes(x=interaction(Reward, Handling), y=propComplete)) + 
-#   geom_line(aes(group = interaction(Handling, SubjID)), size=1, color = cols[i], alpha = 0.5) +
-#   geom_point(size=3, color = cols[i]) +
-#   geom_point(data = test2, aes(group = interaction(Reward, Handling), y = propComplete), size = 3.5, color = "black", fill = "grey60", pch=24) +
-#   labs(title = paste("Acceptance rates for all subjects in the", cond[i], "group")) +
-#   theme_classic()
-# 
-# i <- 4
-# test <- allProp2[allProp2$Group == cond[i], ]
-# test2 <- trueProp[trueProp$Group == cond[i], ]
-# t4 <- ggplot(data = test, aes(x=interaction(Reward, Handling), y=propComplete)) + 
-#   geom_line(aes(group = interaction(Handling, SubjID)), size=1, color = cols[i], alpha = 0.5) +
-#   geom_point(size=3, color = cols[i]) +
-#   geom_point(data = test2, aes(group = interaction(Reward, Handling), y = propComplete), size = 3.5, color = "black", fill = "grey60", pch=24) +
-#   labs(title = paste("Acceptance rates for all subjects in the", cond[i], "group")) +
-#   theme_classic()
-# 
-# 
-# grid.arrange(t1,t3,t2,t4, ncol = 2)
+``` {r Testing plots, echo=FALSE,fig.align="center",fig.width=10,fig.height=8}
+# a facet grid of p(acceptances) as a function of reward x handling, distinguishing between first handling time experienced,
+# for each cost separately.
+# think of doing it for the block order and then prop accepted across costs
+dataAll %>%
+  group_by(SubjID) %>%
+  mutate(BlockOrder = case_when(
+    Handling[1] == 2 ~ "Two",
+    Handling[1] == 10 ~ "Ten",
+    Handling[1] == 14 ~ "Fourteen",
+  )) %>%
+  group_by(SubjID, Cost, Handling, Reward, BlockOrder) %>%
+  summarise(pAccept = mean(Choice)) %>%
+  ggplot(aes(interaction(Reward, Handling), pAccept, linetype = BlockOrder, color = BlockOrder)) + 
+    geom_point(size = 3) + 
+    #geom_errorbar(aes(ymin = meanComplete - SE, ymax = meanComplete + SE), width = 0.2, size = 1) +
+    geom_line(aes(group = interaction(Handling, SubjID)), size = 1) +
+    #geom_point(aes(y = round(optimal)), shape = 21, fill = "grey75", color = "grey30", size = 3, show.legend = F) +
+    labs(x = "Reward.Handling", y = "Proportion Accepted") +
+    scale_color_manual(values = cols) +
+    facet_wrap(vars(Cost), ncol = 2) +
+    theme(legend.key = element_blank(),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 16))
 
+# now for each first block experienced, how do costs compare per reward x handling
+dataAll %>%
+  group_by(SubjID) %>%
+  mutate(FirstBlock = case_when(
+    Handling[1] == 2 ~ "Two",
+    Handling[1] == 10 ~ "Ten",
+    Handling[1] == 14 ~ "Fourteen",
+  )) %>%
+  group_by(Cost, Handling, Reward, FirstBlock) %>%
+  summarise(pAccept = mean(Choice),
+            SE = sd(Choice) / sqrt(length(Choice))) %>%
+  ggplot(aes(interaction(Reward, Handling), pAccept, color = Cost)) + 
+    geom_point(size = 3) + 
+    geom_errorbar(aes(ymin = pAccept - SE, ymax = pAccept + SE), width = 0.4, size = 1) +
+    geom_line(aes(group = interaction(Handling, Cost)), size = 1) +
+    labs(x = "Reward.Handling", y = "Proportion Accepted") +
+    scale_color_manual(values = cols) +
+    facet_wrap(vars(FirstBlock), ncol = 3) +
+    theme(legend.key = element_blank(),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 16))
 ```
 
 
