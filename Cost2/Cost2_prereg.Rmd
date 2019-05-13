@@ -1005,66 +1005,97 @@ pander(prepost$summary, style = "rmarkdown", split.table = 110)
 Now let's divide them by reward and handling amounts. The plots below show that the overall rates of acceptances remain mostly consistent across first and second halves of the experimental session.
 
 ``` {r 16.3.2. Plot Pre/Post reward x handling, echo=FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
-# pre
-t1 <- dataAll %>%
-  filter(Choice < 2, Half == "Half_1") %>%
+# # pre
+# t1 <- dataAll %>%
+#   filter(Choice < 2, Half == "Half_1") %>%
+#   group_by(SubjID) %>%
+#   filter(Handling == 10) %>%
+#   group_by(SubjID, Cost, Reward) %>%
+#   summarise(pAccept = mean(Choice)) %>%
+#   group_by(Cost, Reward) %>%
+#   summarise(propAccept = mean(pAccept),
+#             SE = sd(pAccept) / sqrt(nSubjs)) %>%
+#   ungroup() %>%
+#   mutate(Reward = ifelse(Reward == 20, 12, Reward)) %>%
+#   ggplot(aes(Reward, propAccept, color = Cost)) +
+#     geom_point(size = 3, show.legend = F) +
+#     geom_line(show.legend = F) +
+#     scale_color_manual(values = cols) +
+#     scale_fill_manual(values = cols) +
+#     geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = T) +
+#     scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
+#     scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
+#     labs(y = "Proportion Accepted", title = "First Half") +
+#     theme(legend.key = element_blank(),
+#           legend.position = c(0.8, 0.25),
+#           panel.grid.major = element_blank(), 
+#           panel.grid.minor = element_blank(), 
+#           panel.background = element_blank(), 
+#           axis.line = element_line(colour = "black"),
+#           text = element_text(size = 16))
+# 
+# # post half
+# t2 <- dataAll %>%
+#   filter(Choice < 2, Half == "Half_2") %>%
+#   group_by(SubjID) %>%
+#   filter(Handling == 10) %>%
+#   group_by(SubjID, Cost, Reward) %>%
+#   summarise(pAccept = mean(Choice)) %>%
+#   group_by(Cost, Reward) %>%
+#   summarise(propAccept = mean(pAccept),
+#             SE = sd(pAccept) / sqrt(nSubjs)) %>%
+#   ungroup() %>%
+#   mutate(Reward = ifelse(Reward == 20, 12, Reward)) %>%
+#   ggplot(aes(Reward, propAccept, color = Cost)) +
+#     geom_point(size = 3, show.legend = F) +
+#     geom_line(show.legend = F) +
+#     scale_color_manual(values = cols) +
+#     scale_fill_manual(values = cols) +
+#     geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = F) +
+#     scale_y_continuous(limits = c(-0.1, 1.1), breaks = c(0, 0.5, 1)) +
+#     scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
+#     labs(y = "", title = "Second Half") +
+#     theme(legend.position = c(0.8, 0.2),
+#           panel.grid.major = element_blank(), 
+#           panel.grid.minor = element_blank(), 
+#           panel.background = element_blank(), 
+#           axis.line = element_line(colour = "black"),
+#           text = element_text(size = 16))
+# 
+# 
+# 
+# grid.arrange(t1, t2, ncol = 2)
+
+dataAll %>%
+  filter(Choice < 2) %>%
   group_by(SubjID) %>%
   filter(Handling == 10) %>%
-  group_by(SubjID, Cost, Reward) %>%
+  mutate(Half = ifelse(Half == "Half_1", "First Block", "Last Block")) %>%
+  group_by(SubjID, Half, Cost, Reward) %>%
   summarise(pAccept = mean(Choice)) %>%
-  group_by(Cost, Reward) %>%
+  group_by(Half, Cost, Reward) %>%
   summarise(propAccept = mean(pAccept),
             SE = sd(pAccept) / sqrt(nSubjs)) %>%
   ungroup() %>%
   mutate(Reward = ifelse(Reward == 20, 12, Reward)) %>%
   ggplot(aes(Reward, propAccept, color = Cost)) +
     geom_point(size = 3, show.legend = F) +
-    geom_line(show.legend = F) +
+    geom_line(size = 1, show.legend = F) +
     scale_color_manual(values = cols) +
     scale_fill_manual(values = cols) +
     geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = T) +
     scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
     scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
-    labs(y = "Proportion Accepted", title = "First Half") +
+    labs(y = "Proportion Accepted") +
+    facet_wrap(vars(Half), ncol = 2) +
     theme(legend.key = element_blank(),
-          legend.position = c(0.8, 0.25),
+          legend.position = c(0.9, 0.25),
           panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank(), 
           panel.background = element_blank(), 
           axis.line = element_line(colour = "black"),
           text = element_text(size = 16))
 
-# post half
-t2 <- dataAll %>%
-  filter(Choice < 2, Half == "Half_2") %>%
-  group_by(SubjID) %>%
-  filter(Handling == 10) %>%
-  group_by(SubjID, Cost, Reward) %>%
-  summarise(pAccept = mean(Choice)) %>%
-  group_by(Cost, Reward) %>%
-  summarise(propAccept = mean(pAccept),
-            SE = sd(pAccept) / sqrt(nSubjs)) %>%
-  ungroup() %>%
-  mutate(Reward = ifelse(Reward == 20, 12, Reward)) %>%
-  ggplot(aes(Reward, propAccept, color = Cost)) +
-    geom_point(size = 3, show.legend = F) +
-    geom_line(show.legend = F) +
-    scale_color_manual(values = cols) +
-    scale_fill_manual(values = cols) +
-    geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = F) +
-    scale_y_continuous(limits = c(-0.1, 1.1), breaks = c(0, 0.5, 1)) +
-    scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
-    labs(y = "", title = "Second Half") +
-    theme(legend.position = c(0.8, 0.2),
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(), 
-          panel.background = element_blank(), 
-          axis.line = element_line(colour = "black"),
-          text = element_text(size = 16))
-
-
-
-grid.arrange(t1, t2, ncol = 2)
 ```
 \bigskip
 
@@ -1257,6 +1288,32 @@ dataAll %>%
           panel.background = element_blank(), 
           axis.line = element_line(colour = "black"),
           text = element_text(size = 16))
+
+
+# # now also separated by half
+# dataAll %>%
+#   group_by(SubjID) %>%
+#   mutate(FirstBlock = case_when(
+#     Handling[1] == 2 ~ "Two",
+#     Handling[1] == 10 ~ "Ten",
+#     Handling[1] == 14 ~ "Fourteen",
+#   )) %>%
+#   group_by(Cost, Handling, Reward, FirstBlock, Half) %>%
+#   summarise(pAccept = mean(Choice),
+#             SE = sd(Choice) / sqrt(length(Choice))) %>%
+#   ggplot(aes(interaction(Reward, Handling), pAccept, color = Cost)) + 
+#     geom_point(size = 3) + 
+#     geom_errorbar(aes(ymin = pAccept - SE, ymax = pAccept + SE), width = 0.4, size = 1) +
+#     geom_line(aes(group = interaction(Handling, Cost)), size = 1) +
+#     labs(x = "Reward.Handling", y = "Proportion Accepted") +
+#     scale_color_manual(values = cols) +
+#     facet_wrap(vars(Half, FirstBlock), ncol = 3) +
+#     theme(legend.key = element_blank(),
+#           panel.grid.major = element_blank(), 
+#           panel.grid.minor = element_blank(), 
+#           panel.background = element_blank(), 
+#           axis.line = element_line(colour = "black"),
+#           text = element_text(size = 16))
 ```
 
 
