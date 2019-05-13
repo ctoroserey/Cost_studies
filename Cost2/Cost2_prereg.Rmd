@@ -354,6 +354,46 @@ optimizeOCModel <- function(Data, Algorithm = "NLOPT_LN_NEWUOA", simplify = F) {
 
 }
 
+# summary matrices for refrence-changing models
+betaMatrix <- function(model, rearrange = NA) {
+# get a similarity matrix of the resulting coefficient pairings for the cost conditions
+# first, do a full_join based on column names on the list of coefficient vectors from each dummy code relevel
+# then match the names of columns and rows so NAs are in the diagonal
+  
+  # get the names of the reference group per model iteration
+  refnames <- names(model)
+  
+  # coefficient matrix
+  temp <- lapply(model, function(data) {coefficients(data)$SubjID[1, 2:4]})
+  mixCoeffs <- bind_rows(temp) 
+  preln <- ifelse("Cost" %in% substr(names(mixCoeffs), 1, 4), 4, 5) # count how many characters precede the name of each cost (diff across studies)
+  dimnames(mixCoeffs) <- list(refnames, substr(names(mixCoeffs), preln + 1, 20))
+  mixCoeffs <- as.matrix(mixCoeffs[, match(rownames(mixCoeffs), colnames(mixCoeffs))])
+  mixCoeffs[is.na(mixCoeffs)] <- 0
+  
+  # now the pvals
+  temp <- lapply(model, function(data) {as.list(summary(data)$coefficients[2:4, 4])})
+  mixPvals <- as.matrix(bind_rows(temp)) 
+  dimnames(mixPvals) <- list(refnames, substr(colnames(mixPvals), preln + 1, 20))
+  mixPvals <- as.matrix(mixPvals[, match(rownames(mixPvals), colnames(mixPvals))])
+  mixPvals[is.na(mixPvals)] <- 1
+
+  # if you would like to re-arrange the coefficient order, supply a vector with the desired sequence
+  if (length(rearrange) > 1) {
+    mixCoeffs <- mixCoeffs[rearrange, rearrange]
+    dimnames(mixCoeffs) <- list(rearrange, rearrange)
+    mixPvals <- mixPvals[rearrange, rearrange]
+    dimnames(mixPvals) <- list(rearrange, rearrange)
+  }
+  
+  # combine matrices into list to return
+  out <- list(Betas = round(mixCoeffs, digits = 2),
+              Pvals = round(mixPvals, digits = 5))
+  
+  return(out)
+  
+}
+
 ```
 
 ``` {r Load Data, echo=FALSE}
@@ -581,7 +621,7 @@ Of the 36 tests, around `r splitData_prop` were significantly deviant from optim
 
 ### 16.2.	Comparisons among the four delay and effort conditions.
 
-###  16.2.1.	
+### 16.2.1.	
 
 *To compare preferences (hypothesis 4.2.), we will first perform a one-way ANOVA on the proportion of trials accepted using group as a factor. In addition, we will do pairwise comparisons on the proportion completed among all 4 groups using non-parametric permutation contrasts (6 tests). The same approach will be used for total earnings. This will give us an initial glimpse on the potential differences in cost among conditions.*
 
@@ -734,7 +774,7 @@ pander(x, style = "rmarkdown", split.table = 110)
 
 *We will compute the probability of accepting a trial with a mixed-effects logistic regression. Based on the task structure and our main question, our a priori model of interest will include cost condition, handling time, and reward amount as fixed main effects, and subject ID as a random effect. Cost condition will be modeled with three categorical terms, with the fourth condition as the reference condition. We will run three versions of the model with different reference conditions, in order to test all pairwise differences among the four cost conditions. As with 16.2.2., we anticipate significant main effects (coefficients different than zero) of handling time, reward, and cost condition. We hypothesize that the differences among cost conditions will follow the pattern described in 4.2.*
 
-``` {r 16.2.3. Mixed Effects Model, echo=FALSE,fig.align="center",fig.width=5,fig.height=4}
+``` {r 16.2.3. Mixed Effects Model, echo = FALSE, fig.align = "center", fig.width = 5, fig.height = 4}
 # clean the data so the total acceptances and quits per subj x handling x reward are ready for modeling
 mixLogis_main <- list()
 mixData <- dataAll %>%
@@ -758,36 +798,22 @@ mixLogis_main$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handl
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Easy"))
 mixLogis_main$Easy <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
 
-
-# matrix of coefficients
-# 
-temp <- lapply(mixLogis_main, function(model) {as.list(summary(model)$coefficients[2:4, 1])})
-mixCoeffs <- as.matrix(bind_rows(temp)) #reduce(temp, full_join) 
-dimnames(mixCoeffs) <- list(names(temp), substr(colnames(mixCoeffs), 5, 20))
-mixCoeffs <- as.matrix(mixCoeffs[, match(rownames(mixCoeffs), colnames(mixCoeffs))])
-mixCoeffs[is.na(mixCoeffs)] <- 0
-mixCoeffs <- mixCoeffs[c("Cognitive", "Physical", "Wait", "Easy"), c("Cognitive", "Physical", "Wait", "Easy")]
-
-# matrix of pvals
-temp <- lapply(mixLogis_main, function(model) {as.list(summary(model)$coefficients[2:4, 4])})
-mixPvals <- as.matrix(bind_rows(temp)) 
-dimnames(mixPvals) <- list(names(temp), substr(colnames(mixPvals), 5, 20))
-mixPvals <- as.matrix(mixPvals[, match(rownames(mixPvals), colnames(mixPvals))])
-rownames(mixPvals) <- colnames(mixPvals)
-mixPvals <- mixPvals[c("Cognitive", "Physical", "Wait", "Easy"), c("Cognitive", "Physical", "Wait", "Easy")]
-diag(mixPvals) <- 1
+# matrix of coefficients and pvalues
+rearrange <- c("Cognitive", "Easy", "Wait", "Physical") # to kinda match the order in Cost 3
+mixSummary <- betaMatrix(mixLogis_main, rearrange = rearrange)
+diag(mixSummary$Pvals) <- NA
 
 # plot coefficients and pvalues in a matrix
 # invert colors
 col2 <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0", "#FFFFFF", "#FDDBC7", "#F4A582", "#D6604D", "#B2182B", "#67001F"))
 
-corrplot(mixCoeffs, 
+corrplot(mixSummary$Betas, 
          is.corr = F, 
-         p.mat = mixPvals, 
-         type = "upper",
+         p.mat = mixSummary$Pvals, 
+         type = "lower",
          outline = T,
-         insig = "p-value",
-         sig.level = -1, 
+         #insig = "p-value",
+         sig.level = 0.05, 
          na.label = "square", 
          na.label.col = "grey",
          method = "color", 
@@ -799,7 +825,7 @@ corrplot(mixCoeffs,
 
 The plot below shows the distribution of random intercepts across participants of each group. Participants in the easy condition show much more variability than the other groups, potentially suggesting a bias in choices in this condition. Nonetheless, the intercepts per group are centered around zero.
 
-``` {r 16.2.3. Mixed Effects Model plot rand intercepts, echo=FALSE,fig.align="center",fig.width=5,fig.height=4}
+``` {r 16.2.3. Mixed Effects Model plot rand intercepts, echo = FALSE, fig.align = "center", fig.width = 5, fig.height = 4}
 # plot random intercepts in increasing order
 #RI1 <- qplot(seq(83), sort(ranef(mixLogis_main$Wait)$SubjID[,1]), color = cols[1], show.legend = F) + theme_classic()
 
@@ -823,7 +849,7 @@ temp <- ranef(mixLogis_main$Wait)$SubjID %>%
 As predicted, the model showed significant main effects of handling time (Beta = `r mixLogis_main$Summary$coefficients[5,1]`, SE = `r mixLogis_main$Summary$coefficients[5,2]`, p < 0.001) and reward (Beta = `r mixLogis_main$Summary$coefficients[6,1]`, SE = `r mixLogis_main$Summary$coefficients[6,2]`, p < 0.001). In order to show the comparisons among all conditions, the following plot portrays the coefficients (color scale), and p-values (numbers within squares) that resulted from switching the reference condition. Specifically, each entry shows how much more likely was the reference group to accept an offer than the comparison group. Based on this, we can see that the cognitive group was significantly more likely to accept any offer than the physical and wait groups, but not the easy group.
 
 
-###  16.2.4.
+### 16.2.4.
 
 *Next, we will examine whether the a priori model from 16.2.3. outperforms both simpler and more complex models. Unlike the individual logistic regression fits in 16.1.1., a mixed-effects approach gives us a better goodness of fit measure for model comparisons. We will determine the best model (combination of predictors) using Akaike’s Information Criterion (AIC) to determine the model that minimizes the negative log-likelihood while penalizing the addition of parameters. The regression with each combination of predictors will be fitted in the following order: 1) intercept only; 2) condition only; 3) handling time only; 4) reward only; 5) condition, handling, and reward main effects (from 16.2.3.); 6) adding a handling-by-reward interaction; and 7) adding all three possible two-way interactions. We predict that model 5 will have the lowest AIC.*
 
@@ -902,7 +928,7 @@ propFails <- dataAll %>%
 
 \bigskip
 
-###  16.3.2.
+### 16.3.2.
 
 *In order to further examine choice stability (hypothesis 4.3.1.), we will compute each participant’s total proportion of acceptances pre- and post-midpoint. For each cost condition separately, we will fit a linear model that predicts post-midpoint acceptance from before-midpoint rates. We will report the slopes and 95% confidence intervals (CI) for each cost group. CIs containing 1 will denote that participants in that group produced consistent choices.*
   
@@ -1097,6 +1123,83 @@ dataAll %>%
           text = element_text(size = 16))
 
 ```
+
+
+This prompted the question of whether fitting the mixed logistic model could confirm this shift in preferences. Just as before, the matrix below show the coefficient magnitude (color) and pvalues for differences based on iterating through costs as reference dummy codes.
+
+``` {r 16.3.2. mix pre/post separately, echo = FALSE, fig.align="center", fig.width = 5, fig.height = 4}
+## compute the same mixed effects logistic for each half
+# mixed logistic for the first half
+mixLogis_pre <- list()
+mixData <- dataAll %>%
+  filter(Half == "Half_1") %>%
+  group_by(SubjID, Cost, Handling, Reward) %>%
+  summarize(totalChoices = length(Choice),
+            totalAccepted = sum(Choice),
+            totalQuits = sum(Choice == 0),
+            propAccepted = mean(Choice))
+
+mixLogis_pre$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait"))
+mixLogis_pre$Wait <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Easy"))
+mixLogis_pre$Easy <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Cognitive"))
+mixLogis_pre$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+
+# mixed logistic for the second half
+mixLogis_post <- list()
+mixData <- dataAll %>%
+  filter(Half == "Half_2") %>%
+  group_by(SubjID, Cost, Handling, Reward) %>%
+  summarize(totalChoices = length(Choice),
+            totalAccepted = sum(Choice),
+            totalQuits = sum(Choice == 0),
+            propAccepted = mean(Choice))
+
+mixLogis_post$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait"))
+mixLogis_post$Wait <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Easy"))
+mixLogis_post$Easy <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Cognitive"))
+mixLogis_post$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+
+
+## now produce a summary matrix
+# get the beta and pvalue matrices 
+betasPre <- betaMatrix(mixLogis_pre, rearrange = rearrange)
+betasPost <- betaMatrix(mixLogis_post, rearrange = rearrange)
+
+# and combine them
+betaMat <- matrix(NA, nrow = nrow(betasPre$Betas), ncol = nrow(betasPre$Betas))
+betaMat[lower.tri(betaMat)] <- betasPre$Betas[lower.tri(betasPre$Betas)]
+betaMat[upper.tri(betaMat)] <- betasPost$Betas[lower.tri(betasPost$Betas)]
+dimnames(betaMat) <- list(rearrange, rearrange)
+
+pvalMat <- matrix(NA, nrow = nrow(betasPre$Pvals), ncol = nrow(betasPre$Pvals))
+pvalMat[lower.tri(pvalMat)] <- betasPre$Pvals[lower.tri(betasPre$Pvals)]
+pvalMat[upper.tri(pvalMat)] <- betasPost$Pvals[lower.tri(betasPost$Pvals)]
+dimnames(pvalMat) <- list(rearrange, rearrange)
+
+# remove uninteresting comparisons 
+diag(betaMat) <- 0
+
+# aand plot
+corrplot(betaMat, 
+         is.corr = F, 
+         p.mat = pvalMat, 
+         outline = T,
+         #insig = "p-value",
+         sig.level = 0.05, 
+         na.label = "square", 
+         na.label.col = "grey",
+         method = "color", 
+         tl.col = "black",
+         tl.cex = 0.8,
+         col = col2(200))
+````
+
 \bigskip
 
 ### 16.3.3.
@@ -1236,33 +1339,33 @@ corrplot(OCanova$ES,
 
 ### Testing grounds
 
-``` {r Testing plots, echo=FALSE,fig.align="center",fig.width=10,fig.height=8}
+``` {r Testing plots, echo = FALSE, fig.align = "center", fig.width = 10, fig.height = 4}
 # a facet grid of p(acceptances) as a function of reward x handling, distinguishing between first handling time experienced,
 # for each cost separately.
 # think of doing it for the block order and then prop accepted across costs
-dataAll %>%
-  group_by(SubjID) %>%
-  mutate(BlockOrder = case_when(
-    Handling[1] == 2 ~ "Two",
-    Handling[1] == 10 ~ "Ten",
-    Handling[1] == 14 ~ "Fourteen",
-  )) %>%
-  group_by(SubjID, Cost, Handling, Reward, BlockOrder) %>%
-  summarise(pAccept = mean(Choice)) %>%
-  ggplot(aes(interaction(Reward, Handling), pAccept, linetype = BlockOrder, color = BlockOrder)) + 
-    geom_point(size = 3) + 
-    #geom_errorbar(aes(ymin = meanComplete - SE, ymax = meanComplete + SE), width = 0.2, size = 1) +
-    geom_line(aes(group = interaction(Handling, SubjID)), size = 1) +
-    #geom_point(aes(y = round(optimal)), shape = 21, fill = "grey75", color = "grey30", size = 3, show.legend = F) +
-    labs(x = "Reward.Handling", y = "Proportion Accepted") +
-    scale_color_manual(values = cols) +
-    facet_wrap(vars(Cost), ncol = 2) +
-    theme(legend.key = element_blank(),
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(), 
-          panel.background = element_blank(), 
-          axis.line = element_line(colour = "black"),
-          text = element_text(size = 16))
+# dataAll %>%
+#   group_by(SubjID) %>%
+#   mutate(BlockOrder = case_when(
+#     Handling[1] == 2 ~ "Two",
+#     Handling[1] == 10 ~ "Ten",
+#     Handling[1] == 14 ~ "Fourteen",
+#   )) %>%
+#   group_by(SubjID, Cost, Handling, Reward, BlockOrder) %>%
+#   summarise(pAccept = mean(Choice)) %>%
+#   ggplot(aes(interaction(Reward, Handling), pAccept, linetype = BlockOrder, color = BlockOrder)) + 
+#     geom_point(size = 3) + 
+#     #geom_errorbar(aes(ymin = meanComplete - SE, ymax = meanComplete + SE), width = 0.2, size = 1) +
+#     geom_line(aes(group = interaction(Handling, SubjID)), size = 1) +
+#     #geom_point(aes(y = round(optimal)), shape = 21, fill = "grey75", color = "grey30", size = 3, show.legend = F) +
+#     labs(x = "Reward.Handling", y = "Proportion Accepted") +
+#     scale_color_manual(values = cols) +
+#     facet_wrap(vars(Cost), ncol = 2) +
+#     theme(legend.key = element_blank(),
+#           panel.grid.major = element_blank(), 
+#           panel.grid.minor = element_blank(), 
+#           panel.background = element_blank(), 
+#           axis.line = element_line(colour = "black"),
+#           text = element_text(size = 16))
 
 # now for each first block experienced, how do costs compare per reward x handling
 dataAll %>%
