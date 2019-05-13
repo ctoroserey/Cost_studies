@@ -823,26 +823,25 @@ corrplot(mixSummary$Betas,
 
 ```
 
-The plot below shows the distribution of random intercepts across participants of each group. Participants in the easy condition show much more variability than the other groups, potentially suggesting a bias in choices in this condition. Nonetheless, the intercepts per group are centered around zero.
 
 ``` {r 16.2.3. Mixed Effects Model plot rand intercepts, echo = FALSE, fig.align = "center", fig.width = 5, fig.height = 4}
 # plot random intercepts in increasing order
 #RI1 <- qplot(seq(83), sort(ranef(mixLogis_main$Wait)$SubjID[,1]), color = cols[1], show.legend = F) + theme_classic()
 
-# plot per subject (as expected, the intercepts are highest for those who accepted everythiing)
-temp <- ranef(mixLogis_main$Wait)$SubjID %>%
-  gather(key = Cost, value = RandEffects, colnames(.)) 
-
-(RI1 <- ggplot(data = temp, aes(Cost, RandEffects, fill = Cost)) + 
-  geom_hline(yintercept = 0, alpha = 0.7, linetype = "dashed") + 
-  geom_boxplot(show.legend = F) +
-  scale_fill_manual(values = cols) + 
-  labs(x = "") +
-  theme(panel.grid.major = element_blank(), 
-              panel.grid.minor = element_blank(), 
-              panel.background = element_blank(), 
-              axis.line = element_line(colour = "black"),
-              text = element_text(size = 16)))
+# # plot per subject (as expected, the intercepts are highest for those who accepted everythiing)
+# temp <- ranef(mixLogis_main$Wait)$SubjID %>%
+#   gather(key = Cost, value = RandEffects, colnames(.)) 
+# 
+# (RI1 <- ggplot(data = temp, aes(Cost, RandEffects, fill = Cost)) + 
+#   geom_hline(yintercept = 0, alpha = 0.7, linetype = "dashed") + 
+#   geom_boxplot(show.legend = F) +
+#   scale_fill_manual(values = cols) + 
+#   labs(x = "") +
+#   theme(panel.grid.major = element_blank(), 
+#               panel.grid.minor = element_blank(), 
+#               panel.background = element_blank(), 
+#               axis.line = element_line(colour = "black"),
+#               text = element_text(size = 16)))
 
 ```
 
