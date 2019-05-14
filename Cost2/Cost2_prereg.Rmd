@@ -872,8 +872,6 @@ abicLogis_compare <- data.frame(Model = names(mixLogis_compare),
 mixLogis_compare$Rsq <- 1 - (deviance(mixLogis_compare$AllMain)/deviance(mixLogis_compare$Base)) # denominator is the null deviance
 ```
 
-This plot shows the AIC for every model. The figure below shows AIC and BIC for all the models. As predicted, the model with all main effects reduced the deviance the most ($R^2$ = `r round(mixLogis_compare$Rsq, digits = 2)`).
-
 ``` {r 16.2.4. Plot Deviance comparison, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
 # plot AIC and BIC
 (mixLogis_compare$plot <- abicLogis_compare %>% 
@@ -885,6 +883,7 @@ This plot shows the AIC for every model. The figure below shows AIC and BIC for 
     
 ```
 
+This plot shows the AIC for every model. The figure below shows AIC and BIC for all the models. As predicted, the model with all main effects reduced the deviance the most ($R^2$ = `r round(mixLogis_compare$Rsq, digits = 2)`). The reduction in deviance from an intercept-only model was drastic enough that we did not compute an LRT.
 
 \bigskip
 
@@ -999,10 +998,10 @@ prepost$propBlocks <- dataAll %>%
                          group_by(Cost, Block) %>%
                          summarize(propAccept = mean(propAccept_subj),
                                    seAccept = sd(propAccept_subj)/sqrt(nSubjs)) %>%
-                         ggplot(aes(Block, propAccept, fill = Cost)) +
-                           geom_point(size = 2, pch = 21, color = "black") +
-                           geom_errorbar(aes(ymin=propAccept - seAccept, ymax=propAccept + seAccept, color = Cost), width = 0.1) +
-                           geom_line(aes(color = Cost)) +
+                         ggplot(aes(Block, propAccept, color = Cost)) +
+                           geom_point(size = 2) +
+                           geom_errorbar(aes(ymin = propAccept - seAccept, ymax = propAccept + seAccept, color = Cost), width = 0.1) +
+                           geom_line() +
                            ylim(0, 1) +
                            labs(y = "Proportion Acccepted") +
                            scale_x_continuous(breaks = seq(6)) +
@@ -1338,7 +1337,7 @@ corrplot(OCanova$ES,
 
 ### Testing grounds
 
-``` {r Testing plots, echo = FALSE, fig.align = "center", fig.width = 10, fig.height = 4}
+``` {r Testing plots, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
 # a facet grid of p(acceptances) as a function of reward x handling, distinguishing between first handling time experienced,
 # for each cost separately.
 # think of doing it for the block order and then prop accepted across costs
@@ -1366,30 +1365,30 @@ corrplot(OCanova$ES,
 #           axis.line = element_line(colour = "black"),
 #           text = element_text(size = 16))
 
-# now for each first block experienced, how do costs compare per reward x handling
-dataAll %>%
-  group_by(SubjID) %>%
-  mutate(FirstBlock = case_when(
-    Handling[1] == 2 ~ "Two",
-    Handling[1] == 10 ~ "Ten",
-    Handling[1] == 14 ~ "Fourteen",
-  )) %>%
-  group_by(Cost, Handling, Reward, FirstBlock) %>%
-  summarise(pAccept = mean(Choice),
-            SE = sd(Choice) / sqrt(length(Choice))) %>%
-  ggplot(aes(interaction(Reward, Handling), pAccept, color = Cost)) + 
-    geom_point(size = 3) + 
-    geom_errorbar(aes(ymin = pAccept - SE, ymax = pAccept + SE), width = 0.4, size = 1) +
-    geom_line(aes(group = interaction(Handling, Cost)), size = 1) +
-    labs(x = "Reward.Handling", y = "Proportion Accepted") +
-    scale_color_manual(values = cols) +
-    facet_wrap(vars(FirstBlock), ncol = 3) +
-    theme(legend.key = element_blank(),
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(), 
-          panel.background = element_blank(), 
-          axis.line = element_line(colour = "black"),
-          text = element_text(size = 16))
+# # now for each first block experienced, how do costs compare per reward x handling
+# dataAll %>%
+#   group_by(SubjID) %>%
+#   mutate(FirstBlock = case_when(
+#     Handling[1] == 2 ~ "Two",
+#     Handling[1] == 10 ~ "Ten",
+#     Handling[1] == 14 ~ "Fourteen",
+#   )) %>%
+#   group_by(Cost, Handling, Reward, FirstBlock) %>%
+#   summarise(pAccept = mean(Choice),
+#             SE = sd(Choice) / sqrt(length(Choice))) %>%
+#   ggplot(aes(interaction(Reward, Handling), pAccept, color = Cost)) + 
+#     geom_point(size = 3) + 
+#     geom_errorbar(aes(ymin = pAccept - SE, ymax = pAccept + SE), width = 0.4, size = 1) +
+#     geom_line(aes(group = interaction(Handling, Cost)), size = 1) +
+#     labs(x = "Reward.Handling", y = "Proportion Accepted") +
+#     scale_color_manual(values = cols) +
+#     facet_wrap(vars(FirstBlock), ncol = 3) +
+#     theme(legend.key = element_blank(),
+#           panel.grid.major = element_blank(), 
+#           panel.grid.minor = element_blank(), 
+#           panel.background = element_blank(), 
+#           axis.line = element_line(colour = "black"),
+#           text = element_text(size = 16))
 
 
 # # now also separated by half
@@ -1416,6 +1415,37 @@ dataAll %>%
 #           panel.background = element_blank(), 
 #           axis.line = element_line(colour = "black"),
 #           text = element_text(size = 16))
+
+# forced travels as a function of time
+# number of forced travels as a function of time for cognitive and grip trials
+forcedTravels <- dataAll %>%
+  filter(rawChoice == 2) %>%
+  group_by(SubjID, Cost, Block) %>%
+  count() %>%
+  group_by(Cost, Block) %>%
+  summarise(mTravels = mean(n),
+            SE = sd(n) / length(Block)) 
+
+tempphys <- tibble(Cost = as.factor(rep("Physical", 6)),
+                   Block = as.numeric(seq(6)),
+                   mTravels = rep(0, 6),
+                   SE = rep(0, 6))
+
+forcedTravels <- full_join(forcedTravels, tempphys)
+
+  ggplot(data = forcedTravels, aes(Block, mTravels, color = Cost )) +
+    geom_line(size = 1) +
+    geom_point(size = 3) +
+    geom_errorbar(aes(ymin = mTravels - SE, ymax = mTravels + SE), width = 0.4) +
+    scale_x_continuous(breaks = seq(6)) +
+    labs(y = "Mean number of forced travels") +
+    ylim(0, 4) +
+    theme(legend.key = element_blank(),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 16))
 ```
 
 
