@@ -1419,12 +1419,13 @@ corrplot(OCanova$ES,
 # forced travels as a function of time
 # number of forced travels as a function of time for cognitive and grip trials
 forcedTravels <- dataAll %>%
-  filter(rawChoice == 2) %>%
+  #filter(rawChoice == 2) %>%
   group_by(SubjID, Cost, Block) %>%
-  count() %>%
+  filter(Cost %in% c("Cognitive", "Physical")) %>%
+  summarise(pTravel = mean(rawChoice == 2)) %>%
   group_by(Cost, Block) %>%
-  summarise(mTravels = mean(n),
-            SE = sd(n) / sqrt(21)) 
+  summarise(mTravels = mean(pTravel),
+            SE = sd(pTravel) / sqrt(21)) 
 
 tempphys <- tibble(Cost = as.factor(rep("Physical", 6)),
                    Block = as.numeric(seq(6)),
@@ -1433,19 +1434,19 @@ tempphys <- tibble(Cost = as.factor(rep("Physical", 6)),
 
 forcedTravels <- full_join(forcedTravels, tempphys)
 
-  ggplot(data = forcedTravels, aes(Block, mTravels, color = Cost )) +
-    geom_line(size = 1) +
-    geom_point(size = 3) +
-    geom_errorbar(aes(ymin = mTravels - SE, ymax = mTravels + SE), width = 0.4) +
-    scale_x_continuous(breaks = seq(6)) +
-    labs(y = "Mean n of forced travels") +
-    ylim(0, 4) +
-    theme(legend.key = element_blank(),
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(), 
-          panel.background = element_blank(), 
-          axis.line = element_line(colour = "black"),
-          text = element_text(size = 16))
+ggplot(data = forcedTravels, aes(Block, mTravels, color = Cost )) +
+  geom_line(size = 1) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = mTravels - SE, ymax = mTravels + SE), width = 0.4) +
+  scale_x_continuous(breaks = seq(6)) +
+  labs(y = "Prop. of forced travels") +
+  ylim(0, NA) +
+  theme(legend.key = element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        text = element_text(size = 16))
 ```
 
 
