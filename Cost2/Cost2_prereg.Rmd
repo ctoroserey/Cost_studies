@@ -270,32 +270,38 @@ negLogLik <- function(params, choice, handling, reward) {
   return(negLL)
 }
 
-# minimize the negative log likelihood
-optimizeOCModel <- function(Data, Algorithm = "NLOPT_LN_NEWUOA", simplify = F) {
+
+# optimize the OC model
+optimizeOCModel <- function(Data, Algorithm = "NLOPT_LN_NEWUOA", simplify = F, optfun = negLogLik) {
+  
+  # Data: The participant's log
+  # Algorithm: probably let be
+  # optfun: an external function to minimize (in this case OC, separately defined as negloglik)
+  
   # Prep data
   handling <- Data$Handling
-  reward <- Data$Reward
+  reward <- Data$Offer
   choice <- Data$Choice
   
   # Prep list of results to be returned
   out <- list()
-  out$percentQuit <- (sum(choice==0) / length(choice)) * 100
-  out$percentAccept <- (sum(choice==1) / length(choice)) * 100 
+  out$percentQuit <- mean(choice == 0) * 100
+  out$percentAccept <- mean(choice== 1) * 100 
   miss <- (choice != 1) & (choice != 0)
-  out$percentMiss <- (sum(miss) / length(choice))  * 100
+  out$percentMiss <- mean(miss)  * 100
   choice <- choice[!miss]
   reward <- as.numeric(reward[!miss])
   handling <- as.numeric(handling[!miss])
   
   # Establish lower and upper bounds
-  LB <- log((min(reward)/max(handling)) * 0.99)
-  UB <- log((max(reward)/min(handling)) * 1.01)
+  LB <- round(log((min(reward)/max(handling)) * 0.99), digits = 4)
+  UB <- round(log((max(reward)/min(handling)) * 1.01), digits = 4) # in reality this should be the second largest, since no one would reject the highest val
   
   # Begin defining parameters
   # If choices are one-sided (i.e. all accepted)
   if ((sum(choice) == length(choice)) | (sum(choice) == 0)) {
     ifelse(sum(choice) == length(choice), out$Gamma <- exp(LB), out$Gamma <- exp(UB)) 
-    out$Scale <- NA
+    out$Scale <- 1 # it was NA, but in theory a temperature of 1 also indicates noiseless estimates, and allows for easier fit computations
     out$LL <- 0
   } else {
     # Create a feasible region (search space)
@@ -310,7 +316,7 @@ optimizeOCModel <- function(Data, Algorithm = "NLOPT_LN_NEWUOA", simplify = F) {
     # Optimize the sOC over all possible combinations of starting points
     for (i in seq(nrow(params))) {
       tempInfo <- nloptr(x0 = params[i, ], 
-                   eval_f = negLogLik, 
+                   eval_f = optfun, 
                    lb = c(log(0.001), LB),
                    ub = c(-log(0.001), UB),
                    opts = opts,
@@ -335,7 +341,7 @@ optimizeOCModel <- function(Data, Algorithm = "NLOPT_LN_NEWUOA", simplify = F) {
   out$p <- 1 / (1 + exp(-(out$Scale*(reward - out$subjOC))))
   out$predicted <- reward > out$subjOC
   out$predicted[out$predicted == TRUE] <- 1
-  out$percentPredicted <- (sum(out$predicted == choice) / length(choice)) * 100
+  out$percentPredicted <- mean(out$predicted == choice) 
   
   # adjust the probabilities in case of extreme gammas
   if (out$Gamma <= exp(LB)) {
@@ -353,6 +359,7 @@ optimizeOCModel <- function(Data, Algorithm = "NLOPT_LN_NEWUOA", simplify = F) {
   return(out)
 
 }
+
 
 # summary matrices for refrence-changing models
 betaMatrix <- function(model, rearrange = NA) {
