@@ -1424,7 +1424,7 @@ forcedTravels <- dataAll %>%
   count() %>%
   group_by(Cost, Block) %>%
   summarise(mTravels = mean(n),
-            SE = sd(n) / length(Block)) 
+            SE = sd(n) / sqrt(21)) 
 
 tempphys <- tibble(Cost = as.factor(rep("Physical", 6)),
                    Block = as.numeric(seq(6)),
@@ -1438,7 +1438,7 @@ forcedTravels <- full_join(forcedTravels, tempphys)
     geom_point(size = 3) +
     geom_errorbar(aes(ymin = mTravels - SE, ymax = mTravels + SE), width = 0.4) +
     scale_x_continuous(breaks = seq(6)) +
-    labs(y = "Mean number of forced travels") +
+    labs(y = "Mean n of forced travels") +
     ylim(0, 4) +
     theme(legend.key = element_blank(),
           panel.grid.major = element_blank(), 
