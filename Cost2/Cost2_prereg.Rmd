@@ -955,6 +955,19 @@ prepost$LM <- lapply(sep, function(data) {lm(data$Half_2 ~ data$Half_1)})
 # and concatenate
 prepost$summary <- as.data.frame(cbind(t(sapply(prepost$LM, coefficients)), t(sapply(prepost$LM, confint))))
 colnames(prepost$summary) <- c("Intercept", "Coefficient", "Int_CI-low", "Int_CI-high", "Beta_CI-low", "Beta_CI-high")
+
+## PRE/POST PAIRED PERMUTATIONS
+temp <- dataAll %>%
+  filter(Choice < 2) %>%
+  group_by(SubjID, Cost) %>%
+  summarise(propAccept_1 = mean(Choice[Half == "Half_1"]),
+            propAccept_2 = mean(Choice[Half == "Half_2"])) %>%
+  plyr::dlply("Cost", identity) 
+
+
+# paired perms and effect sizes
+prepost$CohenD <- sapply(temp, function(data) {DescTools::CohenD(data$propAccept_1, data$propAccept_2)})
+prepost$Perms <- sapply(temp, function(data) {permute(data$propAccept_1, data$propAccept_2, paired = T, simple = T)})
 ```
 
 The plot below shows that acceptance rates before and after the mid-point were mostly consistent, although it was more likely for participants to accept less in the second half of the experiment. **NOTE: The lines of means in the scatterplot are calculated by first computing the mean acceptances per block, then averaging those for blocks pre/post break. That's how they match the second half of the right plot, but the linear model is computed with the overall proportion acceptances pre-post, which gives slightly different mean estimates (which is also the reason for slight mean differences in proportion accepted between these and the boxplot in 16.2.1.)**
