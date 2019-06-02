@@ -1231,6 +1231,7 @@ The gamma optimization search space was bound by extreme choice values. For exam
 summaryOC <- list()
 summaryOC$all <- dataAll %>%
                  filter(Choice < 2) %>%
+                 rename(Offer = Reward) %>%
                  group_by(Cost, SubjID) %>%
                  do(optimizeOCModel(., simplify = T)) %>%
                  ungroup()
