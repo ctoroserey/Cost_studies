@@ -280,7 +280,7 @@ optimizeOCModel <- function(Data, Algorithm = "NLOPT_LN_NEWUOA", simplify = F, o
   
   # Prep data
   handling <- Data$Handling
-  reward <- Data$Offer
+  ifelse(is.null(try(dataAll$Offer)), reward <- dataAll$Reward, reward <- dataAll$Offer) #reward <- Data$Offer (FIX THIS BY CALLING ALL COLUMNS REWARD, NOT OFFER)
   choice <- Data$Choice
   
   # Prep list of results to be returned
@@ -407,9 +407,10 @@ betaMatrix <- function(model, rearrange = NA) {
 ### data loading and cleaning up
 # recent addition: turning forced travels to acceptances, as they reflect a preference for that trial
 # rawChoice will be used to compute the # of mistakes
+# NOTE: P389 IS DUPLICATED. FIND OUT REAL ID # FOR ONE OF THEM.
 setwd("./data")
 files <- dir(pattern = '_log.csv')
-nSubjs <- length(files)
+nSubj <- length(files)
 
 dataAll <- tibble(SubjID = files) %>%
   mutate(contents = map(SubjID, ~ read_csv(., col_types = cols())))  %>%
@@ -1017,7 +1018,7 @@ prepost$propBlocks <- dataAll %>%
                          summarise(propAccept_subj = mean(Choice)) %>%
                          group_by(Cost, Block) %>%
                          summarize(propAccept = mean(propAccept_subj),
-                                   seAccept = sd(propAccept_subj)/sqrt(nSubjs)) %>%
+                                   seAccept = sd(propAccept_subj)/sqrt(nSubj)) %>%
                          ggplot(aes(Block, propAccept, color = Cost)) +
                            geom_point(size = 2) +
                            geom_errorbar(aes(ymin = propAccept - seAccept, ymax = propAccept + seAccept, color = Cost), width = 0.1) +
@@ -1058,7 +1059,7 @@ Now let's divide them by reward and handling amounts. The plots below show that 
 #   summarise(pAccept = mean(Choice)) %>%
 #   group_by(Cost, Reward) %>%
 #   summarise(propAccept = mean(pAccept),
-#             SE = sd(pAccept) / sqrt(nSubjs)) %>%
+#             SE = sd(pAccept) / sqrt(nSubj)) %>%
 #   ungroup() %>%
 #   mutate(Reward = ifelse(Reward == 20, 12, Reward)) %>%
 #   ggplot(aes(Reward, propAccept, color = Cost)) +
@@ -1087,7 +1088,7 @@ Now let's divide them by reward and handling amounts. The plots below show that 
 #   summarise(pAccept = mean(Choice)) %>%
 #   group_by(Cost, Reward) %>%
 #   summarise(propAccept = mean(pAccept),
-#             SE = sd(pAccept) / sqrt(nSubjs)) %>%
+#             SE = sd(pAccept) / sqrt(nSubj)) %>%
 #   ungroup() %>%
 #   mutate(Reward = ifelse(Reward == 20, 12, Reward)) %>%
 #   ggplot(aes(Reward, propAccept, color = Cost)) +
@@ -1119,7 +1120,7 @@ dataAll %>%
   summarise(pAccept = mean(Choice)) %>%
   group_by(Half, Cost, Reward) %>%
   summarise(propAccept = mean(pAccept),
-            SE = sd(pAccept) / sqrt(nSubjs)) %>%
+            SE = sd(pAccept) / sqrt(nSubj)) %>%
   ungroup() %>%
   mutate(Reward = ifelse(Reward == 20, 12, Reward)) %>%
   ggplot(aes(Reward, propAccept, color = Cost)) +
