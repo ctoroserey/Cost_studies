@@ -410,7 +410,6 @@ betaMatrix <- function(model, rearrange = NA) {
 # NOTE: P389 IS DUPLICATED. FIND OUT REAL ID # FOR ONE OF THEM.
 setwd("./data")
 files <- dir(pattern = '_log.csv')
-nSubj <- length(files)
 
 dataAll <- tibble(SubjID = files) %>%
   mutate(contents = map(SubjID, ~ read_csv(., col_types = cols())))  %>%
@@ -433,7 +432,7 @@ dataAll <- tibble(SubjID = files) %>%
 
 # get a simple subject list and the number of subjects
 subjList <- unique(dataAll$SubjID)
-nSubj <- length(subjList)
+nSubjs <- length(subjList)
 
 ```
 
@@ -524,11 +523,11 @@ The plot shows the pooled coefficients across subjects for the effect of each pr
 ``` {r 16.1.2., echo = FALSE, include = FALSE}
 # add an AR regressor to track recent quits
 logisRHAR <- dataAll %>%
-  filter(Choice < 2) %>%
-  group_by(SubjID) %>%
-  mutate(AR = seqQuits(Choice)) %>%
-  plyr::dlply("SubjID", identity) %>%
-  lapply(function(data) {glm(Choice ~ Handling + Reward + AR, data = data, family = "binomial")}) 
+              filter(Choice < 2) %>%
+              group_by(SubjID) %>%
+              mutate(AR = seqQuits(Choice)) %>%
+              plyr::dlply("SubjID", identity) %>%
+              lapply(function(data) {glm(Choice ~ Handling + Reward + AR, data = data, family = "binomial")}) 
   
 # Rank sums
 rankAR <- logisRHAR %>% 
@@ -540,11 +539,9 @@ AR_CIs <- sapply(logisRHAR, function(x) {tryCatch(confint(x)[4, ], error = funct
   t() %>% 
   apply(1, function(x) !(x[1] <= 0 & x[2] >= 0))
 
-# Around 10% seemed to have been influenced by previous quitting
-prcntAR_effects <- mean(AR_CIs) * 100
 ```
 
-To measure the significance of each subject's autoregressive coefficient, we computed its CI and checked how many contained zero. By this measure, around `r round(prcntAR_effects)` percent of our participants seemed to have been influenced by recent quitting. However, the autoregressive predictor did not preclude the effect of the remaininig experimental parameters.
+To measure the significance of each subject's autoregressive coefficient, we computed its CI and checked how many contained zero. By this measure, `r sum(AR_CIs)` out of `r nSubjs` of our participants seemed to have been influenced by recent quitting. However, the autoregressive predictor did not preclude the effect of the remaininig experimental parameters.
 
 \bigskip
 
@@ -1018,7 +1015,7 @@ prepost$propBlocks <- dataAll %>%
                          summarise(propAccept_subj = mean(Choice)) %>%
                          group_by(Cost, Block) %>%
                          summarize(propAccept = mean(propAccept_subj),
-                                   seAccept = sd(propAccept_subj)/sqrt(nSubj)) %>%
+                                   seAccept = sd(propAccept_subj)/sqrt(nSubjs)) %>%
                          ggplot(aes(Block, propAccept, color = Cost)) +
                            geom_point(size = 2) +
                            geom_errorbar(aes(ymin = propAccept - seAccept, ymax = propAccept + seAccept, color = Cost), width = 0.1) +
@@ -1059,7 +1056,7 @@ Now let's divide them by reward and handling amounts. The plots below show that 
 #   summarise(pAccept = mean(Choice)) %>%
 #   group_by(Cost, Reward) %>%
 #   summarise(propAccept = mean(pAccept),
-#             SE = sd(pAccept) / sqrt(nSubj)) %>%
+#             SE = sd(pAccept) / sqrt(nSubjs)) %>%
 #   ungroup() %>%
 #   mutate(Reward = ifelse(Reward == 20, 12, Reward)) %>%
 #   ggplot(aes(Reward, propAccept, color = Cost)) +
@@ -1088,7 +1085,7 @@ Now let's divide them by reward and handling amounts. The plots below show that 
 #   summarise(pAccept = mean(Choice)) %>%
 #   group_by(Cost, Reward) %>%
 #   summarise(propAccept = mean(pAccept),
-#             SE = sd(pAccept) / sqrt(nSubj)) %>%
+#             SE = sd(pAccept) / sqrt(nSubjs)) %>%
 #   ungroup() %>%
 #   mutate(Reward = ifelse(Reward == 20, 12, Reward)) %>%
 #   ggplot(aes(Reward, propAccept, color = Cost)) +
@@ -1120,7 +1117,7 @@ dataAll %>%
   summarise(pAccept = mean(Choice)) %>%
   group_by(Half, Cost, Reward) %>%
   summarise(propAccept = mean(pAccept),
-            SE = sd(pAccept) / sqrt(nSubj)) %>%
+            SE = sd(pAccept) / sqrt(nSubjs)) %>%
   ungroup() %>%
   mutate(Reward = ifelse(Reward == 20, 12, Reward)) %>%
   ggplot(aes(Reward, propAccept, color = Cost)) +
