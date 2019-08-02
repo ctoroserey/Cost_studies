@@ -909,22 +909,50 @@ propFails <- dataAll %>%
   group_by(Cost) %>% 
   summarise(meanFT = mean(propFails))
 
-# Reaction times ECDFs including offer and in-trial quits
-(RTs <- dataAll %>%
-  #mutate(RT = ifelse(Choice != 0, RT + 2, RT)) %>%
-  filter(rawChoice < 2) %>% # change this to 1 to reproduce the original plot, since it would only plot the cdf of quits
-  ggplot(aes(RT, color = Cost)) + 
-    #stat_ecdf(lwd = 1.2, geom = "smooth") +
-    geom_line(aes(y = 1 - ..y..), stat = 'ecdf', lwd = 1.5) +
-    geom_vline(xintercept = 1, lty = 2) + # end of the grace period for physical trials
-    scale_color_manual(values = cols) +
-    scale_x_continuous(breaks = seq(14)) +
-    labs(x = "Time in Trial", y = "Proportion Completed") +
-    theme(panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(),
-      panel.background = element_blank(),
-      axis.line = element_line(colour = "black"),
-      text = element_text(size = 16)))
+# # Reaction times ECDFs including offer and in-trial quits
+# (RTs <- dataAll %>%
+#   #mutate(RT = ifelse(Choice != 0, RT + 2, RT)) %>%
+#   filter(rawChoice < 2) %>% # change this to 1 to reproduce the original plot, since it would only plot the cdf of quits
+#   ggplot(aes(RT, color = Cost)) + 
+#     #stat_ecdf(lwd = 1.2, geom = "smooth") +
+#     geom_line(aes(y = 1 - ..y..), stat = 'ecdf', lwd = 1.5) +
+#     geom_vline(xintercept = 1, lty = 2) + # end of the grace period for physical trials
+#     scale_color_manual(values = cols) +
+#     scale_x_continuous(breaks = seq(14)) +
+#     labs(x = "Time in Trial", y = "Proportion Completed") +
+#     theme(panel.grid.major = element_blank(),
+#       panel.grid.minor = element_blank(),
+#       panel.background = element_blank(),
+#       axis.line = element_line(colour = "black"),
+#       text = element_text(size = 16)))
+
+# NEW VERSION OF SURVIVAL. BUT STILL NEEDS A BIT OF WORK. ALSO, CHECK THAT RT > 14s
+
+library(survival)
+library(ggfortify)
+
+# this version of a survival curve forces all successful acceptances to have an RT of 14
+# that's to avoid jumps from 2s to 10s to 14s
+# 1 - Choice is to reverse the coding of choices, since the survival package assumes 0 = censor?
+temp <- dataAll %>%
+    filter(rawChoice < 2) %>% 
+    mutate(#RT = ifelse(Choice == 1, 14, RT),
+           Choice = 1 - Choice) 
+
+survData <- survfit(Surv(RT, Choice) ~ Cost, data = temp)
+
+autoplot(survData) +
+  geom_vline(xintercept = 1, lty = 2) + # end of the grace period for physical trials
+  scale_color_manual(values = cols) +
+  scale_fill_manual(values = cols) +
+  scale_x_continuous(breaks = seq(14)) +
+  ylim(0, 1) +
+  labs(x = "Time in Trial", y = "Proportion Completed") +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        text = element_text(size = 16))
 
 ```
 
