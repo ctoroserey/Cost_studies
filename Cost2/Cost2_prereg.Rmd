@@ -110,7 +110,7 @@ bootstrap <- function(group = 1, statType = mean, B = 5000){
 }
 
 # plot logistic (for the prop complete test, mainly, but it can be easily expanded for more flexibility in n-params)
-plotLogis <- function(coeffs = 1, group = "Cognitive", handling = 1:14, reward = 1:20, xAxis = "Reward", plotType = lines, color = "black", lType = 1, pchType = 16){
+plotLogis <- function(coeffs = 1, group = "Cognitive", handling = 1:14, reward = 1:20, xAxis = "Offer", plotType = lines, color = "black", lType = 1, pchType = 16){
   
     
     # divide into relevant coefficients (assumes logisComb was the best model)
@@ -125,13 +125,13 @@ plotLogis <- function(coeffs = 1, group = "Cognitive", handling = 1:14, reward =
     #phys <- numeric()
     
     # now the parameters
-    label = "Reward Amount"
+    label = "Offer Amount"
     if (group == "Cognitive"){cog = 1} else {cog = 0}
     if (group == "Phys"){phys = 1} else {phys = 0}
     if (group == "Easy") {easy = 1} else {easy = 0}
-    if (xAxis == "Reward"){
+    if (xAxis == "Offer"){
         xAxis = reward 
-        label = "Reward Amount" 
+        label = "Offer Amount" 
     } else {
         xAxis = handling
         label = "Handling Time"
@@ -217,7 +217,7 @@ summarizeData <- function(Data = waitData, nSubs = nSubsW, type = "Wait"){
         tempSummary[subj,2] <- mean(tempChoice)
       
         # earnings
-        tempSummary[subj,3] <- sum(Data[[subj]]$Reward[tempChoice==1])
+        tempSummary[subj,3] <- sum(Data[[subj]]$Offer[tempChoice==1])
         
         # RTs
         tempSummary[subj,4] <- median(Data[[subj]]$`Choice RT`[tempChoice==0])
@@ -240,7 +240,7 @@ summarizeData <- function(Data = waitData, nSubs = nSubsW, type = "Wait"){
         tempSummary[subj,2] <- mean(tempChoice)
         
         # earnings
-        tempSummary[subj,3] <- sum(Data[[subj]]$Reward[tempChoice==1])
+        tempSummary[subj,3] <- sum(Data[[subj]]$Offer[tempChoice==1])
         
         # RTs
         tempSummary[subj,4] <- median(Data[[subj]]$RT[tempChoice==0])
@@ -426,8 +426,8 @@ dataAll <- tibble(SubjID = files) %>%
          Half = ifelse(Block < 4, "Half_1", "Half_2"),
          Cost = factor(Cost, levels = c("Physical", "Cognitive", "Wait", "Easy")),
          optimal = case_when(
-          (Handling == 10 & Reward < 8) ~ 0,
-          (Handling == 14 & Reward < 20) ~ 0,
+          (Handling == 10 & Offer < 8) ~ 0,
+          (Handling == 14 & Offer < 20) ~ 0,
           TRUE ~ 1
          )) 
 
@@ -493,15 +493,15 @@ Choices will be well fit by a computational model in which the subjective opport
 logisRH <- dataAll %>%
   filter(Choice < 2) %>%
   plyr::dlply("SubjID", identity) %>%
-  lapply(function(data) {glm(Choice ~ Handling + Reward, data = data, family = "binomial")}) %>%
+  lapply(function(data) {glm(Choice ~ Handling + Offer, data = data, family = "binomial")}) %>%
   sapply(coefficients)
 
 # Rank sum tests
 rankHand <- wilcox.test(logisRH["Handling", ])
-rankReward <- wilcox.test(logisRH["Reward", ])
+rankOffer <- wilcox.test(logisRH["Offer", ])
 
 # Plot coeffs
-temp <- melt(logisRH[c("Handling", "Reward"), ])
+temp <- melt(logisRH[c("Handling", "Offer"), ])
 qplot(data = temp, x = Var1, y = value, geom = "boxplot") + 
   labs(x = "", y = "Coefficients") +
   geom_hline(yintercept = 0, linetype = "dashed") +
@@ -513,7 +513,7 @@ qplot(data = temp, x = Var1, y = value, geom = "boxplot") +
        text = element_text(size = 16))
 ```
 
-The plot shows the pooled coefficients across subjects for the effect of each predictor. The results show the expected discounting effect of increasing the handling time, as well as the increase in acceptance likelihood as a function of reward increments. We found that these coefficients were significantly different from zero for both handling (V = `r rankHand$statistic`, p `r ifelse(rankHand$p.value < 0.001, "< 0.001", paste("=", round(rankHand$p.value, digits = 2)))`) and reward (V = `r rankReward$statistic`, p `r ifelse(rankReward$p.value < 0.001, "< 0.001", paste("=", round(rankHand$p.value, digits = 2)))`) regardless of cost condition.
+The plot shows the pooled coefficients across subjects for the effect of each predictor. The results show the expected discounting effect of increasing the handling time, as well as the increase in acceptance likelihood as a function of reward increments. We found that these coefficients were significantly different from zero for both handling (V = `r rankHand$statistic`, p `r ifelse(rankHand$p.value < 0.001, "< 0.001", paste("=", round(rankHand$p.value, digits = 2)))`) and reward (V = `r rankOffer$statistic`, p `r ifelse(rankOffer$p.value < 0.001, "< 0.001", paste("=", round(rankHand$p.value, digits = 2)))`) regardless of cost condition.
 
 \bigskip
 
@@ -528,7 +528,7 @@ logisRHAR <- dataAll %>%
               group_by(SubjID) %>%
               mutate(AR = seqQuits(Choice)) %>%
               plyr::dlply("SubjID", identity) %>%
-              lapply(function(data) {glm(Choice ~ Handling + Reward + AR, data = data, family = "binomial")}) 
+              lapply(function(data) {glm(Choice ~ Handling + Offer + AR, data = data, family = "binomial")}) 
   
 # Rank sums
 rankAR <- logisRHAR %>% 
@@ -555,7 +555,7 @@ To measure the significance of each subject's autoregressive coefficient, we com
 temp <- dataAll %>%
   filter(rawChoice < 2) %>%
   group_by(SubjID, Cost) %>%
-  summarise(Earnings = sum(Reward[Choice == 1] / 100),
+  summarise(Earnings = sum(Offer[Choice == 1] / 100),
             pComplete = mean(Choice)) %>%
   mutate(pComplete2 = pComplete^2) %>%
   ungroup()
@@ -600,14 +600,14 @@ pander(lmEarn, style = "rmarkdown")
 # correct pvalues with FDR
 temp <- dataAll %>%
   filter(Choice < 2) %>%
-  group_by(SubjID, Handling, Reward, Cost) %>%
+  group_by(SubjID, Handling, Offer, Cost) %>%
   summarise(pAccept = mean(Choice)) %>%
   mutate(optimal = case_when(
-          (Handling == 10 & Reward < 8) ~ 0,
-          (Handling == 14 & Reward < 20) ~ 0,
+          (Handling == 10 & Offer < 8) ~ 0,
+          (Handling == 14 & Offer < 20) ~ 0,
           TRUE ~ 1
         )) %>% 
-  group_by(Handling, Reward, Cost) %>%
+  group_by(Handling, Offer, Cost) %>%
   summarise(meanAccept = mean(pAccept),
             sdAccept = sd(pAccept),
             optimal = unique(optimal),
@@ -637,7 +637,7 @@ temp <- dataAll %>%
         filter(Choice < 2) %>%
         mutate(Cost = factor(Cost, levels = list("Physical", "Cognitive", "Wait", "Easy"))) %>%
         group_by(SubjID, Cost) %>%
-        summarise(Earnings = sum(Reward[rawChoice == 1] / 100),
+        summarise(Earnings = sum(Offer[rawChoice == 1] / 100),
                   pAccept = mean(Choice))
 
 ## formal testing 
@@ -718,18 +718,18 @@ The plots show that subjects in the wait condition accepted the least and earned
 
 ### 16.2.2.
 
-*In order to further look at the effect of delay, work, and rewards, we will perform a repeated measures ANOVA on the proportion completed for each combination of factors. Reward and handling time will be within-subject factors, and condition a between-subjects factor. In support of hypotheses 4.1. and 4.2., we anticipate significant main effects of handling time, reward, and cost condition, but no interactions.*
+*In order to further look at the effect of delay, work, and rewards, we will perform a repeated measures ANOVA on the proportion completed for each combination of factors. Offer and handling time will be within-subject factors, and condition a between-subjects factor. In support of hypotheses 4.1. and 4.2., we anticipate significant main effects of handling time, reward, and cost condition, but no interactions.*
   
 ``` {r 16.2.2. rmANOVA, echo=FALSE,fig.align="center",fig.width=5,fig.height=4, results = 'asis'}
 temp <- dataAll %>%
         filter(Choice < 2) %>%
-        group_by(SubjID, Cost, Handling, Reward) %>%
+        group_by(SubjID, Cost, Handling, Offer) %>%
         summarise(pAccept = mean(Choice))
 
 ## REPEATED MEASURES ANOVA
 # I think I like this the most
-prop.aov <- with(temp, aov(pAccept ~ factor(Cost) * Handling * Reward + 
-                                 Error(SubjID / (Handling * Reward))))
+prop.aov <- with(temp, aov(pAccept ~ factor(Cost) * Handling * Offer + 
+                                 Error(SubjID / (Handling * Offer))))
 
 ## NOTES ON RESULTS
 # According to the logistic fit, there are main effects for all predictors, but no interactions. It also says that the overall odds for the wait group to accept versus the effort is around 16%. Similarly, increasing the handling time results in a decrease in the multiplicative odds of ~25%. Increments in reward increase the odds of acceptance by ~40%.
@@ -741,19 +741,19 @@ The plot below shows the mean proportion of acceptances (± SEM) per combination
 # prep data to plot the p(accept) based on reward, handling time and cost type
 trueProp <- dataAll %>%
         filter(Choice < 2) %>%
-        group_by(SubjID, Cost, Handling, Reward, optimal) %>%
+        group_by(SubjID, Cost, Handling, Offer, optimal) %>%
         summarise(pAccept = mean(Choice)) %>%
-        group_by(Cost, Handling, Reward, optimal) %>%
+        group_by(Cost, Handling, Offer, optimal) %>%
         summarise(meanComplete = mean(pAccept),
                   SE = sd(pAccept) / sqrt(length(pAccept)))
 
 # and plot
-(a1 <- ggplot(data = trueProp, aes(interaction(Reward, Handling), meanComplete, color = Cost)) + 
+(a1 <- ggplot(data = trueProp, aes(interaction(Offer, Handling), meanComplete, color = Cost)) + 
         geom_point(size = 3) + 
         geom_errorbar(aes(ymin = meanComplete - SE, ymax = meanComplete + SE), width = 0.2, size = 1) +
         geom_line(aes(group = interaction(Handling, Cost)), size = 1) +
         geom_point(aes(y = round(optimal)), shape = 21, fill = "grey75", color = "grey30", size = 3, show.legend = F) +
-        labs(x = "Reward.Handling", y = "Proportion Accepted") +
+        labs(x = "Offer.Handling", y = "Proportion Accepted") +
         scale_color_manual(values = cols) +
         theme(legend.key = element_blank(),
               panel.grid.major = element_blank(), 
@@ -785,7 +785,7 @@ pander(x, style = "rmarkdown", split.table = 110)
 mixLogis_main <- list()
 mixData <- dataAll %>%
   filter(Choice < 2) %>%
-  group_by(SubjID, Cost, Handling, Reward) %>%
+  group_by(SubjID, Cost, Handling, Offer) %>%
   summarize(totalChoices = length(Choice),
             totalAccepted = sum(Choice),
             totalQuits = sum(Choice == 0),
@@ -796,13 +796,13 @@ mixData <- dataAll %>%
 # model with a random intercept and cost-type slope, then relevel the cost to get all pairwise comparisons
 # the correct way to model a logistic with proportions as dependent vars is by prividing n of hits and quits as a matrix
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait"))
-mixLogis_main$Wait <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixLogis_main$Wait <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (Cost | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Cognitive"))
-mixLogis_main$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixLogis_main$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (Cost | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
-mixLogis_main$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixLogis_main$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (Cost | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Easy"))
-mixLogis_main$Easy <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixLogis_main$Easy <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (Cost | SubjID), family = "binomial", data = mixData)
 
 # matrix of coefficients and pvalues
 rearrange <- c("Cognitive", "Easy", "Wait", "Physical") # to kinda match the order in Cost 3
@@ -865,9 +865,9 @@ mixLogis_compare <- list()
 mixLogis_compare$Base <- glmer(cbind(totalAccepted, totalQuits) ~ 1 + (1 | SubjID), family = "binomial", data = mixData) # intercept only
 mixLogis_compare$Cost <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + (1 | SubjID), family = "binomial", data = mixData)
 mixLogis_compare$Handling <- glmer(cbind(totalAccepted, totalQuits) ~ Handling + (1 | SubjID), family = "binomial", data = mixData)
-mixLogis_compare$Reward <- glmer(cbind(totalAccepted, totalQuits) ~ Reward + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_compare$Offer <- glmer(cbind(totalAccepted, totalQuits) ~ Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixLogis_compare$AllMain <- mixLogis_main$Wait
-mixLogis_compare$Interaction <- glmer(cbind(totalAccepted, totalQuits) ~ Cost * Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixLogis_compare$Interaction <- glmer(cbind(totalAccepted, totalQuits) ~ Cost * Offer + (Cost | SubjID), family = "binomial", data = mixData)
 
 # Model selection 
 abicLogis_compare <- data.frame(Model = names(mixLogis_compare),
@@ -1081,14 +1081,14 @@ Now let's divide them by reward and handling amounts. The plots below show that 
 #   filter(Choice < 2, Half == "Half_1") %>%
 #   group_by(SubjID) %>%
 #   filter(Handling == 10) %>%
-#   group_by(SubjID, Cost, Reward) %>%
+#   group_by(SubjID, Cost, Offer) %>%
 #   summarise(pAccept = mean(Choice)) %>%
-#   group_by(Cost, Reward) %>%
+#   group_by(Cost, Offer) %>%
 #   summarise(propAccept = mean(pAccept),
 #             SE = sd(pAccept) / sqrt(nSubjs)) %>%
 #   ungroup() %>%
-#   mutate(Reward = ifelse(Reward == 20, 12, Reward)) %>%
-#   ggplot(aes(Reward, propAccept, color = Cost)) +
+#   mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%
+#   ggplot(aes(Offer, propAccept, color = Cost)) +
 #     geom_point(size = 3, show.legend = F) +
 #     geom_line(show.legend = F) +
 #     scale_color_manual(values = cols) +
@@ -1110,14 +1110,14 @@ Now let's divide them by reward and handling amounts. The plots below show that 
 #   filter(Choice < 2, Half == "Half_2") %>%
 #   group_by(SubjID) %>%
 #   filter(Handling == 10) %>%
-#   group_by(SubjID, Cost, Reward) %>%
+#   group_by(SubjID, Cost, Offer) %>%
 #   summarise(pAccept = mean(Choice)) %>%
-#   group_by(Cost, Reward) %>%
+#   group_by(Cost, Offer) %>%
 #   summarise(propAccept = mean(pAccept),
 #             SE = sd(pAccept) / sqrt(nSubjs)) %>%
 #   ungroup() %>%
-#   mutate(Reward = ifelse(Reward == 20, 12, Reward)) %>%
-#   ggplot(aes(Reward, propAccept, color = Cost)) +
+#   mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%
+#   ggplot(aes(Offer, propAccept, color = Cost)) +
 #     geom_point(size = 3, show.legend = F) +
 #     geom_line(show.legend = F) +
 #     scale_color_manual(values = cols) +
@@ -1142,14 +1142,14 @@ dataAll %>%
   group_by(SubjID) %>%
   filter(Handling == 10) %>%
   mutate(Half = ifelse(Half == "Half_1", "First Block", "Last Block")) %>%
-  group_by(SubjID, Half, Cost, Reward) %>%
+  group_by(SubjID, Half, Cost, Offer) %>%
   summarise(pAccept = mean(Choice)) %>%
-  group_by(Half, Cost, Reward) %>%
+  group_by(Half, Cost, Offer) %>%
   summarise(propAccept = mean(pAccept),
             SE = sd(pAccept) / sqrt(nSubjs)) %>%
   ungroup() %>%
-  mutate(Reward = ifelse(Reward == 20, 12, Reward)) %>%
-  ggplot(aes(Reward, propAccept, color = Cost)) +
+  mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%
+  ggplot(aes(Offer, propAccept, color = Cost)) +
     geom_point(size = 3, show.legend = F) +
     geom_line(size = 1, show.legend = F) +
     scale_color_manual(values = cols) +
@@ -1178,37 +1178,37 @@ This prompted the question of whether fitting the mixed logistic model could con
 mixLogis_pre <- list()
 mixData <- dataAll %>%
   filter(Half == "Half_1") %>%
-  group_by(SubjID, Cost, Handling, Reward) %>%
+  group_by(SubjID, Cost, Handling, Offer) %>%
   summarize(totalChoices = length(Choice),
             totalAccepted = sum(Choice),
             totalQuits = sum(Choice == 0),
             propAccepted = mean(Choice))
 
-mixLogis_pre$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixLogis_pre$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (Cost | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait"))
-mixLogis_pre$Wait <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixLogis_pre$Wait <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (Cost | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Easy"))
-mixLogis_pre$Easy <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixLogis_pre$Easy <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (Cost | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Cognitive"))
-mixLogis_pre$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixLogis_pre$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (Cost | SubjID), family = "binomial", data = mixData)
 
 # mixed logistic for the second half
 mixLogis_post <- list()
 mixData <- dataAll %>%
   filter(Half == "Half_2") %>%
-  group_by(SubjID, Cost, Handling, Reward) %>%
+  group_by(SubjID, Cost, Handling, Offer) %>%
   summarize(totalChoices = length(Choice),
             totalAccepted = sum(Choice),
             totalQuits = sum(Choice == 0),
             propAccepted = mean(Choice))
 
-mixLogis_post$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixLogis_post$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (Cost | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait"))
-mixLogis_post$Wait <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixLogis_post$Wait <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (Cost | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Easy"))
-mixLogis_post$Easy <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixLogis_post$Easy <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (Cost | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Cognitive"))
-mixLogis_post$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Reward + (Cost | SubjID), family = "binomial", data = mixData)
+mixLogis_post$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (Cost | SubjID), family = "binomial", data = mixData)
 
 
 ## now produce a summary matrix
@@ -1258,7 +1258,7 @@ The gamma optimization search space was bound by extreme choice values. For exam
 summaryOC <- list()
 summaryOC$all <- dataAll %>%
                  filter(Choice < 2) %>%
-                 rename(Offer = Reward) %>%
+                 rename(Offer = Offer) %>%
                  group_by(Cost, SubjID) %>%
                  do(optimizeOCModel(., simplify = T)) %>%
                  ungroup()
@@ -1292,7 +1292,7 @@ As can be seen below, the gamma parameter from the OC model was able to predict 
 # Compute the OC for pre-midpoint
 summaryOC$pre <- dataAll %>%
                  filter(Choice < 2, Half == "Half_1") %>%
-                 rename(Offer = Reward) %>%
+                 rename(Offer = Offer) %>%
                  group_by(Cost, SubjID) %>%
                  do(optimizeOCModel(., simplify = T)) %>%
                  ungroup() %>%
@@ -1301,7 +1301,7 @@ summaryOC$pre <- dataAll %>%
 # let's add the gammas to the second half data and estimate prop predicted on the second half
 summaryOC$predicted <- dataAll %>%
                  filter(Choice < 2, Half == "Half_2") %>%
-                 rename(Offer = Reward) %>%
+                 rename(Offer = Offer) %>%
                  group_by(Cost, SubjID) %>%
                  left_join(summaryOC$pre) %>%
                  mutate(OC = Handling * Gamma,
@@ -1398,14 +1398,14 @@ corrplot(OCanova$ES,
 #     Handling[1] == 10 ~ "Ten",
 #     Handling[1] == 14 ~ "Fourteen",
 #   )) %>%
-#   group_by(SubjID, Cost, Handling, Reward, BlockOrder) %>%
+#   group_by(SubjID, Cost, Handling, Offer, BlockOrder) %>%
 #   summarise(pAccept = mean(Choice)) %>%
-#   ggplot(aes(interaction(Reward, Handling), pAccept, linetype = BlockOrder, color = BlockOrder)) + 
+#   ggplot(aes(interaction(Offer, Handling), pAccept, linetype = BlockOrder, color = BlockOrder)) + 
 #     geom_point(size = 3) + 
 #     #geom_errorbar(aes(ymin = meanComplete - SE, ymax = meanComplete + SE), width = 0.2, size = 1) +
 #     geom_line(aes(group = interaction(Handling, SubjID)), size = 1) +
 #     #geom_point(aes(y = round(optimal)), shape = 21, fill = "grey75", color = "grey30", size = 3, show.legend = F) +
-#     labs(x = "Reward.Handling", y = "Proportion Accepted") +
+#     labs(x = "Offer.Handling", y = "Proportion Accepted") +
 #     scale_color_manual(values = cols) +
 #     facet_wrap(vars(Cost), ncol = 2) +
 #     theme(legend.key = element_blank(),
@@ -1423,14 +1423,14 @@ corrplot(OCanova$ES,
 #     Handling[1] == 10 ~ "Ten",
 #     Handling[1] == 14 ~ "Fourteen",
 #   )) %>%
-#   group_by(Cost, Handling, Reward, FirstBlock) %>%
+#   group_by(Cost, Handling, Offer, FirstBlock) %>%
 #   summarise(pAccept = mean(Choice),
 #             SE = sd(Choice) / sqrt(length(Choice))) %>%
-#   ggplot(aes(interaction(Reward, Handling), pAccept, color = Cost)) + 
+#   ggplot(aes(interaction(Offer, Handling), pAccept, color = Cost)) + 
 #     geom_point(size = 3) + 
 #     geom_errorbar(aes(ymin = pAccept - SE, ymax = pAccept + SE), width = 0.4, size = 1) +
 #     geom_line(aes(group = interaction(Handling, Cost)), size = 1) +
-#     labs(x = "Reward.Handling", y = "Proportion Accepted") +
+#     labs(x = "Offer.Handling", y = "Proportion Accepted") +
 #     scale_color_manual(values = cols) +
 #     facet_wrap(vars(FirstBlock), ncol = 3) +
 #     theme(legend.key = element_blank(),
@@ -1449,14 +1449,14 @@ corrplot(OCanova$ES,
 #     Handling[1] == 10 ~ "Ten",
 #     Handling[1] == 14 ~ "Fourteen",
 #   )) %>%
-#   group_by(Cost, Handling, Reward, FirstBlock, Half) %>%
+#   group_by(Cost, Handling, Offer, FirstBlock, Half) %>%
 #   summarise(pAccept = mean(Choice),
 #             SE = sd(Choice) / sqrt(length(Choice))) %>%
-#   ggplot(aes(interaction(Reward, Handling), pAccept, color = Cost)) + 
+#   ggplot(aes(interaction(Offer, Handling), pAccept, color = Cost)) + 
 #     geom_point(size = 3) + 
 #     geom_errorbar(aes(ymin = pAccept - SE, ymax = pAccept + SE), width = 0.4, size = 1) +
 #     geom_line(aes(group = interaction(Handling, Cost)), size = 1) +
-#     labs(x = "Reward.Handling", y = "Proportion Accepted") +
+#     labs(x = "Offer.Handling", y = "Proportion Accepted") +
 #     scale_color_manual(values = cols) +
 #     facet_wrap(vars(Half, FirstBlock), ncol = 3) +
 #     theme(legend.key = element_blank(),
@@ -1588,7 +1588,7 @@ Sample sizes were determined by means of power analysis (repeated measures ANOVA
 		
 9.1.2. Handling and travel times. These will dictate how long each trial is. The "handling time" governs how long it is necessary to wait or work to obtain a reward if a trial is accepted. The "travel time" governs how long the inter-trial interval will be, regardless of whether the trial is accepted. Participants will know that the handling time will be always 10 seconds, and the travel time 6 seconds (matching one of the between-group experiment conditions). 
 		
-9.1.3. Reward magnitude, manipulated within-subject across individual trials. On each trial, participants will learn the amount of money they can earn if they complete the trial (i.e. 4, 8, or 20 cents). The amounts will be sampled uniformly, while guaranteeing that each participant experiences each amount at least twice during each block.
+9.1.3. Offer magnitude, manipulated within-subject across individual trials. On each trial, participants will learn the amount of money they can earn if they complete the trial (i.e. 4, 8, or 20 cents). The amounts will be sampled uniformly, while guaranteeing that each participant experiences each amount at least twice during each block.
 
 
 ## 10. Measured variables 
@@ -1636,14 +1636,14 @@ No blinding is involved in this study.
 
 ## 14. Study design 
 
-The present study complements our previous one, which evaluated cost types through a between-group design. Many of the details remain the same. However, this time every participant will experience all forms of cost (delay, physical effort, and cognitive effort). Delay trials will be intermixed with both physical and cognitive trials, providing a common condition to compare these effortful costs. On each trial, participants will have the opportunity to either wait or work for 10 seconds (the "handling time") in order to earn a reward; alternatively, they can quit by pressing the space bar and skip to the next trial (which incurs a 6 second travel time). Two types of trial combinations (physical/wait and cognitive/wait) will be experienced three times by each participant in 7-minute-long, interleaved blocks. Reward amounts can be 4, 8, or 20 cents, uniformly distributed. Timing information will be disclosed at the beginning of each block, and reward prospects displayed before each trial begins. 
+The present study complements our previous one, which evaluated cost types through a between-group design. Many of the details remain the same. However, this time every participant will experience all forms of cost (delay, physical effort, and cognitive effort). Delay trials will be intermixed with both physical and cognitive trials, providing a common condition to compare these effortful costs. On each trial, participants will have the opportunity to either wait or work for 10 seconds (the "handling time") in order to earn a reward; alternatively, they can quit by pressing the space bar and skip to the next trial (which incurs a 6 second travel time). Two types of trial combinations (physical/wait and cognitive/wait) will be experienced three times by each participant in 7-minute-long, interleaved blocks. Offer amounts can be 4, 8, or 20 cents, uniformly distributed. Timing information will be disclosed at the beginning of each block, and reward prospects displayed before each trial begins. 
 
 ## 15. Randomization
 
 ### 15.1. Block type 
 Each block will contain unfilled delay trials and trials of one effortful cost type (se 14.1). Blocks with each cost type will be interleaved, and participants will be assigned to one of two orders: beginning with a cognitive/wait or a physical/wait block. A row will be assigned to subject IDs prior to recruitment, ensuring that each order is experienced equally often. Participants will be offered a break after completing three out of the six blocks. 
 
-### 15.2. Rewards and cost type 
+### 15.2. Offers and cost type 
 Participants can earn 4, 8, or 20 cents per trial at the cost of performing one of the three conditions. These values are sampled without replacement from a vector containing every combination of cost (effort defined by the current block, and delay) and reward. The vector is reshuffled once completed. This ensures that each combination of cost and reward is presented at least twice per block.
 
 ### 15.3. Trial color 
