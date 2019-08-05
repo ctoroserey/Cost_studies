@@ -280,7 +280,7 @@ optimizeOCModel <- function(Data, Algorithm = "NLOPT_LN_NEWUOA", simplify = F, o
   
   # Prep data
   handling <- Data$Handling
-  ifelse(is.null(try(dataAll$Offer)), reward <- dataAll$Reward, reward <- dataAll$Offer) #reward <- Data$Offer (FIX THIS BY CALLING ALL COLUMNS REWARD, NOT OFFER)
+  reward <- Data$Offer 
   choice <- Data$Choice
   
   # Prep list of results to be returned
@@ -407,7 +407,7 @@ betaMatrix <- function(model, rearrange = NA) {
 ### data loading and cleaning up
 # recent addition: turning forced travels to acceptances, as they reflect a preference for that trial
 # rawChoice will be used to compute the # of mistakes
-# NOTE: P389 IS DUPLICATED. FIND OUT REAL ID # FOR ONE OF THEM.
+# The RT is upper-bounded because a glitch in the code made two 14s trials last longer (among all p's) 
 setwd("./data")
 files <- dir(pattern = '_log.csv')
 
@@ -421,6 +421,7 @@ dataAll <- tibble(SubjID = files) %>%
          SubjID = as.integer(substring(SubjID, 0, 3))) %>%
   unnest() %>%
   mutate(rawChoice = Choice,
+         RT = ifelse(RT > 14.1, 14, RT),
          Choice = ifelse(Choice == 2, 1, Choice),
          Half = ifelse(Block < 4, "Half_1", "Half_2"),
          Cost = factor(Cost, levels = c("Physical", "Cognitive", "Wait", "Easy")),
@@ -947,7 +948,7 @@ autoplot(survData) +
   scale_fill_manual(values = cols) +
   scale_x_continuous(breaks = seq(14)) +
   ylim(0, 1) +
-  labs(x = "Time in Trial", y = "Proportion Completed") +
+  labs(x = "Time in Trial", y = "Proportion Completed", fill = "Cost", color = "Cost") +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
@@ -1291,6 +1292,7 @@ As can be seen below, the gamma parameter from the OC model was able to predict 
 # Compute the OC for pre-midpoint
 summaryOC$pre <- dataAll %>%
                  filter(Choice < 2, Half == "Half_1") %>%
+                 rename(Offer = Reward) %>%
                  group_by(Cost, SubjID) %>%
                  do(optimizeOCModel(., simplify = T)) %>%
                  ungroup() %>%
@@ -1299,10 +1301,11 @@ summaryOC$pre <- dataAll %>%
 # let's add the gammas to the second half data and estimate prop predicted on the second half
 summaryOC$predicted <- dataAll %>%
                  filter(Choice < 2, Half == "Half_2") %>%
+                 rename(Offer = Reward) %>%
                  group_by(Cost, SubjID) %>%
                  left_join(summaryOC$pre) %>%
                  mutate(OC = Handling * Gamma,
-                        predicted = Reward > OC) %>% 
+                        predicted = Offer > OC) %>% 
                  summarise(percentPredicted = mean(predicted == Choice) * 100)
 
 # plot
