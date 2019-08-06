@@ -1239,8 +1239,7 @@ The gamma optimization search space was bound by extreme choice values. For exam
 # group
 summaryOC <- list()
 summaryOC$all <- dataAll %>%
-                 filter(Choice < 2) %>%
-                 rename(Offer = Offer) %>%
+                 #filter(rawChoice < 2) %>%
                  group_by(Cost, SubjID) %>%
                  do(optimizeOCModel(., simplify = T)) %>%
                  ungroup()
@@ -1273,8 +1272,7 @@ As can be seen below, the gamma parameter from the OC model was able to predict 
 ``` {r 16.3.4. OC cross-validation, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
 # Compute the OC for pre-midpoint
 summaryOC$pre <- dataAll %>%
-                 filter(Choice < 2, Half == "Half_1") %>%
-                 rename(Offer = Offer) %>%
+                 filter(Half == "Half_1") %>%
                  group_by(Cost, SubjID) %>%
                  do(optimizeOCModel(., simplify = T)) %>%
                  ungroup() %>%
@@ -1282,8 +1280,7 @@ summaryOC$pre <- dataAll %>%
 
 # let's add the gammas to the second half data and estimate prop predicted on the second half
 summaryOC$predicted <- dataAll %>%
-                 filter(Choice < 2, Half == "Half_2") %>%
-                 rename(Offer = Offer) %>%
+                 filter(Half == "Half_2") %>%
                  group_by(Cost, SubjID) %>%
                  left_join(summaryOC$pre) %>%
                  mutate(OC = Handling * Gamma,
@@ -1292,16 +1289,16 @@ summaryOC$predicted <- dataAll %>%
 
 # plot
 (summaryOC$predictPlot <- ggplot(summaryOC$predicted, aes(Cost, percentPredicted, fill = Cost)) +
-                          labs(x = "") +
-                          geom_boxplot(show.legend = F) +
-                          scale_fill_manual(values = cols) +
-                          labs(y = "Percent Predicted") +
-                          ylim(0,100) +
-                          theme(panel.grid.major = element_blank(),
-                          panel.grid.minor = element_blank(),
-                          panel.background = element_blank(),
-                          axis.line = element_line(colour = "black"),
-                          text = element_text(size = 16)))
+                            labs(x = "") +
+                            geom_boxplot(show.legend = F) +
+                            scale_fill_manual(values = cols) +
+                            labs(y = "Percent Predicted") +
+                            ylim(0,100) +
+                            theme(panel.grid.major = element_blank(),
+                            panel.grid.minor = element_blank(),
+                            panel.background = element_blank(),
+                            axis.line = element_line(colour = "black"),
+                            text = element_text(size = 16)))
 
 ```
 
