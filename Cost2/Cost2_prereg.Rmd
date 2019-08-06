@@ -898,8 +898,6 @@ This plot shows the AIC for every model. The figure below shows AIC and BIC for 
 ### 16.3.1.
 
 *Response times (RT) for quit responses will be presented in a descriptive manner in order to examine whether participants tended to quit early or late within individual trials. Each cost group’s response time distribution will contain the pooled RT across its corresponding participants, and we will display the empirical cumulative distribution functions for each condition. Short RT would suggest confident and stable decisions (in support of 4.3.1.).*
-  
-The ECDF below shows the proportion of quits and acceptances occurring as the trial advanced. Drastic changes indicate the end of one of the possible handling times, and sccessful receipt of a reward. This shows that there were no quits during the handling time, and displays the proportion of acceptances (1 - the y axis here) for each cost at each handling/travel time combination. We can see in the ECDFs below that most decisions to quit happened within the first second into the handling time. The reason why the physical and easy condition show slightly lagged responses is that the experiment allowed a one second grace period for participants to begin gripping. This results in some of them choosing to wait for that second to indicate an offer rejection.
 
 ``` {r 16.3.1. RTs, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
 # Proportion of forced travels per subject and cost type
@@ -936,7 +934,7 @@ library(ggfortify)
 # that's to avoid jumps from 2s to 10s to 14s
 # 1 - Choice is to reverse the coding of choices, since the survival package assumes 0 = censor?
 temp <- dataAll %>%
-    filter(rawChoice < 2) %>% 
+    #filter(rawChoice < 2) %>% 
     mutate(#RT = ifelse(Choice == 1, 14, RT),
            Choice = 1 - Choice) 
 
@@ -957,6 +955,7 @@ autoplot(survData) +
 
 ```
 
+The survival curve below shows instances of quiting across a trial for all participants and handling times. Censors signal completed trials and forced quits, so most occur at the end of the three possible handling times. Participants could only quit once the trial begun. This shows that most decisions to quit happened within the first second into the handling time, and participants rarely quit during the handling time. The reason why the physical and easy condition show slightly lagged responses is that the experiment allowed a one second grace period for participants to begin gripping (marked by the dashed line). This resulted in some of them choosing to wait for that second to indicate an offer rejection. The proportion of forced quits for cognitive effort was `r round(propFails[2, 2], digits = 2)`, and 0 for the physical conditions (the censor around 4s in the physical condition was an acceptance during 2s handling that was incorrectly recorded at 4s by the experimental code).
 
 \bigskip
 
