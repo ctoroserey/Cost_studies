@@ -908,29 +908,10 @@ propFails <- dataAll %>%
   group_by(Cost) %>% 
   summarise(meanFT = mean(propFails))
 
-# # Reaction times ECDFs including offer and in-trial quits
-# (RTs <- dataAll %>%
-#   #mutate(RT = ifelse(Choice != 0, RT + 2, RT)) %>%
-#   filter(rawChoice < 2) %>% # change this to 1 to reproduce the original plot, since it would only plot the cdf of quits
-#   ggplot(aes(RT, color = Cost)) + 
-#     #stat_ecdf(lwd = 1.2, geom = "smooth") +
-#     geom_line(aes(y = 1 - ..y..), stat = 'ecdf', lwd = 1.5) +
-#     geom_vline(xintercept = 1, lty = 2) + # end of the grace period for physical trials
-#     scale_color_manual(values = cols) +
-#     scale_x_continuous(breaks = seq(14)) +
-#     labs(x = "Time in Trial", y = "Proportion Completed") +
-#     theme(panel.grid.major = element_blank(),
-#       panel.grid.minor = element_blank(),
-#       panel.background = element_blank(),
-#       axis.line = element_line(colour = "black"),
-#       text = element_text(size = 16)))
-
-# NEW VERSION OF SURVIVAL. BUT STILL NEEDS A BIT OF WORK. ALSO, CHECK THAT RT > 14s
-
+# this version of a survival curve forces all successful acceptances to have an RT of 14
 library(survival)
 library(ggfortify)
 
-# this version of a survival curve forces all successful acceptances to have an RT of 14
 # that's to avoid jumps from 2s to 10s to 14s
 # 1 - Choice is to reverse the coding of choices, since the survival package assumes 0 = censor?
 temp <- dataAll %>%
@@ -1064,7 +1045,9 @@ prepost$propBlocks <- dataAll %>%
 grid.arrange(prepost$scatterplot, prepost$propBlocks, ncol = 2)
 ```
 
-The following table shows the coefficients and CI for each linear model, and show that pre-post acceptance rates were very similar for each condition (i.e. one is present in all confidence intervals).
+The following table shows the coefficients and CI for each linear model, and show that pre-post acceptance rates were very similar for each condition (i.e. one is present in all confidence intervals). Note that interpreting the coefficients depends on the intercept, and the wait condition had a relatively high intercept. 
+
+A better test is to perform a pairwise comparison between halves per cost type. Paired permutations on means of proportions showed no differences for wait and easy groups (p > 0.5), but significantly lower acceptance rates for physical (*p* = `r prepost$Perms[1]`, Cohen's D = `r prepost$CohenD[1]`) and cognitive (*p* = `r prepost$Perms[2]`, Cohen's D = `r prepost$CohenD[2]`) groups. These results are more consistent with the plots above.
 
 
 ``` {r 16.3.2. prepost table, pander}
@@ -1149,7 +1132,7 @@ dataAll %>%
   ungroup() %>%
   mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%
   ggplot(aes(Offer, propAccept, color = Cost)) +
-    geom_point(size = 3, show.legend = F) +
+    geom_point(size = 3, show.legend = T) +
     geom_line(size = 1, show.legend = F) +
     scale_color_manual(values = cols) +
     scale_fill_manual(values = cols) +
@@ -1250,7 +1233,7 @@ corrplot(betaMat,
 
 *To estimate the subjective opportunity cost (hypothesis 4.3.2.), we will use a logistic function to model each participant’s probability of completing a trial based on the difference between the delayed reward’s magnitude and the estimated opportunity cost (OC) for each cost type. OC will be computed as the product of a free parameter (gamma) and the handling time. Both gamma and the temperature parameter of the logistic function will be estimated at the subject level, independently for each subject.*
 
-The gamma optimization search space was bound by extreme choice values. For example, someone with an extremely high OC would not accept even the most beneficial offers, and would reject a 20 cent offer when the handling time was 2 seconds (or 20/2). Conversely, a participant experiencing low opportunity costs would accept the unbeneficial offer of 4 cents for a 14 second delay (or 4/14). The model was optimized to find the lowest value of gamma that significantly reduced the negative log likelihood. The resulting gamma values per participant are shown per group below (gray lines denote the rate of earnings under optimal behavior for all 3 timing contexts), and reflect what was seen in the previous sections: participants in the wait and physical conditions showed higher gamma values (and thus opportunity costs) than in the other two groups. Given the high variability of the easy condition, it might be worth modeling each timing context independently, or perhaps fitting the model on subgroups defined by a median split of the participants based on their acceptance rate.
+The gamma optimization search space was bound by extreme choice values. For example, someone with an extremely high OC would not accept even the most beneficial offers, and would reject a 20 cent offer when the handling time was 2 seconds (or 20/2). Conversely, a participant experiencing low opportunity costs would accept the unbeneficial offer of 4 cents for a 14 second delay (or 4/14). The model was optimized to find the lowest value of gamma that significantly reduced the negative log likelihood (R-squared: mean = `r mean(summaryOC$all$Rsquared)`, SD = `r sd(summaryOC$all$Rsquared)`). The resulting gamma values per participant are shown per group below (gray lines denote the rate of earnings under optimal behavior for all 3 timing contexts), and reflect what was seen in the previous sections: participants in the wait and physical conditions showed higher gamma values (and thus opportunity costs) than in the other two groups. Given the high variability of the easy condition, it might be worth modeling each timing context independently, or perhaps fitting the model on subgroups defined by a median split of the participants based on their acceptance rate. 
 
 ``` {r 16.3.3. OC modeling, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
 # group
