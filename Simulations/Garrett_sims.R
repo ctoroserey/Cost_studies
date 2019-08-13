@@ -29,8 +29,12 @@ poorAccept <- list(HDLR = F, LDHR = T, HDHR = T, LDLR = T)
 # alpha is the adaptation rate
 p <- 0
 alpha <- 0.005
-n <- 60
-
+alphaPos <- 0.005
+alphaNeg <- 0.002
+n <- 80
+asymmetric <- T # to use asymmetric updating of p
+order <- c("Poor", "Rich") # c("Poor", "Rich") c("Rich", "Poor") you can have a single block too
+  
 # this is just to store a session's evolution of the reward estimate
 pStore <- numeric()
 evol <- data.frame(Reward = NA,
@@ -41,58 +45,90 @@ evol <- data.frame(Reward = NA,
                    Optimal = NA,
                    Environment = NA)
 
-# start simulating a series of 'n' trials in an 'env' environment
-env <- poorTrials
-for (run in seq(n)) {
-  # randomly select the next 7 trials based on environmental richness
-  sequence <- sample(env)
-  
-  # go through trials
-  for (trial in sequence) {
-    # if the trial's rate is higher than the estimated OC (average reward rate p * delay)
-    # accept <- rich/poorAccept[[trial]] for optimality
-    OC <- trialTimes[[trial]] * p
-    accept <- ifelse(trialRewards[[trial]] > OC, T, F)
-    
-    # updated p at each second within the trial (one 0 = no update during offer window)
-    if (accept) {
-      for (r in trialType[[trial]]) {
-        p <- p + alpha * (r - p) # could turn this into a function, so multiple models can be tested
-        evol <- rbind(evol, c(r, trialTimes[[trial]], p, trial, accept, poorAccept[[trial]], "Poor"))
+# perform block simluations in the given order
+for (environment in order) {
+  if (environment == "Poor") {
+    # start simulating a series of 'n' trials in an 'env' environment
+    env <- poorTrials
+    for (run in seq(n)) {
+      # randomly select the next 7 trials based on environmental richness
+      sequence <- sample(env)
+      
+      # go through trials
+      for (trial in sequence) {
+        # if the trial's rate is higher than the estimated OC (average reward rate p * delay)
+        # accept <- rich/poorAccept[[trial]] for optimality
+        OC <- trialTimes[[trial]] * p
+        accept <- ifelse(trialRewards[[trial]] > OC, T, F)
+        
+        # updated p at each second within the trial (one 0 = no update during offer window)
+        if (accept) {
+          for (r in trialType[[trial]]) {
+            if (r == 0 & asymmetric == T) {
+              p <- p + alphaNeg * (r - p)
+              evol <- rbind(evol, c(r, trialTimes[[trial]], p, trial, accept, poorAccept[[trial]], "Poor"))
+            } else if (r > 0 & asymmetric == T) {
+              p <- p + alphaPos * (r - p)
+              evol <- rbind(evol, c(r, trialTimes[[trial]], p, trial, accept, poorAccept[[trial]], "Poor"))
+            } else {
+              p <- p + alpha * (r - p) # could turn this into a function, so multiple models can be tested
+              evol <- rbind(evol, c(r, trialTimes[[trial]], p, trial, accept, poorAccept[[trial]], "Poor"))
+            }
+          }
+        } else {
+          if (asymmetric) {
+            p <- p + alphaNeg * (0 - p)
+            evol <- rbind(evol, c(r, trialTimes[[trial]], p, trial, accept, poorAccept[[trial]], "Poor"))
+          } else {
+            p <- p + alpha * (0 - p) # 0 is for the 1 second in the offer window
+            evol <- rbind(evol, c(r, trialTimes[[trial]], p, trial, accept, poorAccept[[trial]], "Poor"))
+          }
+        }
       }
-    } else {
-      p <- p + alpha * (0 - p) # 0 is for the 1 second in the offer window
-      evol <- rbind(evol, c(r, trialTimes[[trial]], p, trial, accept, poorAccept[[trial]], "Poor"))
+    }
+  }
+  
+  if (environment == "Rich") {
+    # start simulating a series of 'n' trials in an 'env' environment
+    env <- richTrials
+    for (run in seq(n)) {
+      # randomly select the next 7 trials based on environmental richness
+      sequence <- sample(env)
+      
+      # go through trials
+      for (trial in sequence) {
+        # if the trial's rate is higher than the estimated OC (average reward rate p * delay)
+        # accept <- rich/poorAccept[[trial]] for optimality
+        OC <- trialTimes[[trial]] * p
+        accept <- ifelse(trialRewards[[trial]] > OC, T, F)
+        
+        # updated p at each second within the trial (one 0 = no update during offer window)
+        if (accept) {
+          for (r in trialType[[trial]]) {
+            if (r == 0 & asymmetric == T) {
+              p <- p + alphaNeg * (r - p)
+              evol <- rbind(evol, c(r, trialTimes[[trial]], p, trial, accept, richAccept[[trial]], "Rich"))
+            } else if (r > 0 & asymmetric == T) {
+              p <- p + alphaPos * (r - p)
+              evol <- rbind(evol, c(r, trialTimes[[trial]], p, trial, accept, richAccept[[trial]], "Rich"))
+            } else {
+              p <- p + alpha * (r - p) # could turn this into a function, so multiple models can be tested
+              evol <- rbind(evol, c(r, trialTimes[[trial]], p, trial, accept, richAccept[[trial]], "Rich"))
+            }
+          }
+        } else {
+          if (asymmetric) {
+            p <- p + alphaNeg * (0 - p)
+            evol <- rbind(evol, c(r, trialTimes[[trial]], p, trial, accept, richAccept[[trial]], "Rich"))
+          } else {
+            p <- p + alpha * (0 - p) # 0 is for the 1 second in the offer window
+            evol <- rbind(evol, c(r, trialTimes[[trial]], p, trial, accept, richAccept[[trial]], "Rich"))
+          }
+        }
+      }
     }
   }
 }
-
-# start simulating a series of 'n' trials in an 'env' environment
-env <- richTrials
-for (run in seq(n)) {
-  # randomly select the next 7 trials based on environmental richness
-  sequence <- sample(env)
-  
-  # go through trials
-  for (trial in sequence) {
-    # if the trial's rate is higher than the estimated OC (average reward rate p * delay)
-    # accept <- rich/poorAccept[[trial]] for optimality
-    OC <- trialTimes[[trial]] * p
-    accept <- ifelse(trialRewards[[trial]] > OC, T, F)
-    
-    # updated p at each second within the trial (one 0 = no update during offer window)
-    if (accept) {
-      for (r in trialType[[trial]]) {
-        p <- p + alpha * (r - p) # could turn this into a function, so multiple models can be tested
-        evol <- rbind(evol, c(r, trialTimes[[trial]], p, trial, accept, richAccept[[trial]], "Rich"))
-      }
-    } else {
-      p <- p + alpha * (0 - p) # 0 is for the 1 second in the offer window
-      evol <- rbind(evol, c(r, trialTimes[[trial]], p, trial, accept, richAccept[[trial]], "Rich"))
-    }
-  }
-}
-
 
 
 
@@ -105,18 +141,23 @@ evol %>%
          ReceiptLDLR = ifelse((Reward > 0 & Choice == T & trialType == "LDLR"), -2, -6),
          ReceiptLDHR = ifelse((Reward > 0 & Choice == T & trialType == "LDHR"), -1, -6),
          optimalReceipt = ifelse((Reward > 0 & Optimal != Choice), -3, -6),
-         Time = c(seq(sum(Environment == "Poor")), seq(sum(Environment == "Rich"))),
-         Environment = factor(Environment, levels = c("Poor", "Rich"))) %>%
+         Time = c(seq(sum(Environment == order[1])), seq(sum(Environment == order[2]))),
+         Environment = factor(Environment, levels = order)) %>%
   ggplot(aes(Time, p)) +
     geom_line() +
     ylim(-3, NA) +
-    labs(title = paste("MVT reward rate evolution, alpha =", alpha)) +
+    labs(title = paste("MVT reward rate evolution,", ifelse(asymmetric, "asymmetric model", "symmetric model"))) +
     geom_point(aes(Time, optimalReceipt), pch = 21, color = "black", fill = "grey", size = 1.5) +
     geom_point(aes(Time, ReceiptLDHR, fill = trialType), pch = 21, color = "black", size = 1.5) +
     geom_point(aes(Time, ReceiptHDHR, fill = trialType), pch = 21, color = "black", size = 1.5) +
     geom_point(aes(Time, ReceiptLDLR, fill = trialType), pch = 21, color = "black", size = 1.5) +
     geom_point(aes(Time, ReceiptHDLR, fill = trialType), pch = 21, color = "black", size = 1.5) +
+    geom_hline(yintercept = c(2.5, 10, 40), linetype = "dashed") +
     facet_wrap(vars(Environment), scales = "free_x") +
-    theme_classic()
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(),
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 16))
 
 
