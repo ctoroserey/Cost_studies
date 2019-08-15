@@ -31,8 +31,8 @@ p <- 0
 alpha <- 0.005
 alphaPos <- 0.005
 alphaNeg <- 0.002
-n <- 80
-asymmetric <- T # to use asymmetric updating of p
+n <- 60
+asymmetric <- F # to use asymmetric updating of p
 order <- c("Poor", "Rich") # c("Poor", "Rich") c("Rich", "Poor") you can have a single block too
   
 # this is just to store a session's evolution of the reward estimate
@@ -131,33 +131,57 @@ for (environment in order) {
 }
 
 
+# plots
+plots <- list()
 
 # plot the evolution of p
-evol %>%
-  filter(!is.na(p)) %>%
-  mutate(p = as.numeric(p),
-         ReceiptHDHR = ifelse((Reward > 0 & Choice == T & trialType == "HDHR"), -1.5, -6),
-         ReceiptHDLR = ifelse((Reward > 0 & Choice == T & trialType == "HDLR"), -2.5, -6),
-         ReceiptLDLR = ifelse((Reward > 0 & Choice == T & trialType == "LDLR"), -2, -6),
-         ReceiptLDHR = ifelse((Reward > 0 & Choice == T & trialType == "LDHR"), -1, -6),
-         optimalReceipt = ifelse((Reward > 0 & Optimal != Choice), -3, -6),
-         Time = c(seq(sum(Environment == order[1])), seq(sum(Environment == order[2]))),
-         Environment = factor(Environment, levels = order)) %>%
-  ggplot(aes(Time, p)) +
-    geom_line() +
-    ylim(-3, NA) +
-    labs(title = paste("MVT reward rate evolution,", ifelse(asymmetric, "asymmetric model", "symmetric model"))) +
-    geom_point(aes(Time, optimalReceipt), pch = 21, color = "black", fill = "grey", size = 1.5) +
-    geom_point(aes(Time, ReceiptLDHR, fill = trialType), pch = 21, color = "black", size = 1.5) +
-    geom_point(aes(Time, ReceiptHDHR, fill = trialType), pch = 21, color = "black", size = 1.5) +
-    geom_point(aes(Time, ReceiptLDLR, fill = trialType), pch = 21, color = "black", size = 1.5) +
-    geom_point(aes(Time, ReceiptHDLR, fill = trialType), pch = 21, color = "black", size = 1.5) +
-    geom_hline(yintercept = c(2.5, 10, 40), linetype = "dashed") +
-    facet_wrap(vars(Environment), scales = "free_x") +
-    theme(panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          panel.background = element_blank(),
-          axis.line = element_line(colour = "black"),
-          text = element_text(size = 16))
+plots$behavior <- evol %>%
+                    filter(!is.na(p)) %>%
+                    mutate(p = as.numeric(p),
+                           ReceiptHDHR = ifelse((Reward > 0 & Choice == T & trialType == "HDHR"), -1.5, -6),
+                           ReceiptHDLR = ifelse((Reward > 0 & Choice == T & trialType == "HDLR"), -2.5, -6),
+                           ReceiptLDLR = ifelse((Reward > 0 & Choice == T & trialType == "LDLR"), -2, -6),
+                           ReceiptLDHR = ifelse((Reward > 0 & Choice == T & trialType == "LDHR"), -1, -6),
+                           optimalReceipt = ifelse((Reward > 0 & Optimal != Choice), -3, -6),
+                           Time = c(seq(sum(Environment == order[1])), seq(sum(Environment == order[2]))),
+                           Environment = factor(Environment, levels = order)) %>%
+                    ggplot(aes(Time, p)) +
+                      geom_line() +
+                      ylim(-3, NA) +
+                      labs(title = paste("MVT reward rate evolution,", ifelse(asymmetric, "asymmetric model", "symmetric model"))) +
+                      geom_point(aes(Time, optimalReceipt), pch = 21, color = "black", fill = "grey", size = 1.5) +
+                      geom_point(aes(Time, ReceiptLDHR, fill = trialType), pch = 21, color = "black", size = 1.5) +
+                      geom_point(aes(Time, ReceiptHDHR, fill = trialType), pch = 21, color = "black", size = 1.5) +
+                      geom_point(aes(Time, ReceiptLDLR, fill = trialType), pch = 21, color = "black", size = 1.5) +
+                      geom_point(aes(Time, ReceiptHDLR, fill = trialType), pch = 21, color = "black", size = 1.5) +
+                      geom_hline(yintercept = c(2.5, 10, 40), linetype = "dashed") +
+                      facet_wrap(vars(Environment), scales = "free_x") +
+                      theme(panel.grid.major = element_blank(),
+                            panel.grid.minor = element_blank(),
+                            panel.background = element_blank(),
+                            axis.line = element_line(colour = "black"),
+                            text = element_text(size = 16))
 
+
+# plot overall proportion of acceptances (a la supplemental fig 1)
+plots$propAccept <- evol %>%
+                      filter(!is.na(p),
+                             Reward > 0) %>%
+                      mutate(p = as.numeric(p),
+                             Choice = as.logical(Choice),
+                             ReceiptHDHR = ifelse((Reward > 0 & Choice == T & trialType == "HDHR"), -1.5, -6),
+                             ReceiptHDLR = ifelse((Reward > 0 & Choice == T & trialType == "HDLR"), -2.5, -6),
+                             ReceiptLDLR = ifelse((Reward > 0 & Choice == T & trialType == "LDLR"), -2, -6),
+                             ReceiptLDHR = ifelse((Reward > 0 & Choice == T & trialType == "LDHR"), -1, -6),
+                             optimalReceipt = ifelse((Reward > 0 & Optimal != Choice), -3, -6),
+                             Time = c(seq(sum(Environment == order[1])), seq(sum(Environment == order[2]))),
+                             Environment = factor(Environment, levels = order),
+                             trialType = factor(trialType, levels = c("LDHR", "LDLR", "HDHR", "HDLR"))) %>%
+                      group_by(Environment, trialType) %>%
+                      summarise(pAccept = mean(Choice)) %>%
+                      ggplot(aes(trialType, pAccept, fill = Environment)) +
+                        geom_bar(stat = "identity", position = "dodge", color = "black") +
+                        labs(title = paste("Environment order: ", order[1], "-", order[2], sep = "")) +
+                        scale_fill_manual(values = c("Rich" = "blue", "Poor" = "red")) +
+                        theme_classic()
 
