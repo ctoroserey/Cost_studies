@@ -32,7 +32,7 @@ alpha <- 0.005
 alphaPos <- 0.005
 alphaNeg <- 0.002
 n <- 60
-asymmetric <- F # to use asymmetric updating of p
+asymmetric <- T # to use asymmetric updating of p
 order <- c("Poor", "Rich") # c("Poor", "Rich") c("Rich", "Poor") you can have a single block too
   
 # this is just to store a session's evolution of the reward estimate
