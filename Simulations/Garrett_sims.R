@@ -3,6 +3,13 @@
 # this was helpful in understanding their approach
 # and really, I did it to motivate myself to do it with my own data
 
+
+# notes for Neil:
+# - Since p is updated per second, and handling times are considered negative, 
+#   asymmetric MVT can't compensate for extra positive learning. This could be why their betas are so low, to prevent this.
+#   In a case where p is updated per trial experienced, the issue might be solved? Maybe try that...
+#   So, during symmetry the handling time updates are compensated by the reward rate, reaching a mean rate. Maybe that's why p ends up at 20 during Rich blocks
+
 library(tidyverse)
 
 # there are 4 trial types, spanning low to high reward rates
@@ -27,13 +34,13 @@ poorAccept <- list(HDLR = F, LDHR = T, HDHR = T, LDLR = T)
 # the model updates per second
 # p = is the expected reward value
 # alpha is the adaptation rate
-p <- 0
+p <- 8
 alpha <- 0.005
 alphaPos <- 0.005
 alphaNeg <- 0.002
 n <- 60
-asymmetric <- T # to use asymmetric updating of p
-order <- c("Poor", "Rich") # c("Poor", "Rich") c("Rich", "Poor") you can have a single block too
+asymmetric <- F # to use asymmetric updating of p
+order <- c("Rich", "Poor")  # c("Poor", "Rich") c("Rich", "Poor") you can have a single block too
   
 # this is just to store a session's evolution of the reward estimate
 pStore <- numeric()
@@ -65,7 +72,7 @@ for (environment in order) {
         if (accept) {
           for (r in trialType[[trial]]) {
             if (r == 0 & asymmetric == T) {
-              p <- p + alphaNeg * (r - p)
+              p <- p + alphaNeg * (r - p) 
               evol <- rbind(evol, c(r, trialTimes[[trial]], p, trial, accept, poorAccept[[trial]], "Poor"))
             } else if (r > 0 & asymmetric == T) {
               p <- p + alphaPos * (r - p)
