@@ -959,12 +959,13 @@ autoplot(survData) +
   scale_fill_manual(values = cols) +
   scale_x_continuous(breaks = seq(14)) +
   ylim(0, 1) +
-  labs(x = "Time in Trial", y = "Proportion Completed", fill = "Cost", color = "Cost") +
-  theme(panel.grid.major = element_blank(),
+  labs(x = "Time in Trial", y = "Proportion Accepted", fill = "Cost", color = "Cost") +
+  theme(legend.position = c(0.3, 0.2),
+        panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
         axis.line = element_line(colour = "black"),
-        text = element_text(size = 16))
+        text = element_text(size = 22))
 
 ```
 
