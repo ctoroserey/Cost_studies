@@ -938,7 +938,8 @@ propFails <- dataAll %>%
   group_by(SubjID, Cost) %>% 
   summarise(propFails = mean(rawChoice == 2)) %>%
   group_by(Cost) %>% 
-  summarise(meanFT = mean(propFails))
+  summarise(meanFT = mean(propFails),
+            sdFT = sd(propFails))
 
 # this version of a survival curve forces all successful acceptances to have an RT of 14
 library(survival)
@@ -966,6 +967,17 @@ autoplot(survData) +
         panel.background = element_blank(),
         axis.line = element_line(colour = "black"),
         text = element_text(size = 22))
+
+# RT ecdfs for the whole group across blocks, with the option to subdivide by cost group
+dataAll %>%
+  filter(Choice == 0,
+         RT < 1) %>%
+  ggplot(aes(RT, group = Block, color = Block)) +
+    stat_ecdf() +
+    #facet_wrap(vars(Cost)) +
+    theme_classic()
+
+
 
 ```
 
