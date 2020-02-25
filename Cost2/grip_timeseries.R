@@ -18,6 +18,7 @@
 ###---------- library and functions ---------
 library(tidyverse)
 library(data.table)
+library(parallel)
 
 select_signal <- function(physData, start, end, thresh = 0, smoothing = 0, id = NA, trialLength) {
   # this function will use the experimental timing from a log to get rid of non-experimental recordings
@@ -83,7 +84,7 @@ trial_gripping <- function(physData, trialStart, trialLength, average = TRUE, ex
   # - extras: data frame. extra trial characteristics to add (e.g. reward amount, length, etc) 
   
   # if a single sample set is to be retrieved per trial, create a vector to index below
-  if (length(trialLength) == 1) {
+  if (!missing(trialLength)) {
     trialLength <- rep(trialLength, length(trialStart))
   }
   
@@ -208,7 +209,7 @@ biopacData <- biopacData %>%
   filter(SubjID != 419) %>% # some subjects' data are atypical, with low gripping values. Add those here during testing.
   plyr::dlply("SubjID", identity)
 
-biopacData <- lapply(biopacData, function(data) {
+biopacData <- mclapply(biopacData, function(data) {
   select_signal(data$V1, 
                 unique(data$sessionStart), 
                 unique(data$sessionEnd), 
@@ -225,33 +226,37 @@ trialData <- halfData %>%
   plyr::dlply("SubjID", identity)
 
 # gripping strength per chosen trial (mean gripping possible)
-trialGrip <- lapply(seq_along(biopacData), function(i) {
-  trial_gripping(biopacData[[i]], trialData[[i]]$trialStart_ms, trialData[[i]]$Handling_ms, average = F, extras = trialData[[i]])
+trialGrip <- mclapply(seq_along(biopacData), function(i) {
+  trial_gripping(biopacData[[i]], 
+                 trialData[[i]]$trialStart_ms, 
+                 trialData[[i]]$Handling_ms, 
+                 average = F, 
+                 extras = trialData[[i]])
 })
 
 # get mean grip per offer x handling x subject into 1 df
 trialGrip_all <- mclapply(trialGrip, function(data) {
   data %>%
     group_by(SubjID, Handling, Offer, TrialTime) %>%
-    summarise(mGrip = mean(GripStrength),
-              lowCI = quantile(GripStrength, 0.05),
-              hiCI = quantile(GripStrength, 0.95))
+    summarise(mGrip = mean(GripStrength))
   })
 trialGrip_all <- do.call(rbind, trialGrip_all)
 
 
 ### plot checks
-# inspect this per individual, because some of them don't make sense
-# just use trialGrip[[i]]
-ggplot(data = trialGrip_all, aes(TrialTime, mGrip, group = as.factor(Offer), color = as.factor(Offer), fill = as.factor(Offer))) +
+# mean gripping per handling x offer across subjects
+trialGrip_all %>%
+  group_by(Handling, Offer, TrialTime) %>%
+  summarise(meanGrip = mean(mGrip, na.rm = T),
+            se = sd(mGrip, na.rm = T) / nSubjs) %>%
+  ggplot(aes(TrialTime, meanGrip, group = as.factor(Offer), color = as.factor(Offer), fill = as.factor(Offer))) +
   #geom_smooth() +
   geom_line() +
-  geom_line(aes(y = lowCI), linetype = "dashed") +
-  geom_line(aes(y = hiCI), linetype = "dashed") +
+  geom_line(aes(y = meanGrip - se), linetype = "dashed") +
+  geom_line(aes(y = meanGrip + se), linetype = "dashed") +
   #geom_ribbon(ymin = ymin, ymax = ymax, alpha = 0.3) +
   facet_wrap(vars(Handling)) +
   theme_classic()
-
 
 
 # # odd: 2, 12 (off by a bit), 17 (2s), 18, 19 (like some are off), 20, 22, 23, 29
