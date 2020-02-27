@@ -76,12 +76,13 @@ select_signal <- function(physData, start, end, thresh = 0, smoothing = 0, id = 
   
 }
 
-trial_gripping <- function(physData, trialStart, trialLength, average = TRUE, extras) {
+trial_gripping <- function(physData, trialStart, trialLength, average = TRUE, extras, resample = 0, preData = 0) {
   # this function will generate a data frame that allows to compare the grip strength per choice
   # 
   # - trialLength: in ms, can be handling, or how many samples you want to select (scalar)
   # - average: get the mean grip strength per trial
   # - extras: data frame. extra trial characteristics to add (e.g. reward amount, length, etc) 
+  # - resample: if the ts is too long, set adelta to capture (i.e. every 100th row)
   
   # if a single sample set is to be retrieved per trial, create a vector to index below
   if (!missing(trialLength)) {
@@ -97,8 +98,8 @@ trial_gripping <- function(physData, trialStart, trialLength, average = TRUE, ex
   for (trial in seq_along(trialStart)) {
     # select this trial's sample
     start <- trialStart[trial]
-    end <- start + trialLength[trial]
-    section <- physData[start:end]
+    end <- start + trialLength[trial] -1
+    section <- physData[(start - preData):end]
     
     # average if requested
     if (average) {
@@ -133,6 +134,14 @@ trial_gripping <- function(physData, trialStart, trialLength, average = TRUE, ex
     
     # append to grip df
     df <- cbind(extras, df)
+  }
+  
+  # resample if needed
+  if (resample > 0) {
+    df <- df[seq(1, nrow(df), by = resample), ]
+    df <- df %>% 
+      group_by(Handling, Offer, Trial) %>%
+      mutate(ResampledTime = seq(length(Trial)))
   }
   
   return(df)
@@ -231,61 +240,91 @@ trialGrip <- mclapply(seq_along(biopacData), function(i) {
                  trialData[[i]]$trialStart_ms, 
                  trialData[[i]]$Handling_ms, 
                  average = F, 
-                 extras = trialData[[i]])
+                 extras = trialData[[i]], 
+                 resample = 100,
+                 preData = 3000)
 })
 
 # get mean grip per offer x handling x subject into 1 df
 trialGrip_all <- mclapply(trialGrip, function(data) {
   data %>%
-    group_by(SubjID, Handling, Offer, TrialTime) %>%
-    summarise(mGrip = mean(GripStrength))
+    group_by(SubjID, Handling, Offer, ResampledTime) %>%
+    summarise(mGrip = mean(GripStrength)) %>%
+    ungroup()
   })
 trialGrip_all <- do.call(rbind, trialGrip_all)
 
 
 ### plot checks
 # mean gripping per handling x offer across subjects
-trialGrip_all %>%
-  group_by(Handling, Offer, TrialTime) %>%
-  summarise(meanGrip = mean(mGrip, na.rm = T),
-            se = sd(mGrip, na.rm = T) / nSubjs) %>%
-  ggplot(aes(TrialTime, meanGrip, group = as.factor(Offer), color = as.factor(Offer), fill = as.factor(Offer))) +
-  #geom_smooth() +
-  geom_line() +
-  geom_line(aes(y = meanGrip - se), linetype = "dashed") +
-  geom_line(aes(y = meanGrip + se), linetype = "dashed") +
-  #geom_ribbon(ymin = ymin, ymax = ymax, alpha = 0.3) +
-  facet_wrap(vars(Handling)) +
-  theme_classic()
+# trialGrip_all %>%
+#   group_by(Handling, Offer, TrialTime) %>%
+#   summarise(meanGrip = mean(mGrip, na.rm = T),
+#             se = sd(mGrip, na.rm = T) / nSubjs) %>%
+#   ggplot(aes(TrialTime, meanGrip, group = as.factor(Offer), color = as.factor(Offer), fill = as.factor(Offer))) +
+#     #geom_smooth() +
+#     geom_line() +
+#     geom_line(aes(y = meanGrip - se), linetype = "dashed") +
+#     geom_line(aes(y = meanGrip + se), linetype = "dashed") +
+#     #geom_ribbon(ymin = ymin, ymax = ymax, alpha = 0.3) +
+#     facet_wrap(vars(Handling)) +
+#     theme_classic()
 
 
-# # odd: 2, 12 (off by a bit), 17 (2s), 18, 19 (like some are off), 20, 22, 23, 29
-# i <- 19
-# ggplot(data = trialGrip[[i]], aes(TrialTime, GripStrength, group = as.factor(Offer), color = as.factor(Offer))) +
-#   geom_line(alpha = 0.1) +
+# individuals
+# i <- 9
+# 
+# trialGrip[[i]] %>%
+#   mutate(ResampledTime = seq(nrow(.)),
+#          Offer = as.factor(Offer)) %>%
+#   #filter(Handling == 10) %>%
+#   ggplot(aes(TrialTime, GripStrength, group = Offer, color = Offer, fill = Offer)) +
+#   geom_point(size = 0.5) +
 #   geom_smooth() +
-#   #ylim(0, 30) +
-#   #geom_ribbon(ymin = ymin, ymax = ymax, alpha = 0.3) +
+#   #ylim(0, NA) +
 #   facet_wrap(vars(Handling)) +
 #   theme_classic()
 
-# odd: 2, 17 (2s), 18, 19 (like some are off), 20, 22, 23, 29
+# good examples: 1, 3, 4, 7, 9, 10, 11, 15, 19, 21, 24, 30
+# bad: 6, 8, 12, 14, 16, 17, 18, 20, 22, 23, 25, 26, 27, 28, 29, 31
 
-# odd ones
-# 2: above-threshold pressing before first trial, but otherwise looks fine
-# 6: see 2, also skipped 1st trial (see 29)
-# 12: looks ok
-# 14: see 29, first acceptance at 23k
-# 16: see 29, first acceptance at 13k
-# 17: see 29, first acceptance at 15k
-# 18: ahmm...looks like constant pressing for a block. Might discard.
-# 19: looks like they pressed during the offer window
-# 20: uhm
-# 22: extra holding at the beginning? see 29
-# 23: handling time off?
-# 25: see 29
-# 26: double check, see 29
-# 29: looks ok, but a general problem arose: the first trial is not always accepted, so the calculation is off
-# 30: see 2
+# selected
+
+
+# good subs
+subs <- c(1, 3, 4, 7, 9, 10, 11, 15, 19, 21, 24, 30)
+
+
+
+trialGrip_all %>%
+  filter(SubjID %in% unique(SubjID)[subs]) %>%
+  mutate(Offer = as.factor(Offer)) %>%
+  filter(Handling == 14,
+         Offer != 4) %>%
+  group_by(Handling, Offer, ResampledTime) %>%
+  summarise(meanGrip = mean(mGrip, na.rm = T),
+            se = sd(mGrip, na.rm = T) / length(unique(SubjID))) %>%
+  ggplot(aes(ResampledTime, meanGrip, group = Offer, color = Offer, fill = Offer)) +
+    #geom_point(pch = 21, color = "black", alpha = 0.3) +
+    geom_line(size = 1.5) +
+    geom_vline(xintercept = 30, linetype = "dashed", alpha = 0.5, size = 1.5) +
+    geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5, size = 1.5) +
+    # geom_smooth(aes(ResampledTime, mGrip, color = Offer, fill = Offer, group = Offer)) +
+    geom_line(aes(y = meanGrip - se), linetype = "dashed", size = 1) +
+    geom_line(aes(y = meanGrip + se), linetype = "dashed", size = 1) +
+    #facet_wrap(vars(Handling)) +
+    labs(x = "Time in Trial (sec)", y = "Mean Gripping Strength (a.u.)") +
+    scale_x_continuous(breaks = seq(0, 170, by = 10), labels = seq(-3, 14)) +
+    ylim(NA, 2.5) +
+    theme(legend.position = c(0.9, 0.25),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 22))
+
+
+
+
 
 
