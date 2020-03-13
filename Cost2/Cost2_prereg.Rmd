@@ -2,8 +2,9 @@
 title: "Preregistration analysis, Cost 2 study"
 author: "Claudio Toro Serey & Joseph T. McGuire"
 output:
-  html_document: default
   pdf_document: default
+  word_document: default
+  html_document: default
 ---
 
 This document follows the steps planned for the first pre-registration (https://osf.io/2rsgm/). The bullet points match the organization shown on the website as closely as possible. First, here is a restatement of the questions and hypotheses.
@@ -1278,8 +1279,6 @@ corrplot(betaMat,
 
 *To estimate the subjective opportunity cost (hypothesis 4.3.2.), we will use a logistic function to model each participant’s probability of completing a trial based on the difference between the delayed reward’s magnitude and the estimated opportunity cost (OC) for each cost type. OC will be computed as the product of a free parameter (gamma) and the handling time. Both gamma and the temperature parameter of the logistic function will be estimated at the subject level, independently for each subject.*
 
-The gamma optimization search space was bound by extreme choice values. For example, someone with an extremely high OC would not accept even the most beneficial offers, and would reject a 20 cent offer when the handling time was 2 seconds (or 20/2). Conversely, a participant experiencing low opportunity costs would accept the unbeneficial offer of 4 cents for a 14 second delay (or 4/14). The model was optimized to find the lowest value of gamma that significantly reduced the negative log likelihood (R-squared: mean = `r mean(summaryOC$all$Rsquared)`, SD = `r sd(summaryOC$all$Rsquared)`). The resulting gamma values per participant are shown per group below (gray lines denote the rate of earnings under optimal behavior for all 3 timing contexts), and reflect what was seen in the previous sections: participants in the wait and physical conditions showed higher gamma values (and thus opportunity costs) than in the other two groups. Given the high variability of the easy condition, it might be worth modeling each timing context independently, or perhaps fitting the model on subgroups defined by a median split of the participants based on their acceptance rate. 
-
 ``` {r 16.3.3. OC modeling, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
 # group
 summaryOC <- list()
@@ -1305,6 +1304,8 @@ summaryOC$all <- dataAll %>%
                         text = element_text(size = 16)))
 
 ```
+
+The gamma optimization search space was bound by extreme choice values. For example, someone with an extremely high OC would not accept even the most beneficial offers, and would reject a 20 cent offer when the handling time was 2 seconds (or 20/2). Conversely, a participant experiencing low opportunity costs would accept the unbeneficial offer of 4 cents for a 14 second delay (or 4/14). The model was optimized to find the lowest value of gamma that significantly reduced the negative log likelihood (R-squared: mean = `r mean(summaryOC$all$Rsquared)`, SD = `r sd(summaryOC$all$Rsquared)`). The resulting gamma values per participant are shown per group below (gray lines denote the rate of earnings under optimal behavior for all 3 timing contexts), and reflect what was seen in the previous sections: participants in the wait and physical conditions showed higher gamma values (and thus opportunity costs) than in the other two groups. Given the high variability of the easy condition, it might be worth modeling each timing context independently, or perhaps fitting the model on subgroups defined by a median split of the participants based on their acceptance rate. 
 
 \bigskip
 
