@@ -3,10 +3,10 @@ title: Apparent preferences for cognitive effort fade when multiple forms of eff
 author: "Claudio Toro-Serey^1^2 & Joseph T. McGuire^1^2"
 csl: apa.csl
 output:
-  word_document: default #reference_docx: Style_reference_draft.docx
   pdf_document:
     highlight: haddock
     keep_tex: no
+  word_document: default #reference_docx: Style_reference_draft.docx
 header-includes:
 - \usepackage{setspace}\doublespacing
 - \usepackage[left]{lineno}
@@ -368,7 +368,7 @@ summarizeData <- function(Data = waitData, nSubs = nSubsW, type = "Wait"){
 ```{r Load data for between-subject experiment, echo = FALSE}
 ### data loading and cleaning up
 # forced travels are switched to acceptances, as they reflect a preference for that trial
-# rawChoice will be used to compute the # of mistakes
+# rawChoice will be used to compute the # of mistakes
 # The RT is upper-bounded because a glitch in the code made two 14s trials last longer (among all p's) 
 setwd("./Cost2/data")
 files <- dir(pattern = '_log.csv')
@@ -452,17 +452,67 @@ Cognitive and physical effort are typically regarded as costly, but recent findi
 
 
 ## Methods
+ 
+### **Experiment 1: Between-subjects comparison of costs**
 
+### Participants
+
+Both between- and within-subject experiments were pregeristered with the Open Science Framework (https://osf.io/2rsgm/registrations). All experimental procedures were approved by the Boston University Institutional Review Board, and written consent was acquired for all participants. For the between-subject experiment, we recruited individuals until a desired number of 84 eligible participants was achieved (58 Female, median age = 21, range = 18 - 31; number excluded before reaching goal = XX). The sample size was determined by means of power analysis (ANOVA), using a significance level of 0.05, power of 0.8, an effect size of f = 0.45 (calculated from a pilot study), and three groups (one for each cost type). The resulting per-group sample was 20, which we increased to 21 in order to match three possible block orders. We added an extra group of 21 participants who experienced a minimally effortful condition in order to determine whether effort or pure engagement were driving our results.
+	We excluded participant datasets based on four preregistered criteria: 1) Consent: If they withdrew their participation; 2) Inattentiveness: a catch trial was placed at the end of each experimental block, asking participants to press a key within 3 seconds (time requirement based on pilot study response times). A participant that failed two or more of these checks was excluded and replaced. 3) Improbable choice behavior: The task was structured so that one reward amount must always be accepted. A participant who quit every trial in at least one block was assumed not to have followed or understood task instructions, or to have disengaged from the task altogether. 4) Performance: In the cognitive effort condition, participants were forced to travel if they made 2 mistakes in a trial (see task procedures below). Any participant with more than 30% forced travels was excluded and replaced. 
+
+### Foraging Task 
+
+All experimental tasks were implemented using PsychoPy 2.X (CITE) on a Macbook Pro laptop. In this task, participants foraged for monetary rewards in an environment in which each trial required either physical effort or cognitive effort for a set period of time (the “handling time”), or an equivalent unfilled delay. Their goal was to maximize their gains within a fixed amount of time. Participants exerted physical effort by maintaining grip on a handheld dynamometer (XXXX, BIOPAC Systems, United States) using their dominant hand. Gripping requirements were calibrated at 20% of maximum voluntary contraction (MVC, acquired at the beginning of the session). Cognitive effort entailed switching among Stroop, dot motion coherence, and flanker tasks. In Stroop, one of three color names was displayed on the screen (red, blue or green), with a font color that was either congruent (e.g. word red painted in red) or incongruent (e.g. word red painted in blue). Participants had to select the color of the font, not the word displayed (i.e. they had to suppress their tendency to read the word). For motion coherence, 100 solid white dots moved on the screen. A fraction of these dots moved cohesively to the left or right (coherence could be either 30% or 40%, uniformly sampled), while the rest moved in random directions. Participants had to respond with the direction of the cohesive set of dots. REVISE. In flanker, rows of arrowheads pointed either to the left or the right (maximum of 3 rows, 3 to 13 arrowheads per row). Participants responded with the direction of the center arrowhead, which could point in the same or opposite direction from its neighbors. These tasks were configured so that responses always involved a left or right key press (e.g. for Stroop, two colored circles were presented at each side of the screen). During the handling time, cognitive tasks and their configurations were randomly sampled, and were presented for 1 s followed by a 1 s inter-stimulus interval. Participants were asked to respond within each task’s presentation time. Before the experiment, participants trained in each cognitive task until they correctly performed six consecutive ones of each kind.
+Each participant was assigned to one of these types of costs (cognitive effort, physical effort, or delay), and a fourth group of equal size faced an effortless physical task that involved minimal gripping (each group was unaware that other cost conditions existed). On each trial a monetary offer was displayed for 2 s, and participants had the opportunity to expend time and/or effort during the handling time in order to earn it. Upon completion of a trial participants saw a 2 s window displaying the reward obtained, which was followed by a travel time to the next offer. Alternatively, the participant could quit at any point during the handling time by pressing the spacebar on the computer, and immediately start traveling. If participants failed to maintain above-threshold gripping or made two mistakes during the cognitive task, they were forced to travel and missed the reward.
+There were three block types, in which handling times of 2, 10, or 14 seconds were paired with travel times of 14, 6, and 2 seconds, respectively (note that all combinations add up to 16 seconds). Timing parameters were held constant within each 7-min block. Each of these blocks was experienced in a pseudo-randomized order, and repeated in the same order after a short break in order to probe choice stability (total session length = 42 minutes). Reward amounts varied uniformly per trial (4, 8, or 20 cents), such that every reward was presented twice every six trials. This prevented sequences from being dominated by a single amount during any window of time. Timing information was disclosed at the beginning of each block, and rewards displayed before each trial began during a 2 s window. Participants received training prior to the experimental session, and were told about all possible environmental statistics in order to preclude experience-dependent learning. 
+In short, participants faced with different behavioral costs were tasked with deciding their preferred strategy to maximize rewards in fully-disclosed foraging environments of variable richness.
+
+### Operationalization of Cost
+
+Foraging theory posits that accepting a delayed reward depends on the opportunity cost (OC) of time incurred in obtaining it, given by the richness of the environment (Stephens and Krebs, 1977). In this study, the richness of the environment was manipulated by the length of the handling and travel times (i.e. shorter travel times produced richer environments). Since time combinations were fixed per block, we calculated each block’s optimal accept/reject strategy by computing all decision strategies according to the following equation:
+
+**INSERT**
+
+where R, H, and P are the reward, handling time, and acceptance probability of trial i, respectively, and T is the travel times. This gives the total reward per second attainable in each block as a function of the lowest amount accepted (i.e. acceptance threshold). Figure X shows possible earnings for each choice strategy, as well as the lowest amount participants should accept in order to maximize their rewards (circled dots). For example, a participant in a 10 s handling block should accept 8-cent and 20-cent rewards (and reject 4-cent rewards) to maximize their reward rate. Significant deviations from the optimal strategy can be understood as reflecting changes in subjective OC. Beyond comparing among cost types, this approach allowed us to test if certain demands boosted the value of offers (i.e. over-accepting low offers).
+
+### Analyses
+
+First, we tested whether decision makers integrated delay and reward information. To address the prediction that participants would be more likely to accept higher reward and shorter handling time trials, we fit a logistic regression to each participant’s data to predict trial-wise acceptances, using handling time and reward amount as predictors. The resulting beta coefficients for handling time and reward were pooled across all participants, and we performed a one-sample rank-sum test on each set of coefficients to examine whether they were significantly positive or negative (compared to no effect of 0). We then performed an extension of the logistic regression by adding an autoregressive covariate containing the number of consecutive quits prior to a given trial. This examined the possibility that participant choices were governed by recent quitting history rather than the experimental parameters. Coefficients significantly different from 0 denoted that a participant relied on recent quitting history. 
+	Our foraging task was configured such that over and under accepting were detrimental to total earnings. To confirm this, we fit a general linear model with constant, linear, and quadratic terms to estimate the correspondence between proportion accepted (independent variable) and total earnings (dependent variable). A significant quadratic coefficient thus would signal that the task statistics operated as expected. Next, to determine the optimality of each group’s decisions, performed two-sided one-sample t-tests to see if the proportion of acceptances for each time/reward combination was significantly different from the optimal rate (see Operationalization of Cost above). This resulted in 36 independent tests (3 rewards amounts, 3 handling/travel time combinations, and 4 groups), so we corrected for multiple comparisons using False Discovery Rate (FDR) CHANGE TO COST3 APPROACH.
+Next we compared preferences among cost conditions. We first performed a one-way ANOVA on the proportion of trials accepted using group as a factor. We then compared the proportion completed among all 4 groups using non-parametric permutation contrasts (6 tests). The same approach was used for total earnings. This gave us an initial glimpse on the potential differences in cost among conditions. In order to further look at the effect of delay, work, and rewards, we will perform a repeated measures ANOVA on the proportion completed for each combination of factors. Reward and handling time will be within-subject factors, and condition a between-subjects factor. In support of hypotheses 4.1. and 4.2., we anticipate significant main effects of handling time, reward, and cost condition, but no interactions (MAYBE REMOVE, EXPLAINING WHY IT’S REDUNDANT). We computed the probability of accepting a trial with a mixed-effects logistic regression. Based on the task structure and our main question, our a priori model of interest included cost condition, handling time, and reward amount as fixed main effects, and subject ID as a random effect. Cost condition was modeled with three categorical terms, with the fourth condition as the reference condition. We ran three versions of the model with different reference conditions, in order to test all pairwise differences among the four cost conditions. As preregistered, we anticipated significant main effects (coefficients different than zero) of handling time, reward, and cost condition. We hypothesize that the differences among cost conditions will follow the pattern described in 4.2. We then examined whether this a priori model outperformed both simpler and more complex models. We used both Akaike’s Information Criterion (AIC) and Bayesian Information Criterion (BIC) to determine the model that minimized the negative log-likelihood while penalizing the addition of parameters. The regression with each combination of predictors was fitted in the following order: 1) intercept only; 2) cost type only; 3) handling time only; 4) reward only; 5) condition, handling, and reward main effects (a priori model); 6) adding a handling-by-reward interaction; and 7) adding all three possible two-way interactions. We predicted that model 5 would have the lowest AIC.
+Finally, we modeled the subjective opportunity cost in each condition. We started by addressing the prediction that participants would display consistent choice patterns throughout the session (i.e. that the reward amounts they accepted in a given timing condition would be similar throughout the experiment). This prediction was made because participants had full knowledge of the environment. We computed each participant’s total proportion of acceptances pre- and post-midpoint for every block. For each cost condition separately, we will fit a linear model that predicts post-midpoint acceptance from before-midpoint rates. We will report the slopes and 95% confidence intervals (CI) for each cost group. CIs containing 1 will denote that participants in that group produced consistent choices (CHANGE TO COST3 APPROACH, PERMUTATION).
+Once we established choice stability, we proceeded to estimate the subjective OC of each type of demand (see Operationalization of Cost above). OC were computed as the product of a free parameter (gamma) and the handling time. We used a softmax function to model each participant’s probability of completing a trial based on the difference between the delayed reward’s magnitude and the estimated OC for each cost type. 
+
+ **INSERT**
+
+Both gamma and the temperature parameter of the softmax function were estimated independently for each subject, using a maximum likelihood (MLE) approach through the NLOPTR package (CITE). We cross-validated each subject’s OC value using the pre-midpoint data for estimation, and post-midpoint choices for testing. The estimates from the training sample were used to predict acceptances in the testing sample, and the mean percent correctly predicted was reported for each group. Finally, the OC estimates for each group were compared using an ANOVA with condition as a factor. This let us determine which cost type produced the highest discounting. (ADD ADDITIONAL MODELS FROM LITERATURE)
+
+### **Experiment 2: Within-subjects comparison of costs**
+
+### Participants 
+
+We collected data from a new sample of 48 eligible participants  (39 Female, median age = 21, range = 18 - 36). Sample size was once again determined by means of power analysis (repeated measures ANOVA), using a significance level of 0.05, power of 0.8, a desired effect size of f=0.5, and four factors (one for each condition). The resulting sample size was 45, which we increased to 48 in order to balance the potential order of blocks. We excluded participants using the same criteria as in the between-subject experiment.
+
+### Foraging Task Adaptation
+
+The original between-subjects task was modified so that participants foraged for cost types in addition to rewards. Every participant experienced all forms of cost (delay, physical effort, and cognitive effort). There were two block types, in which delay trials were interspersed with either physical-effort or cognitive-effort trials. This setup prevented participants from having to rapidly switch between response modalities across trials (i.e. keyboard press and handgrip). Block combinations (i.e. physical/wait and cognitive/wait) were experienced three times by each participant in 7-minute-long, interleaved blocks, thus matching the experiment’s length to the between-subject version. Half of the participants experienced a block sequence that started with the physical block. Timing parameters were matched to the middle condition from Experiment 1 (i.e. 10 s handling and 6 s travel), allowing a balance between acquiring enough observations per trial type and being able to compare results across experiments. Participants were informed that this timing combination would be constant prior to beginning the experiment. Cost type combinations were disclosed at the beginning of each block, and reward/cost offers displayed before each trial begins (e.g. “8 cents for physical effort”). Unlike the previous experiment, participants could make their choice during the offer window (instead of during the handling time). Participants trained in each type of demand until they reached the same criteria as in the between-subject experiment.
+
+### Analyses
+
+The analytical pipeline for the within-subject study was mostly preserved from the between-subject experiment. We first ran tests to determine whether decision makers integrated reward information. We performed a logistic regression per participant to predict trial-wise acceptances based on reward amounts. The resulting beta coefficients were pooled across all participants, and a one-sample rank-sum test was used to examine whether they were significantly positive or negative (compared to 0). Next, we explored the effects of choice history by adding an autoregressive covariate containing the number of consecutive recent quits. We then confirmed that the under- and over-acceptance were detrimental to total earnings by performing the same quadratic linear model explained above. To determine the optimality of the group’s decisions, we will examine whether each cost type produced a bias to over or under-accept at 4 and 8 cents (assuming that 20 cents were always be accepted, given our design). The reward-maximizing strategy was to always reject 4 cents and accept 8 cents, yielding a combined optimal proportion of acceptances of 50% (see Operationalization of Costs for details). We performed a two-sided one-sample chi-squared test of proportions against the null probability of 0.5 for each type of cost. Therefore, a significant difference indicated that participants either over or under accepted rewards.
+To compare acceptance rates among cost conditions, we first computed the probability of accepting a trial with a mixed-effects logistic regression. The model included cost condition and reward amount as fixed main effects, and subject ID as a random effect (does this make sense? It’s specified just like the previous one). Cost condition was modeled with three categorical terms, with the fourth condition as the reference condition (two effort conditions, and two delay conditions corresponding to each effort type). We ran three versions of the model with different reference conditions, in order to test all relevant pairwise differences among the four cost conditions. Next, we compared this model to both simpler and more complex models using Akaike’s Information Criterion (AIC) and Bayesian Information Criterion (BIC). We added varied model complexity in the following order: 1) intercept only; 2) condition only; 3) reward only; 4) condition and reward main effects (base model); and 5) adding a two-way interaction. We predicted that model 4 would have the last considerable decrease in the negative log-likelihood.
+Next we probed the confidence and consistency with which participants made choices. We computed the proportion of quits that were performed during the choice window versus during the handling time. We interpreted as confidence if a participant made at least 80% of their choices during the offer window. We then computed each participant’s total proportion of acceptances on the first two and last two blocks, and compared them using a paired permutation analysis (5000 iterations).
+To estimate the subjective opportunity cost of each condition, we will use a logistic function to model each participant’s probability of completing a trial based on the difference between the delayed reward’s magnitude and the estimated opportunity cost (OC) for each cost type. OC will be computed as the product of a free parameter (gamma) and the handling time. Both gamma and the temperature parameter of the logistic function will be estimated at the subject level, independently for each subject and cost type. We cross-validated each subject’s OC value using the first four blocks (two cognitive, two physical) for estimation, and the last two blocks (one of each effort type) choices for testing. The estimates were used to predict acceptances in the testing sample, and the mean percent correctly predicted was reported for each cost type. The OC estimates for each group will be compared using a repeated measures ANOVA with cost as a factor. We will perform pairwise paired permutations as post-hoc tests. This will let us determine which cost type produced the highest discounting.
 
 ## Results
 
 ### **Between-subjects: Tests of whether decision makers integrate delay and reward information**
 
-### 16.1.1.
+### BTW: 16.1.1.
 
   *To address hypothesis 4.1., A logistic regression will be fit for each participant in order to predict trial-wise acceptances, using handling time and reward amount as predictors. The resulting beta coefficients for handling time and reward will be pooled across all participants, and we will perform a one-sample rank-sum test on each set of coefficients to examine whether the they are significantly positive or negative (compared to 0). If the group coefficients are significantly positive, it would mean that a predictor reliably increases the likelihood of acceptance. This will allow us to determine whether increments in handling time and reward amounts increased and decreased the likelihood of acceptance for each participant, respectively.* 
   
-``` {r 16.1.1., fig.align="center", fig.width = 4, fig.height = 4, echo = FALSE}
+``` {r BTW: 16.1.1., fig.align="center", fig.width = 4, fig.height = 4, echo = FALSE}
 # filterout errors and compute R + H logistic per subject, then get coefficients
 logisRH <- dataBtw %>%
   filter(Choice < 2) %>%
@@ -491,11 +541,11 @@ The plot shows the pooled coefficients across subjects for the effect of each pr
 
 \bigskip
 
-### 16.1.2.	
+### BTW: 16.1.2.	
 
 *We will perform an extension of the logistic regression from 16.1.1., this time adding an autoregressive covariate containing the number of consecutive quits prior to a given trial. In this way, we will examine the possibility that participant choices were governed by recent quitting history rather than the experimental parameters (see 11.1.3.). Coefficients not significantly different from 0 will denote that a participant did not rely on recent quitting history.*
   
-``` {r 16.1.2., echo = FALSE, include = FALSE}
+``` {r BTW: 16.1.2., echo = FALSE, include = FALSE}
 # add an AR regressor to track recent quits
 logisRHAR <- dataBtw %>%
               filter(Choice < 2) %>%
@@ -520,11 +570,11 @@ To measure the significance of each subject's autoregressive coefficient, we com
 
 \bigskip
 
-### 16.1.3.	
+### BTW: 16.1.3.	
 
 *A general linear model with constant, linear, and quadratic terms will be used to estimate the correspondence between proportion accepted (independent variable) and total earnings (dependent variable). No other covariates will be used, as this analysis is to confirm that over and under accepting are detrimental to total earnings. The quadratic term will be defined as the squared deviation from the optimal overall acceptance rate.*
   
-``` {r 16.1.3. Earnings, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
+``` {r BTW: 16.1.3. Earnings, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
 # calculate the proportions and earnings per subject, while keeping group info
 temp <- dataBtw %>%
   filter(rawChoice < 2) %>%
@@ -554,7 +604,7 @@ lmEarn <- lm(Earnings ~ pComplete + pComplete2, data = temp)
 
 The figure shows that participants that over and unceraccepted earned less money overall, as predicted. This is supported by a significant quadratic term from the linear model (F = `r round(summary(lmEarn)$fstatistic[1], digits = 2)`, Beta = `r summary(lmEarn)$coefficients[3,1]`, SE = `r round(summary(lmEarn)$coefficients[3,2], digits = 2)`, R-squared = `r round(summary(lmEarn)$r.squared, digits = 2)`; black line shows the fit). The following table shows all the results from the model.
 
-``` {r 16.1.3. Earnings table, echo=FALSE,fig.align="center",fig.width=9,fig.height=5}
+``` {r BTW: 16.1.3. Earnings table, echo=FALSE,fig.align="center",fig.width=9,fig.height=5}
 # Summary table for the linear model
 panderOptions("digits", 2)
 pander(lmEarn, style = "rmarkdown")
@@ -562,11 +612,11 @@ pander(lmEarn, style = "rmarkdown")
   
 \bigskip
   
-### 16.1.4.	
+### BTW: 16.1.4.	
 
 *To determine the optimality of each group’s decisions, we will perform two-sided one-sample t-tests (with mu being the optimal proporion of acceptances--either 0 or 1) to see if the proportion of acceptances for each time/reward combination was significantly different from the optimal rate (see 11.2.). This will result in 36 independent tests (3 rewards amounts, 3 handling/travel time combinations, and 4 groups), so we will correct for multiple comparisons using False Discovery Rate (FDR).*
 
-``` {r 16.1.4., echo=FALSE}
+``` {r BTW: 16.1.4., echo=FALSE}
 # in order
 # clean data, 
 # calculate each individual's prop. accept,
@@ -601,11 +651,11 @@ Of the 36 tests, around `r splitData_prop` were significantly deviant from optim
 
 ### **Between-subjects: Comparisons among the four delay and effort conditions**
 
-### 16.2.1.	
+### BTW: 16.2.1.	
 
 *To compare preferences (hypothesis 4.2.), we will first perform a one-way ANOVA on the proportion of trials accepted using group as a factor. In addition, we will do pairwise comparisons on the proportion completed among all 4 groups using non-parametric permutation contrasts (6 tests). The same approach will be used for total earnings. This will give us an initial glimpse on the potential differences in cost among conditions.*
 
-``` {r 16.2.1. Overall Proportion/Earnings, fig.align = "center", fig.width = 8, fig.height = 4, echo = FALSE}  
+``` {r BTW: 16.2.1. Overall Proportion/Earnings, fig.align = "center", fig.width = 8, fig.height = 4, echo = FALSE}  
 ## ECDF of proportion completed per cost type
 temp <- dataBtw %>%
         filter(Choice < 2) %>%
@@ -690,11 +740,11 @@ The plots show that subjects in the wait condition accepted the least and earned
 
 \bigskip
 
-### 16.2.2.
+### BTW: 16.2.2.
 
 *In order to further look at the effect of delay, work, and rewards, we will perform a repeated measures ANOVA on the proportion completed for each combination of factors. Offer and handling time will be within-subject factors, and condition a between-subjects factor. In support of hypotheses 4.1. and 4.2., we anticipate significant main effects of handling time, reward, and cost condition, but no interactions.*
   
-``` {r 16.2.2. rmANOVA, echo=FALSE,fig.align="center",fig.width=5,fig.height=4, results = 'asis'}
+``` {r BTW: 16.2.2. rmANOVA, echo=FALSE,fig.align="center",fig.width=5,fig.height=4, results = 'asis'}
 temp <- dataBtw %>%
         filter(Choice < 2) %>%
         group_by(SubjID, Cost, Handling, Offer) %>%
@@ -711,7 +761,7 @@ prop.aov <- with(temp, aov(pAccept ~ factor(Cost) * Handling * Offer +
 
 The plot below shows the mean proportion of acceptances (± SEM) per combination of handling time, reward, and condition (optimal acceptance rate indicated by the gray triangles). Visually, the graph confirms a couple of important intuitions. First, as the handling time increases, the proportion of acceptances decreases. Second, this discounting did not affect the 20 cent offers, as is expected from the present foraging environment. Lastly, and similar to the previous point, as the value of the offers increases so does the willingness to accept a trial. Beyond these general features, it is clear that the cognitive effort group accepted more than the other groups, regardless of the combination of experimental parameters. Notably, the optimality of this greater acceptance rate is determined by the timing context (e.g. optimal at 2 second handling time, but detrimental at 14 seconds).      
 
-``` {r 16.2.2. rmANOVA plot, echo = FALSE, fig.align = "center", fig.width = 10, fig.height = 6}
+``` {r BTW: 16.2.2. rmANOVA plot, echo = FALSE, fig.align = "center", fig.width = 10, fig.height = 6}
 # # code to calculate the rwd/sec rate for each acceptance threshold per handling
 # rwd <- c(4, 8, 20)
 # handling <- c(14, 10, 2) + 2 # add 2 to H and T to account for offer and reward disclosure windows
@@ -772,7 +822,7 @@ trueProp <- dataBtw %>%
 
 These intuitions were formally tested using a repeated measures ANOVA, whose results are presented in the table below. Overall, the analysis partially confirmed our predictions. While all main effects were significant, there was an unexpected significant condition-by-reward interaction, which could be due to the performance of the "easy" group relative to their peers. Importantly, we found that the interaction between all three main parameters was not significant, thus suggesting that the effects of handling and reward on choices were not different across groups.
 
-``` {r 16.2.2. rmANOVA table, pander}
+``` {r BTW: 16.2.2. rmANOVA table, pander}
 # anova table
 x <- summary(prop.aov)   
 x <- x$`Error: Within`
@@ -782,11 +832,11 @@ pander(x, style = "rmarkdown", split.table = 110)
 
 \bigskip
 
-### 16.2.3.	
+### BTW: 16.2.3.	
 
 *We will compute the probability of accepting a trial with a mixed-effects logistic regression. Based on the task structure and our main question, our a priori model of interest will include cost condition, handling time, and reward amount as fixed main effects, and subject ID as a random effect. Cost condition will be modeled with three categorical terms, with the fourth condition as the reference condition. We will run three versions of the model with different reference conditions, in order to test all pairwise differences among the four cost conditions. As with 16.2.2., we anticipate significant main effects (coefficients different than zero) of handling time, reward, and cost condition. We hypothesize that the differences among cost conditions will follow the pattern described in 4.2.*
 
-``` {r 16.2.3. Mixed Effects Model, echo = FALSE, fig.align = "center", fig.width = 5, fig.height = 4}
+``` {r BTW: 16.2.3. Mixed Effects Model, echo = FALSE, fig.align = "center", fig.width = 5, fig.height = 4}
 # clean the data so the total acceptances and quits per subj x handling x reward are ready for modeling
 mixLogis_main <- list()
 mixData <- dataBtw %>%
@@ -836,7 +886,7 @@ corrplot(mixSummary$Betas,
 ```
 
 
-``` {r 16.2.3. Mixed Effects Model plot rand intercepts, echo = FALSE, fig.align = "center", fig.width = 5, fig.height = 4}
+``` {r BTW: 16.2.3. Mixed Effects Model plot rand intercepts, echo = FALSE, fig.align = "center", fig.width = 5, fig.height = 4}
 # plot random intercepts in increasing order
 #RI1 <- qplot(seq(83), sort(ranef(mixLogis_main$Wait)$SubjID[,1]), color = colsBtw[1], show.legend = F) + theme_classic()
 
@@ -860,12 +910,12 @@ corrplot(mixSummary$Betas,
 As predicted, the model showed significant main effects of handling time (Beta = `r mixLogis_main$Summary$coefficients[5,1]`, SE = `r mixLogis_main$Summary$coefficients[5,2]`, p < 0.001) and reward (Beta = `r mixLogis_main$Summary$coefficients[6,1]`, SE = `r mixLogis_main$Summary$coefficients[6,2]`, p < 0.001). In order to show the comparisons among all conditions, the following plot portrays the coefficients (color scale), and p-values (numbers within squares) that resulted from switching the reference condition. Specifically, each entry shows how much more likely was the reference group to accept an offer than the comparison group. Based on this, we can see that the cognitive group was significantly more likely to accept any offer than the physical and wait groups, but not the easy group.
 
 
-### 16.2.4.
+### BTW: 16.2.4.
 
 *Next, we will examine whether the a priori model from 16.2.3. outperforms both simpler and more complex models. Unlike the individual logistic regression fits in 16.1.1., a mixed-effects approach gives us a better goodness of fit measure for model comparisons. We will determine the best model (combination of predictors) using Akaike’s Information Criterion (AIC) to determine the model that minimizes the negative log-likelihood while penalizing the addition of parameters. The regression with each combination of predictors will be fitted in the following order: 1) intercept only; 2) condition only; 3) handling time only; 4) reward only; 5) condition, handling, and reward main effects (from 16.2.3.); 6) adding a handling-by-reward interaction; and 7) adding all three possible two-way interactions. We predict that model 5 will have the lowest AIC.*
 
 
-``` {r 16.2.4. Model comparison, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+``` {r BTW: 16.2.4. Model comparison, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
 # Quasibinomial GLM versions (with proper proportion setup)
 mixLogis_compare <- list()
 mixLogis_compare$Base <- glmer(cbind(totalAccepted, totalQuits) ~ 1 + (1 | SubjID), family = "binomial", data = mixData) # intercept only
@@ -884,7 +934,7 @@ abicLogis_compare <- data.frame(Model = names(mixLogis_compare),
 mixLogis_compare$Rsq <- 1 - (deviance(mixLogis_compare$AllMain)/deviance(mixLogis_compare$Base)) # denominator is the null deviance
 ```
 
-``` {r 16.2.4. Plot Deviance comparison, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+``` {r BTW: 16.2.4. Plot Deviance comparison, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
 # plot AIC and BIC
 (mixLogis_compare$plot <- abicLogis_compare %>% 
   gather(Comparison, Value, AIC:BIC) %>%
@@ -901,11 +951,11 @@ This plot shows the AIC for every model. The figure below shows AIC and BIC for 
 
 ### **Between-subjects: Modeling the subjective opportunity cost in each condition**
 
-### 16.3.1.
+### BTW: 16.3.1.
 
 *Response times (RT) for quit responses will be presented in a descriptive manner in order to examine whether participants tended to quit early or late within individual trials. Each cost group’s response time distribution will contain the pooled RT across its corresponding participants, and we will display the empirical cumulative distribution functions for each condition. Short RT would suggest confident and stable decisions (in support of 4.3.1.).*
 
-``` {r 16.3.1. RTs, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+``` {r BTW: 16.3.1. RTs, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
 # Proportion of forced travels per subject and cost type
 propFails <- dataBtw %>% 
   filter(Cost != "Wait") %>% 
@@ -959,11 +1009,11 @@ The survival curve below shows instances of quiting across a trial for all parti
 
 \bigskip
 
-### 16.3.2.
+### BTW: 16.3.2.
 
 *In order to further examine choice stability (hypothesis 4.3.1.), we will compute each participant’s total proportion of acceptances pre- and post-midpoint. For each cost condition separately, we will fit a linear model that predicts post-midpoint acceptance from before-midpoint rates. We will report the slopes and 95% confidence intervals (CI) for each cost group. CIs containing 1 will denote that participants in that group produced consistent choices.*
   
-``` {r 16.3.2. Pre/Post Break, echo=FALSE,fig.align="center",fig.width=5,fig.height=5}
+``` {r BTW: 16.3.2. Pre/Post Break, echo=FALSE,fig.align="center",fig.width=5,fig.height=5}
 # divide the data into proportion accepted before/after the break (one per column)
 temp <- dataBtw %>%
   filter(Choice < 2) %>%
@@ -998,7 +1048,7 @@ prepost$Perms <- sapply(temp, function(data) {permute(data$propAccept_1, data$pr
 
 The plot below shows that acceptance rates before and after the mid-point were mostly consistent, although it was more likely for participants to accept less in the second half of the experiment. **NOTE: The lines of means in the scatterplot are calculated by first computing the mean acceptances per block, then averaging those for blocks pre/post break. That's how they match the second half of the right plot, but the linear model is computed with the overall proportion acceptances pre-post, which gives slightly different mean estimates (which is also the reason for slight mean differences in proportion accepted between these and the boxplot in 16.2.1.)**
 
-``` {r 16.3.2. Plot Pre/Post, echo=FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
+``` {r BTW: 16.3.2. Plot Pre/Post, echo=FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
 # scatter plot of pre/post acceptances
 # BIG CAVEAT: THE 
 # first calculate the mean acceptances per cost/half to draw horizontal and vertical lines on the plot
@@ -1069,14 +1119,14 @@ The following table shows the coefficients and CI for each linear model, and sho
 A better test is to perform a pairwise comparison between halves per cost type. Paired permutations on means of proportions showed no differences for wait and easy groups (p > 0.5), but significantly lower acceptance rates for physical (*p* = `r prepost$Perms[1]`, Cohen's D = `r prepost$CohenD[1]`) and cognitive (*p* = `r prepost$Perms[2]`, Cohen's D = `r prepost$CohenD[2]`) groups. These results are more consistent with the plots above.
 
 
-``` {r 16.3.2. prepost table, pander}
+``` {r BTW: 16.3.2. prepost table, pander}
 panderOptions("digits", 2)
 pander(prepost$summary, style = "rmarkdown", split.table = 110)
 ```
 
 Now let's divide them by reward and handling amounts. The plots below show that the overall rates of acceptances remain mostly consistent across first and second halves of the experimental session.
 
-``` {r 16.3.2. Plot Pre/Post reward x handling, echo=FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
+``` {r BTW: 16.3.2. Plot Pre/Post reward x handling, echo=FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
 # # pre
 # t1 <- dataBtw %>%
 #   filter(Choice < 2, Half == "Half_1") %>%
@@ -1173,7 +1223,7 @@ dataBtw %>%
 
 This prompted the question of whether fitting the mixed logistic model could confirm this shift in preferences. Just as before, the matrix below show the coefficient magnitude (color) and pvalues for differences based on iterating through costs as reference dummy codes.
 
-``` {r 16.3.2. mix pre/post separately, echo = FALSE, fig.align="center", fig.width = 5, fig.height = 4}
+``` {r BTW: 16.3.2. mix pre/post separately, echo = FALSE, fig.align="center", fig.width = 5, fig.height = 4}
 ## compute the same mixed effects logistic for each half
 # mixed logistic for the first half
 mixLogis_pre <- list()
@@ -1248,11 +1298,11 @@ corrplot(betaMat,
 
 \bigskip
 
-### 16.3.3.
+### BTW: 16.3.3.
 
 *To estimate the subjective opportunity cost (hypothesis 4.3.2.), we will use a logistic function to model each participant’s probability of completing a trial based on the difference between the delayed reward’s magnitude and the estimated opportunity cost (OC) for each cost type. OC will be computed as the product of a free parameter (gamma) and the handling time. Both gamma and the temperature parameter of the logistic function will be estimated at the subject level, independently for each subject.*
 
-``` {r 16.3.3. OC modeling, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+``` {r BTW: 16.3.3. OC modeling, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
 # group
 summaryOC <- list()
 summaryOC$all <- dataBtw %>%
@@ -1282,13 +1332,13 @@ The gamma optimization search space was bound by extreme choice values. For exam
 
 \bigskip
 
-### 16.3.4.
+### BTW: 16.3.4.
 
 *We will cross-validate each subject’s OC value using the pre-midpoint data for estimation, and post-midpoint choices for testing. The estimates will be used to predict acceptances in the testing sample, and the mean percent correctly predicted will be reported for each group. This will also provide information on the stability of each participant’s choices (4.3.1.).*
   
 As can be seen below, the gamma parameter from the OC model was able to predict post-midpoint choices successfully regardless of group. 
 
-``` {r 16.3.4. OC cross-validation, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+``` {r BTW: 16.3.4. OC cross-validation, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
 # Compute the OC for pre-midpoint
 summaryOC$pre <- dataBtw %>%
                  filter(Half == "Half_1") %>%
@@ -1323,11 +1373,11 @@ summaryOC$predicted <- dataBtw %>%
 
 \bigskip
 
-### 16.3.5.
+### BTW: 16.3.5.
 
 *The OC estimates for each group will be compared using an ANOVA with condition as a factor. This will let us determine which cost type produced the highest discounting.*
 
-``` {r 16.3.5. OC comparisons, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
+``` {r BTW: 16.3.5. OC comparisons, echo=FALSE,fig.align="center",fig.width=6,fig.height=4}
 # ANOVA
 OCanova <- list()
 OCanova$aov <- summary(aov(Gamma ~ Cost, data = summaryOC$all))
@@ -1363,7 +1413,7 @@ OCanova$ES <- summaryOC$all %>%
 
 The analysis of variance was significant (F = `r round(Fval, digits = 2)`, p = `r ifelse(Pval < 0.001, "< 0.001", paste("=", round(Pval, digits = 2)))`, R-squared = `r Rsquared_aov`). Pairwise post-hoc permutations are shown in the following matrix. These results suggest that participants engaged in cognitively effortful demands experience significantly lower opportunity costs than those whose demands involve physical effort and pure delay. The reason for this is unclear, and we will work on it in the near future. 
 
-``` {r 16.3.5. corrplot, echo = FALSE, fig.align="center", fig.width=5, fig.height=5}
+``` {r BTW: 16.3.5. corrplot, echo = FALSE, fig.align="center", fig.width=5, fig.height=5}
 # plot all pairwise comparisons
 corrplot(OCanova$ES,
          is.corr = F, 
@@ -1382,11 +1432,1177 @@ corrplot(OCanova$ES,
 
 
 \bigskip
-
+
 
 
 
 
 \newpage
+
+
+
+
+### **Within-subjects: Tests of whether decision makers integrate reward information**
+
+### WTH: 16.1.1. 
+
+*To address hypothesis 4.1., A logistic regression will be fit for each participant in order to predict trial-wise acceptances, using reward amount as predictor. The resulting beta coefficients will be pooled across all participants, and we will perform a one-sample rank-sum test to examine whether the they are significantly positive or negative (compared to 0). If the group coefficients are significantly positive, it would mean that a predictor reliably increases the likelihood of acceptance. This will allow us to determine whether increments in reward amounts increased the likelihood of acceptance for each participant.*
+	
+``` {r WTH: 16.1.1., fig.align="center", fig.width = 4, fig.height = 4, echo = FALSE}
+# adapt the data so the fits are only performed on choices, not failed attempts (revisit?)
+dataList <- dataWth %>% plyr::dlply("SubjID", identity)
+
+# fits
+logisticFits_base <- lapply(dataList, function(data) glm(Choice ~ Offer, data = data, family = "binomial")) 
+
+# Summarize
+baseCoeffs <- as.data.frame(t(sapply(logisticFits_base, "[[", "coefficients")))
+baseCoeffs$ConvIters <- sapply(logisticFits_base, function(x) {summary(x)$iter})
+baseCoeffs$R2 <- sapply(logisticFits_base, function(x) {1 - (summary(x)$deviance / summary(x)$null.deviance)})
+baseCoeffs$aic <- sapply(logisticFits_base, function(x) {summary(x)$aic})
+baseCoeffs$propAccept_total <- sapply(dataList, function(data) {mean(data$Choice)})
+baseCoeffs$propAccept_totalSQRD <- baseCoeffs$propAccept_total^2
+baseCoeffs$totalEarned <- (dataWth %>% group_by(SubjID) %>% summarize(totalEarned = sum(Offer[Choice == 1])))$totalEarned
+baseCoeffs$SubjID <- subjList_wth # add subject list column to join the demographics by it below
+
+# plot to match the one in Cost 2, even though we only have offer as an influence
+ggplot(data = baseCoeffs, aes(x = "Offer", y = Offer)) +
+  geom_boxplot() +
+  ylim(-10, 10) +
+  labs(x = "", y = "Coefficients") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  theme(legend.position = c(0.9, 0.7),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        text = element_text(size = 16))
+
+```
+
+The Wilcoxon signed rank test showed that the reward coefficients were significantly greater than 0 (V = `r wilcox.test(baseCoeffs$Offer)$statistic`, *p* = `r wilcox.test(baseCoeffs$Offer)$p.value`), indicating that participants were properly influenced by reward amounts.
+
+### WTH: 16.1.2. 
+
+*We will perform an extension of the logistic regression from 16.1.1., this time adding an autoregressive covariate containing the number of consecutive quits prior to a given trial. In this way, we will examine the possibility that participant choices were governed by recent quitting history rather than the experimental parameters. Coefficients not significantly different from 0 will denote that a participant did not rely on recent quitting history.*
+	
+``` {r WTH: 16.1.2., echo = FALSE, include = FALSE}
+# Create an autoregressive predictor based on previous consecutive quits
+dataList <- lapply(dataList, function(data) data %>% mutate(AR = seqQuits(Choice)))
+
+# fits
+logisticFits_base <- lapply(dataList, function(data) {glm(Choice ~ Offer + AR, data = data, family = "binomial")}) 
+
+# get the low/high 95% CIs for AR
+baseCoeffs <- as.data.frame(t(sapply(logisticFits_base, confint, "AR"))) %>% 
+  dplyr::rename(AR_CILow = `2.5 %`, AR_CIHigh = `97.5 %`) %>%
+  mutate(SubjID = subjList_wth) %>%
+  left_join(baseCoeffs, by = "SubjID")
+
+# reorder so that SubjID comes first
+#baseCoeffs <- baseCoeffs[ , c(3,4,5,6,7,8,9,1,2)]
+
+# create a vector indicating whether 0 is included or not
+# but first change NA to 0 (visual inspection showed that NAs were tied to p's with near full p(accept), meaning they weren't influenced by history)
+baseCoeffs <- baseCoeffs %>% mutate(AR_CILow = ifelse(is.na(AR_CILow), 0, AR_CILow),
+                                    AR_CIHigh = ifelse(is.na(AR_CIHigh), 0, AR_CIHigh))
+baseCoeffs$AR_effect <- apply(baseCoeffs, 1, function(x) (!(as.numeric(x["AR_CILow"]) <= 0 & as.numeric(x["AR_CIHigh"]) >= 0)))
+
+# alternative method, just do pvalues (maybe adjusted when n is higher)
+# mean(sapply(logisticFits_base, function(x) {summary(x)$coefficients[3,4]}) < 0.05)
+```
+
+This regression showed that `r sum(baseCoeffs$AR_effect)` out of `r nSubjs_wth` of the subjects were influenced by recent quit history.
+
+###	WTH: 16.1.3. 
+
+*A general linear model with constant, linear, and quadratic terms will be used to estimate the correspondence between proportion accepted (independent variable) and total earnings (dependent variable). No other covariates will be used, as this analysis is to confirm that over and under accepting are detrimental to total earnings. The quadratic term will be defined as the squared deviation from the optimal overall acceptance rate?*
+	
+``` {r WTH: 16.1.3. prop accept x earnings, echo = FALSE, include = T, fig.align="center",fig.width=4,fig.height=4}
+# Notes: I also performed this comparing halves and block types x half, and it doesn't look like participants were accepting less to make more.
+# calculate the proportions and earnings per subject, while keeping group info
+temp <- dataWth %>%
+  filter(rawChoice < 2) %>%
+  group_by(SubjID) %>%
+  summarise(Earnings = sum(Offer[Choice == 1] / 100),
+            pComplete = mean(Choice)) %>%
+  mutate(pComplete2 = pComplete^2) %>%
+  ungroup()
+
+# linear fit of earnings x prop accept
+# adding a regressor for half shows no diffs in earnings
+lmEarn <- lm(Earnings ~ pComplete + pComplete2, data = temp)
+
+# plot
+(earnFitplot <- ggplot(data = temp, aes(pComplete, Earnings)) + 
+         scale_color_manual(values = cols) + 
+         geom_point(pch = 21, color = "black", size = 3, show.legend = T) + 
+         stat_smooth(aes(y = Earnings), method = "lm", formula = y ~ x + I(x^2), color = "grey30") +
+         labs(x = "Proportion Completed", y = "Total Earnings (dollars)") +
+         scale_fill_manual(values = cols) +
+         ylim(12, 16) +
+         theme(panel.grid.major = element_blank(), 
+           panel.grid.minor = element_blank(), 
+           panel.background = element_blank(), 
+           axis.line = element_line(colour = "black"),
+           text = element_text(size = 16)))
+
+# extra analyses
+# a pre-post paired permutation on earnigs confirms no differences (more evidence in section 16.3.3--prepost)
+# this means that, at least in general, participants are not changing their behavior due to monetary incentives
+# but because of something else, maybe like fatigue (this pattern holds even at finer subdivisions)
+# PPearn <- dataWth %>%
+#           #filter(Block %in% c(1,2,5,6)) %>%
+#           mutate(Choice = ifelse(Choice > 1, 0, Choice)) %>%
+#           group_by(SubjID, Half) %>%
+#           summarise(Earnings = sum(Offer[Choice == 1] / 100),
+#                     pComplete = mean(Choice)) %>%
+#           ungroup() %>% 
+#           select(SubjID, Half, Earnings) %>% 
+#           spread(Half, Earnings)
+# 
+# permute(PPearn$Half_1, PPearn$Half_2, paired = TRUE)
+```
+
+The table shows the results from this linear model. In accord with the design of the experimental task, participants who either rejected or accepted too many trials received the least amount of money overall. This is confirmed by significance of the quadratic term below.
+
+``` {r WTH: 16.1.3. Earnings table, echo=FALSE,fig.align="center",fig.width=9,fig.height=5}
+# Summary table for the linear model
+panderOptions("digits", 2)
+pander(lmEarn, style = "rmarkdown")
+```  
+
+###	WTH: 16.1.4. 
+
+*To determine the optimality of the group's decisions, we will examine whether each cost type produced a bias to over or under-accept at 4 and 8 cents (assuming that 20 cents will always be accepted). The reward-maximizing strategy is to always reject 4 cents and accept 8 cents, yielding a combined optimal proportion of acceptances of 50%. We will perform a two-sided one-sample chi-squared test of proportions against the null probability of 0.5 for each type of cost. We will report the estimated overall proportion of acceptances for these rewards along with the statistics to show the direction of the bias.*
+
+``` {r WTH: 16.1.4., echo = FALSE, fig.align="center",fig.width=6,fig.height=4}
+# get the proportion of acceptances per reward and trial type across subjects, and do a one sample t test versus a null mu given by the optimal strategy
+# note that in the very likely case that every participant will accept or reject for a given reward/cost (i.e. sd = 0): 
+# I am just providing a pseudo pvalue as 1 minus the diff. between prevalent choice and the null (so, removing the standard deviation from the t test equation, otherwise you can't divide by 0)
+# this is just to track the optimality.
+# I am also adding the mean/sd of acceptances per cost/reward and optimality as reference
+# summary_costvsreward <- data %>% 
+#                           group_by(SubjID, Offer, Cost) %>% 
+#                           summarize(prop = mean(Choice)) %>%
+#                           group_by(Offer, Cost) %>%
+#                           summarize(pval = ifelse(sd(prop) == 0, 
+#                                                   1 - (mean(prop) - ifelse(mean(Offer) == 4, 0, 1)), 
+#                                                   t.test(prop, mu = (ifelse(mean(Offer) == 4, 0, 1)))$p.value),
+#                                     propAccept = mean(prop),
+#                                     sdAccept = sd(prop)) %>%
+#                           ungroup() %>%
+#                           mutate(Optimal = rep(c(0,1,1), each = 4),
+#                                  Padjusted = p.adjust(pval, method = "BY"))
+# 
+# temp <- data %>%
+#   group_by(SubjID, Offer, Cost) %>%
+#   filter(Offer < 20) %>%
+#   summarize(propAccept = mean(Choice)) %>% 
+#   spread(Cost, propAccept) %>% 
+#   ungroup() %>% 
+#   select(Cognitive:Wait_P) %>% 
+#   apply(., 2, t.test, mu = 0.5) 
+# 
+# summary_costvsreward <- data.frame(tstat = sapply(temp, "[[", "statistic"), 
+#                                    pval = sapply(temp, "[[", "p.value"))
+# rownames(summary_costvsreward) <- names(temp)
+
+# get quits and acceptances per cost type for each subject
+# revisit this eventually to clean it up
+temp <- dataWth %>%
+  group_by(SubjID, Offer, Cost) %>%
+  filter(Offer < 20) %>%
+  summarize(propAccept = mean(Choice),
+            accept = sum(Choice),
+            quit = sum(Choice == 0)) %>% 
+  gather(act, counts, accept:quit) %>% 
+  unite(temp, Cost, act, sep = ".") %>% 
+  select(SubjID, Offer, temp, counts) %>% 
+  spread(temp, counts) %>%
+  ungroup() %>% 
+  select(Cognitive.accept:Wait_P.quit) 
+
+# perform a prop.test based on the group's acceptances and quits per cost
+temp2 <- lapply(seq(1, 8, by = 2), function(i) {prop.test(sum(temp[,i]), sum(temp[,i] + temp[,i+1]), p = 0.5, conf.level = 0.95)})
+
+# store stats in a dataframe
+summary_costvsreward <- data.frame(probability = sapply(temp2, "[[", "estimate"),
+                                   chisquared = sapply(temp2, "[[", "statistic"), 
+                                   confint = t(sapply(temp2, "[[", "conf.int")),
+                                   pval = sapply(temp2, "[[", "p.value"))
+rownames(summary_costvsreward) <- unique(gsub("[.].*","",names(temp)))
+
+rm(temp, temp2)
+
+# create table
+pander(round(summary_costvsreward, digits = 4))
+```
+
+The table shows a significant bias towards low acceptance for 4 and 8 cent rewards for all but one condition (wait trials associated with cognitive effort). The plot in 16.2.1. shows the proportion of acceptances per reward for each cost condition.
+
+### **Within-subjects: Comparisons among the four delay and effort conditions**
+
+###	WTH: 16.2.1. 
+
+*We will compute the probability of accepting a trial with a mixed-effects logistic regression. Based on the task structure and our main question, our a priori model of interest will include cost condition and reward amount as fixed main effects, and subject ID as a random effect. Cost condition will be modeled with three categorical terms, with the fourth condition as the reference condition (two effort conditions, and two delay conditions corresponding to each effort type). We will run three versions of the model with different reference conditions, in order to test all relevant pairwise differences among the four cost conditions (per 4.2). We anticipate significant main effects (coefficients different than zero) for reward and cost condition. We hypothesize that the differences among cost conditions will follow the pattern described in 4.2.* 
+
+``` {r WTH: 16.2.1. Overall Proportion diffs, fig.align = "center", fig.width = 6, fig.height = 4, echo = FALSE}  
+# ## ECDF of proportion completed per cost type
+# temp <- dataWth %>%
+#         filter(Choice < 2) %>%
+#         #mutate(Cost = factor(Cost, levels = list("Physical", "Cognitive", "Wait_0", "Wait_1"))) %>%
+#         group_by(SubjID, Cost) %>%
+#         summarise(pComplete = mean(Choice))
+# 
+# 
+# # plots
+# (p2 <- ggplot(temp, aes(Cost, pComplete, fill = Cost)) + 
+#         geom_boxplot(show.legend = F) +
+#         scale_fill_manual(values = cols) +
+#         ylim(c(0, 1)) +
+#         labs(y = "Proportion Completed") +
+#         theme(panel.grid.major = element_blank(), 
+#             panel.grid.minor = element_blank(), 
+#             panel.background = element_blank(), 
+#             axis.line = element_line(colour = "black"),
+#             text = element_text(size = 16)))
+
+
+```
+
+
+
+``` {r WTH: 16.2.1., echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 5}
+# both methods yield similar outputs, at least coefficients and pvalues
+# but the likelihoods will differ of course. The second one might be better in terms of computational needs.
+# method 1
+# mixLogis_main <- list()
+# mixLogis_main$Cog <- glmer(Choice ~ Cost + Offer + (1 | SubjID), family = "binomial", data = data)
+
+# method 2
+mixLogis_main <- list()
+mixData <- dataWth %>%
+  group_by(SubjID, Cost, Offer) %>%
+  summarize(totalChoices = length(Choice),
+            totalAccepted = sum(Choice),
+            totalQuits = sum(Choice == 0),
+            propAccepted = mean(Choice))
+
+mixLogis_main$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait_C"))
+mixLogis_main$Wait_C <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait_P"))
+mixLogis_main$Wait_P <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
+mixLogis_main$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+
+
+# plot proportion accepted per trial/offer combo
+(n2 <- dataWth %>%
+        filter(Choice < 2) %>%
+        group_by(Cost, Offer) %>%
+        summarise(propAccept = mean(Choice),
+                  SE = sd(Choice) / sqrt(nSubjs_wth)) %>%
+        ungroup() %>%
+        mutate(Optimal = rep(c(0, 1, 1), length(unique(dataWth$Cost))),
+               #BlockType = as.factor(rep(c(0,1,0,1), each = 3)),
+               Offer = ifelse(Offer == 20, 12, Offer)) %>%
+        ggplot(aes(Offer, propAccept, color = Cost)) +
+          geom_point(size = 3, show.legend = T) +
+          geom_point(aes(y = Optimal), size = 3, pch = 21, fill = "grey75", color = "grey30") +
+          geom_line(lwd = 1, show.legend = T) +
+          scale_color_manual(values = cols) +
+          scale_fill_manual(values = cols) +
+          geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.4, size = 1) +
+          scale_y_continuous(limits = c(0, 1), breaks = c(0,0.5,1)) +
+          scale_x_continuous(breaks = c(4, 8, 12), labels = c("4", "8", "20")) +
+          labs(y = "Proportion Accepted") +
+          theme(legend.position = c(0.8, 0.25),
+                legend.key = element_blank(),
+                panel.grid.major = element_blank(),
+                panel.grid.minor = element_blank(),
+                panel.background = element_blank(),
+                axis.line = element_line(colour = "black"),
+                text = element_text(size = 22)))
+
+```
+
+
+
+The plot above shows that the pattern of reward acceptances does indeed resemble that from the between-subject experiment for an equivalent time combination. However, the differences in cost are mostly reversed from the previous experiment, following the order stipulated in 4.2. The matrix below shows the coefficients for all cost comparisons, with coefficient size in color and respective p-values enclosed in each box. This figure formally confirms the pattern seen above, although the wait conditions do trend towards significance.
+
+``` {r WTH: 16.2.1. corrplot, echo = FALSE, fig.align="center", fig.width=5, fig.height=4}
+# get summary of coeffs
+rearrange <- c("Cognitive", "Wait_C", "Wait_P", "Physical")
+mixSummary <- betaMatrix(mixLogis_main, rearrange = rearrange)
+diag(mixSummary$Pvals) <- NA
+
+# remove uninteresting comparisons
+mixSummary$Betas[rbind(c(3, 1), c(4,2))] <- NA
+mixSummary$Pvals[rbind(c(3, 1), c(4,2))] <- NA
+
+# invert colors
+col2 <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0", "#FFFFFF", "#FDDBC7", "#F4A582", "#D6604D", "#B2182B", "#67001F"))
+
+corrplot(mixSummary$Betas, 
+         is.corr = F, 
+         p.mat = mixSummary$Pvals, 
+         type = "lower",
+         outline = T,
+         #insig = "p-value",
+         sig.level = 0.05, 
+         na.label = "square", 
+         na.label.col = "grey",
+         method = "color", 
+         tl.col = "black",
+         tl.cex = 0.8,
+         col = col2(200))
+         
+```
+
+###	WTH: 16.2.2.
+
+*Next, we will examine whether the a priori model from 16.2.1. outperforms both simpler and more complex models. Unlike the individual logistic regression fits in 16.1.1., a mixed-effects approach gives us a better goodness of fit measure for model comparisons. We will determine the best model (combination of predictors) using Akaike's Information Criterion (AIC) and Bayesian Information Criterion (BIC) to determine the model that minimizes the negative log-likelihood. The regression with each combination of predictors will be fitted in the following order: 1) intercept only; 2) condition only; 3) reward only; 4) condition and reward main effects (from 16.2.3.); and 5) adding a two-way interaction. We predict that model 4 will have the last considerable decrease in the negative log-likelihood.*
+
+``` {r WTH: 16.2.2., echo = FALSE, fig.align="center", fig.width=6, fig.height=4}
+# Quasibinomial GLM versions (with proper proportion setup)
+mixLogis_compare <- list()
+mixLogis_compare$Base <- glmer(cbind(totalAccepted, totalQuits) ~ 1 + (1 | SubjID), family = "binomial", data = mixData) # intercept only
+mixLogis_compare$Cost <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_compare$Reward <- glmer(cbind(totalAccepted, totalQuits) ~ Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_compare$AllMain <- mixLogis_main$Cognitive
+mixLogis_compare$Interaction <- glmer(cbind(totalAccepted, totalQuits) ~ Cost * Offer + (1 | SubjID), family = "binomial", data = mixData)
+
+# Model selection 
+abicLogis_compare <- data.frame(Model = names(mixLogis_compare),
+                                AIC = sapply(mixLogis_compare, AIC),
+                                BIC = sapply(mixLogis_compare, BIC))
+
+
+# plot 
+(mixLogis_compare$plot <- abicLogis_compare %>% 
+  gather(Comparison, Value, AIC:BIC) %>%
+  mutate(Model = factor(Model, levels = names(mixLogis_compare))) %>%
+  ggplot(aes(Model, Value, fill = Comparison)) +
+    geom_point(color = "black", pch = 21, size = 3) +
+    theme_classic())
+  
+# effect size
+mixLogis_compare$Rsq <- 1 - (deviance(mixLogis_compare$AllMain)/deviance(mixLogis_compare$Base)) # denominator is the null deviance
+```
+
+The figure shows that the model with all main effects had the lowest AIC, but not BIC (pseudo R-square: `r round(mixLogis_compare$Rsq, digits = 2)`). We performed a likelihood ratio test to formally determine whether adding cost type to the reward-only model significantly improved the fit. We computed the difference in deviance between the models, and evaluated it under a chi-squared distribution with 3 degrees of freedom (i.e. the number of parameters added to the model, as cost was dummy-coded). The table below summarizes the results, showing that the addition of cost type significantly improved the model fit. (personal note: sure, AIC is 1 value lower when considering the difference in dfs, but that's barely making it..)
+
+``` {r WTH: 16.2.2. LRT (anova) table, echo = F}
+test <- anova(mixLogis_compare$Reward, mixLogis_compare$AllMain)
+rownames(test) <- c("Reward Only", "All Main")
+
+pander(test[c(1, 2, 3, 5, 6, 8)])
+```
+
+### **Within-subjects: Modeling the subjective opportunity cost in each condition**
+
+###	WTH: 16.3.1. 
+
+*Response times (RT) for quit responses will be presented in a descriptive manner in order to examine whether participants tended to quit early or late within individual trials. Each cost condition's response time distribution will contain the pooled RT across participants, and we will display the empirical cumulative distribution functions for each condition. Short RT would suggest confident and stable decisions (in support of 4.3.1.).*
+
+``` {r WTH: 16.3.1., echo = FALSE, fig.align="center", fig.width=6, fig.height=4}
+# Proportion of forced travels per subject and cost type
+propFails <- dataWth %>%
+  filter(Cost != "WAIT") %>%
+  group_by(SubjID, Cost) %>%
+  summarise(propFails = mean(rawChoice == 2)) %>%
+  group_by(Cost) %>%
+  summarise(meanQuit = mean(propFails))
+# 
+# # Reaction times ECDFs including offer and in-trial quits
+# (RTs <- data %>%
+#   mutate(RT = ifelse(ResponseType != "OfferQuit", RT + 2, RT)) %>%
+#   filter(rawChoice < 2) %>% 
+#   ggplot(aes(RT, color = Cost)) + 
+#     #stat_ecdf(lwd = 1.2) +
+#     geom_line(aes(y = 1 - ..y..), stat = 'ecdf', lwd = 1.5) +
+#     geom_vline(xintercept = 2, lty = 2) + # end of the offer period
+#     scale_color_manual(values = cols) +
+#     scale_x_continuous(breaks = seq(12), limits = c(0, 14)) +
+#     labs(x = "Time in Cost", y = "Proportion Completed") +
+#     theme(panel.grid.major = element_blank(),
+#       panel.grid.minor = element_blank(),
+#       panel.background = element_blank(),
+#       axis.line = element_line(colour = "black"),
+#       text = element_text(size = 16)))
+
+# NEW VERSION OF SURVIVAL. BUT STILL NEEDS A BIT OF WORK. ALSO, CHECK THAT RT > 14s
+
+library(survival)
+library(ggfortify)
+
+# this version of a survival curve forces all successful acceptances to have an RT of 14
+# that's to avoid jumps from 2s to 10s to 14s
+# 1 - Choice is to reverse the coding of choices, since the survival package assumes 0 = censor?
+# to note re: x-axis. In this exp, p's could quit within the 2s offer window. Cost 2 didn't allow that, so it counts from when trial begins.
+temp <- dataWth %>%
+    mutate(RT = ifelse(ResponseType != "OfferQuit", RT + 2, RT)) %>%
+    #filter(rawChoice < 2) %>% 
+    mutate(#RT = ifelse(Choice == 1, 14, RT),
+           Choice = 1 - Choice) 
+
+survData <- survfit(Surv(RT, Choice) ~ Cost, data = temp)
+
+autoplot(survData) +
+  geom_vline(xintercept = 2, lty = 2) + # end of the grace period for physical trials
+  scale_color_manual(values = cols) +
+  scale_fill_manual(values = cols) +
+  scale_x_continuous(breaks = seq(12)) +
+  ylim(0, 1) +
+  scale_x_continuous(breaks = seq(0, 12), labels = seq(-2, 10)) +
+  labs(x = "Time in Trial", y = "Proportion Accepted", fill = "Cost", color = "Cost") +
+  theme(legend.position = c(0.35, 0.2),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        text = element_text(size = 22))
+
+# ecdf of RTs across blocks for all subjects combined
+dataWth %>%
+  mutate(RT = ifelse(ResponseType != "OfferQuit", RT + 2, RT)) %>%
+  mutate(Choice = 1 - Choice)  %>%
+  filter(ResponseType == "OfferQuit") %>%
+  ggplot(aes(RT, group = Block, color = Block)) +
+    stat_ecdf() +
+    #facet_wrap(vars(Cost)) +
+    theme_classic()
+
+```
+
+Participants can quit either during the offer period (2s) or during the handling time (10s), allowing for a total of 12 seconds to give up on the current trial. The survival curve above shows quitting throughout the trial for all participants. Censored points signal completions (at end of interval) and forced travels (throughout the trial). The figure suggests that participants made most of their choices quickly within the offer window. The overall proportion of forced trials was scarce (overall mean proportion of fails for cognitive and physical trials were `r unlist(propFails[1:2,2])`, respectively). 
+
+###	WTH: 16.3.2. 
+
+*We will also compute the proportion of quits that were performed during the choice window versus during the handling time. If over 80% of quits occurred during the choice window on average, this will suggest that participants were confident in their choices.*
+
+``` {r WTH: 16.3.2., echo = FALSE}
+# Proportion of quits once the trial started per subject
+PropQuits <- dataWth %>%
+  filter(!(ResponseType %in% c("Forced Travel", "Forced travel", "Reward"))) %>%
+  group_by(SubjID) %>%
+  summarise(propAccept = mean(ResponseType == "Quit"))
+
+```
+
+The mean proportion of quits during the handling time was `r round(mean(PropQuits$propAccept), digits = 2)` (SD = `r round(sd(PropQuits$propAccept), digits = 2)`), with `r sum(PropQuits$propAccept > 0.2)` participants accepting fewer than 80% of trials during the offer window. 
+
+###	WTH: 16.3.3. 
+
+*In order to further examine choice stability (hypothesis 4.3.1.), we will compute each participant's total proportion of acceptances on the first two and last two blocks. We will compute a mixed-effects linear model to predict post-midpoint proportion of acceptances from pre-midpoint rates, with subjects as random intercepts and condition as a dummy-coded fixed effect. We will report the 95% confidence interval (CI) for the pre-midpoint predictor. A CI containing 1 will denote that participants in that condition produced consistent choices, while accounting for the overall acceptance patterns of a given subject across cost types. (**This is a more elaborate version of the between-subject analysis, which did a pre-post prediction based on the proportion of acceptances per subject across groups**).*
+
+``` {r WTH: 16.3.3., echo = FALSE, fig.align = "center", fig.width = 8, fig.height = 4, include = F}
+# restructure the data
+temp <- dataWth %>%
+  filter(!(Block %in% c(3,4))) %>%
+  group_by(SubjID, Cost, Half) %>%
+  summarise(propAccepted = mean(Choice)) %>%
+  ungroup() %>%
+  spread(Half, propAccepted)
+
+# compute the mixed effects model (linear for this)
+mixLogis_prepost <- lmer(Half_2 ~ Half_1 + Cost -1 + (1 | SubjID), data = temp)
+
+# get the coefficients and confidence intervals
+t1 <- coefficients(mixLogis_prepost)$SubjID[1, 2:6]
+t2 <- as.data.frame(t(confint(mixLogis_prepost)[3:7,]))
+
+# and concatenate them
+summary_prepost <- t(bind_rows(t1, t2))
+colnames(summary_prepost) <- c("Coefficient", "CI-low", "CI-high")
+
+# # prepost half paired perms
+# temp <- temp %>% plyr::dlply("Cost", identity) 
+# prepost <- list()
+# prepost$cohen <- sapply(temp, function(data) {DescTools::CohenD(data$Half_1, data$Half_2)})
+# prepost$perm <- sapply(temp, function(data) {permute(data$Half_1, data$Half_2, paired = T, simple = T)})
+
+## paired tests for first versus last block per cost type
+FirstvsLast <- dataWth %>%
+  filter(Choice < 2) %>%
+  group_by(SubjID) %>%
+  mutate(Block = case_when(
+    Block %in% c(1, 2) ~ 1,
+    Block %in% c(3, 4) ~ 2,
+    Block %in% c(5, 6) ~ 3
+  )) %>%
+  group_by(SubjID, Cost, Block) %>%
+  summarise(propAccept_subj = mean(Choice)) %>%
+  spread(Block, propAccept_subj) %>%
+  rename(First = `1`, Second = `2`, Third = `3`) %>%
+  plyr::dlply("Cost", identity)
+
+prepost <- list()
+prepost$Perms <- sapply(FirstvsLast, function(x) {permute(x$First, x$Third, paired = T, simple = T)})
+prepost$CohenD <- sapply(FirstvsLast, function(x) {DescTools::CohenD(x$First, x$Third)})
+
+rm(temp, t1, t2)
+```
+
+``` {r WTH: 16.3.3. plots, echo = FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
+# various plots
+# acceptances across blocks
+propBlocks <- dataWth %>%
+    filter(Choice < 2) %>%
+    group_by(SubjID) %>%
+    mutate(Block = case_when(
+      Block %in% c(1, 2) ~ 1,
+      Block %in% c(3, 4) ~ 2,
+      Block %in% c(5, 6) ~ 3
+    )) %>%
+    group_by(SubjID, Cost, Block) %>%
+    summarise(propAccept_subj = mean(Choice)) %>%
+    group_by(Cost, Block) %>%
+    summarize(propAccept = mean(propAccept_subj),
+              seAccept = sd(propAccept_subj)/sqrt(nSubjs_wth)) %>%
+    ggplot(aes(Block, propAccept, color = Cost)) +
+      geom_point(size = 2) +
+      geom_errorbar(aes(ymin = propAccept - seAccept, ymax = propAccept + seAccept, color = Cost), width = 0.1) +
+      geom_line() +
+      ylim(0, 1) +
+      labs(y = "Proportion Accepted") +
+      scale_x_continuous(breaks = c(1, 2, 3)) +
+      scale_color_manual(values = cols) +
+      scale_fill_manual(values = cols) +
+      theme(legend.key = element_blank(),
+         legend.position = c(0.8, 0.25),
+         panel.grid.major = element_blank(),
+         panel.grid.minor = element_blank(),
+         panel.background = element_blank(),
+         axis.line = element_line(colour = "black"),
+         text = element_text(size = 16))
+
+# Pre-post midpoint
+# calculate mean per trial type to draw horizontal/vertical lines pre/post
+df_mean <- dataWth %>%
+            filter(Choice < 2, !(Block %in% c(3,4))) %>%
+            group_by(SubjID, Cost) %>%
+            summarise(propAccept_1 = mean(Choice[Half=="Half_1"]),
+                      propAccept_2 = mean(Choice[Half=="Half_2"])) %>%
+            group_by(Cost) %>%
+            summarise(propAccept_1 = mean(propAccept_1),
+                      propAccept_2 = mean(propAccept_2))
+
+mid <- dataWth %>%
+  filter(Choice < 2, !(Block %in% c(3,4))) %>%
+  group_by(SubjID, Cost) %>%
+  summarise(propAccept_1 = mean(Choice[Half=="Half_1"]),
+            propAccept_2 = mean(Choice[Half=="Half_2"])) %>%
+  ggplot(aes(propAccept_1, propAccept_2, fill = Cost)) +
+    geom_point(size = 3, pch = 21, color = "black", show.legend = F) +
+    labs(x = "Proportion Accepted - First Block", y = "Proportion Accepted - Last Block") +
+    scale_fill_manual(values = cols) +
+    scale_color_manual(values = cols) +
+    xlim(0, 1) +
+    ylim(0, 1) +
+    geom_abline(slope = 1, intercept = 0, lty = 2) +
+    geom_hline(data = df_mean, aes(yintercept = propAccept_2, color = Cost), linetype="dashed", show.legend = F) +
+    geom_vline(data = df_mean, aes(xintercept = propAccept_1, color = Cost), linetype="dashed", show.legend = F) +
+    theme(legend.key = element_blank(),
+       legend.position = c(0.8, 0.25),
+       panel.grid.major = element_blank(),
+       panel.grid.minor = element_blank(),
+       panel.background = element_blank(),
+       axis.line = element_line(colour = "black"),
+       text = element_text(size = 16))
+
+
+# wait vs effort across effort conditions
+pAll <- dataWth %>%
+  filter(Choice < 2) %>%
+  mutate(Cost2 = ifelse(!(Cost %in%  c("Wait_C", "Wait_P")), "EFFORT", "WAIT"),
+         BlockType = ifelse(gsub(".*_", "", Cost) == 1, "Physical", "Cognitive")) %>%
+  group_by(SubjID, BlockType) %>%
+  summarise(Wait_accept = mean(Choice[Cost2 == "WAIT"]),
+            Effort_accept = mean(Choice[Cost2 == "EFFORT"])) %>%
+  ggplot(aes(Wait_accept, Effort_accept, color = SubjID, shape = BlockType)) +
+    geom_point(size = 5, show.legend = T) +
+    xlim(0,1) +
+    ylim(0,1) +
+    geom_abline(slope = 1, intercept = 0, lty = 2) +
+    scale_color_manual(values = cols) +
+    scale_fill_manual(values = cols) +
+    theme_classic()
+
+# load the plots
+grid.arrange(mid, propBlocks, ncol = 2)
+
+
+# plot showing the difference in proportion of acceptances between first and last block, effort vs delay for each block type
+# lines connect the same subject between the blocks
+dataWth %>%
+  group_by(SubjID) %>%
+  mutate(Block = case_when(
+    Block %in% c(1, 2) ~ 1,
+    Block %in% c(3, 4) ~ 2,
+    Block %in% c(5, 6) ~ 3
+  )) %>%
+  #filter(Half == "Half_1", Offer < 20) %>%
+  filter(Block != 2) %>%
+  mutate(Block = ifelse(Block == 1, "First Block", "Last Block")) %>%
+  group_by(SubjID, Cost, Block, Offer) %>%
+  summarise(propAccept = mean(Choice)) %>%
+  ungroup() %>%
+  #mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%
+  spread(Block, propAccept) %>%
+  mutate(Difference = `Last Block` - `First Block`) %>%
+  group_by(SubjID, Cost) %>%
+  summarise(Diffscore = sum(Difference)/3) %>%
+  mutate(Type = ifelse(Cost %in% c("Cognitive", "Physical"), "Effort", "Delay"),
+         Cost = ifelse(Cost %in% c("Cognitive", "Wait_C"), "Cognitive", "Physical")) %>%
+  spread(Type, Diffscore) %>%
+  ggplot(aes(Effort, Delay, group = SubjID, fill = Cost)) +
+    geom_hline(yintercept = 0) +
+    geom_vline(xintercept = 0) +
+    geom_path(show.legend = F, alpha = 0.5, linetype = "dashed") +
+    geom_point(show.legend = T, pch = 21, color = "black", size = 4) +
+    scale_fill_manual(values = cols) +
+    annotate("text", x = -0.4, y = 0.6, label = "Increased preference for delay over time", size = 5, color = "grey30") +
+    annotate("text", x = -0.5, y = -0.6, label = "All acceptances decreased", size = 5, color = "grey30") +
+    annotate("text", x = 0.5, y = 0.6, label = "All acceptances increased", size = 5, color = "grey30") +
+    annotate("text", x = 0.4, y = -0.6, label = "Increased preference for effort over time", size = 5, color = "grey30") +
+    labs(x = "P(Effort): Last - First Block", y = "P(Delay): Last - First Block", fill = "Block type") +
+    ylim(-0.7, 0.7) +
+    xlim(-0.7, 0.7) +
+    theme(legend.key = element_blank(),
+          legend.position = c(0.9, 0.35),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 20))
+
+
+### CODE TO LOOK AT EARNINGS PER BLOCK AND CALCULATE OPTIMAL EARNINGS
+# # code to calculate the rwd/sec rate for each acceptance threshold per handling
+# rwd <- c(4, 8, 20)
+# handling <- c(14, 10, 2) + 2 # add 2 to H and T to account for offer and reward disclosure windows
+# travel <- c(2, 6, 14) + 2
+# rwdRates <- sapply(3:1, function(thresh) {(sum(tail(rwd, n = thresh))) / ((handling * thresh) + (travel * 3))})
+# 
+# # the highest reward amount for a typical 7-min block per handling is:
+# apply(rwdRates, 1, max) * (7 * 60)
+
+# # this helps make sense of the toal earnings
+# # plotting mean earnings per cost and block
+# dataWth %>%
+#   filter(rawChoice == 1) %>%
+#   group_by(SubjID) %>%
+#   mutate(Block = case_when(
+#     Block %in% c(1, 2) ~ 1,
+#     Block %in% c(3, 4) ~ 2,
+#     Block %in% c(5, 6) ~ 3
+#   )) %>%
+#   group_by(SubjID, Cost, Block) %>%
+#   summarise(subEarnings = sum(Offer)) %>%
+#   group_by(Cost, Block) %>%
+#   summarise(meanEarned = mean(subEarnings),
+#             seEarned = sd(subEarnings) / sqrt(nSubjs_wth)) %>%
+#   ggplot(aes(Block, meanEarned, color = Cost)) +
+#     geom_point(size = 2) +
+#     geom_errorbar(aes(ymin = meanEarned - seEarned, ymax = meanEarned + seEarned, color = Cost), width = 0.1, size = 1.5) +
+#     geom_line(size = 1.5) +
+#     labs(y = "Mean Earnings +- SE (cents)") +
+#     scale_x_continuous(breaks = c(1, 2, 3)) +
+#     scale_color_manual(values = cols) +
+#     scale_fill_manual(values = cols) +
+#     theme(legend.key = element_blank(),
+#           #legend.position = c(0.1, 0.8),
+#           panel.grid.major = element_blank(),
+#           panel.grid.minor = element_blank(),
+#           panel.background = element_blank(),
+#           axis.line = element_line(colour = "black"),
+#           text = element_text(size = 22))
+
+```
+
+These participants tended to accept fewer trials on the second half of the experiment (Beta = `r round(summary_prepost[1,1], digits = 2)`, 95% CI: `r round(summary_prepost[1,2:3], digits = 2)`). The figure on the left shows this tendency, although some subjects shows considerable consistency. The plot on the right divides the proportion of acceptances across blocks (each cost block is experienced thrice), and shows a global decrease in acceptances as a function of experimental time.
+
+A better test is to perform pairwise comparisons between the first and last block per cost. Paired permutations on means of proportions showed that all participants accepted fewer trials during the second half, regardless of cost (all p < 0.05; Cohen's D: cognitive = `r prepost$CohenD[1]`, physical = `r prepost$CohenD[2]`, wait-cognitive = `r prepost$CohenD[1]`, wait-physical = `r prepost$CohenD[1]`).
+
+Now let's divide them by reward and handling amounts. The plots below show that initially participant choices resembled those from the between-subject experiment, accepting more cognitive trials than any other, and displaying higher costs for physical/wait_p. However, by the end of the experiment all cost types were exacerbated. As seen before, cognitive trials had the greatest decrease in acceptances across reward amounts. This re-evaluation was not present when participants faced only one type of cost.
+
+``` {r WTH: 16.3.3. Plot Pre/Post reward x handling, echo = FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
+# # first block
+# t1 <- data %>%
+#   group_by(SubjID) %>%
+#   mutate(Block = do.call(c, lapply(c(2, 4, 6), function(x) {rep(x / 2, sum(Block %in% c(x - 1, x)))}))) %>%
+#   #filter(Half == "Half_1", Offer < 20) %>%
+#   filter(Block == 1) %>%
+#   group_by(Cost, Offer) %>%
+#   summarise(propAccept = mean(Choice),
+#             SE = sd(Choice) / sqrt(nSubjs_wth)) %>%
+#   ungroup() %>%
+#   mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%
+#   ggplot(aes(Offer, propAccept, color = Cost)) +
+#     geom_point(size = 3, show.legend = F) +
+#     #geom_point(aes(y = Optimal), size = 3, pch = 21, color = "darkgrey") +
+#     geom_line(show.legend = F) +
+#     scale_color_manual(values = cols) +
+#     scale_fill_manual(values = cols) +
+#     geom_errorbar(aes(ymin=propAccept-SE, ymax=propAccept+SE), width=0.2, size=1, show.legend = T) +
+#     scale_y_continuous(limits = c(-0.1,1.1), breaks = c(0,0.5,1)) +
+#     scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
+#     labs(x = "Reward", y = "Proportion Accepted", title = "First Block") +
+#     theme(legend.key = element_blank(),
+#           legend.position = c(0.8, 0.25),
+#           panel.grid.major = element_blank(), 
+#           panel.grid.minor = element_blank(), 
+#           panel.background = element_blank(), 
+#           axis.line = element_line(colour = "black"),
+#           text = element_text(size = 16))
+# 
+# 
+# # last block
+# t3 <- data %>%
+#     group_by(SubjID) %>%
+#     mutate(Block = do.call(c, lapply(c(2, 4, 6), function(x) {rep(x / 2, sum(Block %in% c(x - 1, x)))}))) %>%
+#     #filter(Half == "Half_2", Offer < 20) %>%
+#     filter(Block == 3) %>%
+#     group_by(Cost, Offer) %>%
+#     summarise(propAccept = mean(Choice),
+#               SE = sd(Choice) / sqrt(nSubjs_wth)) %>%
+#     ungroup() %>%
+#     mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%
+#     ggplot(aes(Offer, propAccept, color = Cost)) +
+#       geom_point(size = 3, show.legend = F) +
+#       geom_line(show.legend = F) +
+#       scale_color_manual(values = cols) +
+#       scale_fill_manual(values = cols) +
+#       geom_errorbar(aes(ymin=propAccept-SE, ymax=propAccept+SE), width=0.2, size=1, show.legend = F) +
+#       scale_y_continuous(limits = c(-0.1,1.1), breaks = c(0,0.5,1)) +
+#       scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
+#       labs(x = "Reward", y = "", title = "Last Block") +
+#       theme(legend.position = c(0.1, 0.7),
+#             panel.grid.major = element_blank(), 
+#             panel.grid.minor = element_blank(), 
+#             panel.background = element_blank(), 
+#             axis.line = element_line(colour = "black"),
+#             text = element_text(size = 16))
+# 
+# grid.arrange(t1, t3, ncol = 2)
+
+dataWth %>%
+  group_by(SubjID) %>%
+  mutate(Block = case_when(
+    Block %in% c(1, 2) ~ 1,
+    Block %in% c(3, 4) ~ 2,
+    Block %in% c(5, 6) ~ 3
+  )) %>%
+  #filter(Half == "Half_1", Offer < 20) %>%
+  filter(Block != 2) %>%
+  mutate(Block = ifelse(Block == 1, "First Block", "Last Block")) %>%
+  group_by(Cost, Block, Offer) %>%
+  summarise(propAccept = mean(Choice),
+            SE = sd(Choice) / sqrt(nSubjs_wth)) %>%
+  ungroup() %>%
+  mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%
+  ggplot(aes(Offer, propAccept, color = Cost)) +
+    geom_point(size = 3, show.legend = T) +
+    #geom_point(aes(y = Optimal), size = 3, pch = 21, color = "darkgrey") +
+    geom_line(size = 1, show.legend = F) +
+    scale_color_manual(values = cols) +
+    scale_fill_manual(values = cols) +
+    geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = T) +
+    scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
+    scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
+    labs(x = "Reward", y = "Proportion Accepted") +
+    facet_wrap(vars(Block)) +
+    theme(legend.key = element_blank(),
+          legend.position = c(0.9, 0.25),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 22))
+
+```
+
+This prompted the question of whether fitting the mixed logistic model could confirm this shift in preferences. Just as before, the matrix below show the coefficient magnitude (color) and pvalues for differences based on iterating through costs as reference dummy codes.
+
+``` {r WTH: 16.3.3. mix pre/post separately, echo = FALSE, fig.align="center", fig.width=5, fig.height=4}
+## compute the same mixed effects logistic for each half
+# mixed logistic for the first half
+mixLogis_pre <- list()
+mixData <- dataWth %>%
+  filter(Half == "Half_1") %>%
+  group_by(SubjID, Cost, Offer) %>%
+  summarize(totalChoices = length(Choice),
+            totalAccepted = sum(Choice),
+            totalQuits = sum(Choice == 0),
+            propAccepted = mean(Choice))
+
+mixLogis_pre$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait_C"))
+mixLogis_pre$Wait_C <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait_P"))
+mixLogis_pre$Wait_P <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
+mixLogis_pre$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+
+
+# mixed logistic for the second half
+mixLogis_post <- list()
+mixData <- dataWth %>%
+  filter(Half == "Half_2") %>%
+  group_by(SubjID, Cost, Offer) %>%
+  summarize(totalChoices = length(Choice),
+            totalAccepted = sum(Choice),
+            totalQuits = sum(Choice == 0),
+            propAccepted = mean(Choice))
+
+mixLogis_post$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait_C"))
+mixLogis_post$Wait_C <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait_P"))
+mixLogis_post$Wait_P <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
+mixLogis_post$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+
+## now produce a summary matrix
+# get the beta and pvalue matrices 
+betasPre <- betaMatrix(mixLogis_pre)
+betasPost <- betaMatrix(mixLogis_post)
+
+# and combine them
+betaMat <- matrix(NA, nrow = nrow(betasPre$Betas), ncol = nrow(betasPre$Betas))
+betaMat[lower.tri(betaMat)] <- betasPre$Betas[lower.tri(betasPre$Betas)]
+betaMat[upper.tri(betaMat)] <- betasPost$Betas[upper.tri(betasPost$Betas)]
+dimnames(betaMat) <- list(names(mixLogis_pre), names(mixLogis_pre))
+
+pvalMat <- matrix(NA, nrow = nrow(betasPre$Pvals), ncol = nrow(betasPre$Pvals))
+pvalMat[lower.tri(pvalMat)] <- betasPre$Pvals[lower.tri(betasPre$Pvals)]
+pvalMat[upper.tri(pvalMat)] <- betasPost$Pvals[upper.tri(betasPost$Pvals)]
+dimnames(pvalMat) <- list(names(mixLogis_pre), names(mixLogis_pre))
+
+# remove uninteresting comparisons 
+diag(betaMat) <- 0
+betaMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
+pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
+
+# aand plot
+corrplot(betaMat, 
+         is.corr = F, 
+         p.mat = pvalMat, 
+         outline = T,
+         #insig = "p-value",
+         sig.level = 0.05, 
+         na.label = "square", 
+         na.label.col = "grey",
+         method = "color", 
+         tl.col = "black",
+         tl.cex = 0.8,
+         col = col2(200))
+```
+
+Finally, we can compare how the difference in proportion accepted between last and first blocks changes between trial types. The plots below show that effort and delay trials in the cognitive blocks tended to be rejected more on the last block (i.e. they land on the negative side of both axes). The plot on the right shows a similar pattern for trials on the physical blocks, but these are more similar across subjects, and also show a small tendency to accept more on either first or last blocks.
+
+``` {r WTH: 16.3.3 temp plot, echo = FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
+
+cw <- dataWth %>%
+  group_by(SubjID) %>%
+  mutate(Block = case_when(
+    Block %in% c(1, 2) ~ 1,
+    Block %in% c(3, 4) ~ 2,
+    Block %in% c(5, 6) ~ 3
+  )) %>%
+  filter(Offer < 20) %>%
+  filter(Block != 2) %>%
+  group_by(SubjID, Block, Cost, Offer) %>%
+  summarise(pAccept = mean(Choice)) %>%
+  spread(Block, pAccept) %>%
+  mutate(diff = `3` - `1`) %>%
+  ungroup() %>%
+  select(-c(`1`, `3`)) %>%
+  spread(Cost, diff) %>%
+  ggplot(aes(Cognitive, Wait_C, fill = as.character(Offer))) +
+    geom_point(pch = 21, color = "black", size = 3) +
+    geom_hline(yintercept = 0) +
+    geom_vline(xintercept = 0) +
+    geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+    ylim(-1, 1) +
+    xlim(-1, 1) +
+    labs(#title = "P(Accepted): Last - First Block",
+         x = "P(Cognitive): Last - First",
+         y = "P(Wait_C): Last - First",
+         fill = "Offer") +
+    theme(legend.key = element_blank(),
+          legend.background = element_rect(fill = "grey80"),
+          legend.position = c(0.8, 0.8),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 16))
+
+gw <- dataWth %>%
+  group_by(SubjID) %>%
+  mutate(Block = case_when(
+    Block %in% c(1, 2) ~ 1,
+    Block %in% c(3, 4) ~ 2,
+    Block %in% c(5, 6) ~ 3
+  )) %>%
+  filter(Offer < 20) %>%
+  filter(Block != 2) %>%
+  group_by(SubjID, Block, Cost, Offer) %>%
+  summarise(pAccept = mean(Choice)) %>%
+  spread(Block, pAccept) %>%
+  mutate(diff = `3` - `1`) %>%
+  ungroup() %>%
+  select(-c(`1`, `3`)) %>%
+  spread(Cost, diff) %>%
+  ggplot(aes(Physical, Wait_P, fill = as.character(Offer))) +
+    geom_point(pch = 21, color = "black", size = 3, show.legend = F) +
+    geom_hline(yintercept = 0) +
+    geom_vline(xintercept = 0) +
+    geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+    ylim(-1, 1) +
+    xlim(-1, 1) +
+    labs(#title = "P(Accepted): Last - First Block",
+         x = "P(Physical): Last - First",
+         y = "P(Wait_P): Last - First",
+         fill = "Offer") +
+    theme(legend.position = c(0.8, 0.8),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 16))
+
+
+grid.arrange(cw, gw, ncol = 2)
+
+# more prepost tests
+# diffscore prepost for effort vs wait
+dataWth %>%
+  group_by(SubjID) %>%
+  mutate(Block = case_when(
+    Block %in% c(1, 2) ~ 1,
+    Block %in% c(3, 4) ~ 2,
+    Block %in% c(5, 6) ~ 3
+  )) %>%
+  #filter(Half == "Half_1", Offer < 20) %>%
+  filter(Block != 2) %>%
+  mutate(Block = ifelse(Block == 1, "First Block", "Last Block")) %>%
+  group_by(SubjID, Cost, Block, Offer) %>%
+  summarise(propAccept = mean(Choice)) %>%
+  ungroup() %>%
+  #mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%
+  spread(Block, propAccept) %>%
+  mutate(Difference = `Last Block` - `First Block`) %>%
+  group_by(SubjID, Cost) %>%
+  summarise(Diffscore = sum(Difference)/3) %>%
+  spread(Cost, Diffscore) %>%
+  ggplot() +
+    geom_point(aes(Cognitive, Wait_C), color = cols[1]) +
+    geom_point(aes(Physical, Wait_P), color = cols[2]) +
+    geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+    ylim(-0.5, 0.5) +
+    xlim(-0.5, 0.5) +
+    #geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
+    #geom_boxplot(show.legend = F, size = 1.5) +
+    #geom_jitter(width=0.1, alpha = 0.3, show.legend = F) +
+    #scale_color_manual(values = cols) +
+    #scale_fill_manual(values = cols) +
+    theme(legend.key = element_blank(),
+          legend.position = c(0.9, 0.25),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 22))
+
+# diffscore per cost type (you don't see if specific subjects are prone to increasing/decreasing acceptances across them)
+dataWth %>%
+  group_by(SubjID) %>%
+  mutate(Block = case_when(
+    Block %in% c(1, 2) ~ 1,
+    Block %in% c(3, 4) ~ 2,
+    Block %in% c(5, 6) ~ 3
+  )) %>%
+  #filter(Half == "Half_1", Offer < 20) %>%
+  filter(Block != 2) %>%
+  mutate(Block = ifelse(Block == 1, "First Block", "Last Block")) %>%
+  group_by(SubjID, Cost, Block, Offer) %>%
+  summarise(propAccept = mean(Choice)) %>%
+  ungroup() %>%
+  #mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%
+  spread(Block, propAccept) %>%
+  mutate(Difference = `Last Block` - `First Block`) %>%
+  group_by(SubjID, Cost) %>%
+  summarise(Diffscore = sum(Difference)/3) %>%
+  ggplot(aes(Cost, Diffscore, fill = Cost)) +
+    geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
+    geom_boxplot(show.legend = F, size = 1.5) +
+    geom_jitter(width=0.1, alpha = 0.3, show.legend = F) +
+    scale_color_manual(values = cols) +
+    scale_fill_manual(values = cols) +
+    theme(legend.key = element_blank(),
+          legend.position = c(0.9, 0.25),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 22))
+```
+
+### WTH: 16.3.4. 
+
+*To estimate the subjective opportunity cost (hypothesis 4.3.2.), we will use a logistic function to model each participant's probability of completing a trial based on the difference between the delayed reward's magnitude and the estimated opportunity cost (OC) for each cost type. OC will be computed as the product of a free parameter (gamma) and the handling time. Both gamma and the temperature parameter of the logistic function will be estimated at the subject level, independently for each subject and cost type.*
+
+``` {r WTH: 16.3.4., echo = FALSE, fig.align="center", fig.width=6, fig.height=4}
+# Here it might be best to estimate gamma for the wait trials only at first
+# once the wait OCs are estimated, then they can be modulated by effort
+# Estimate gamma per subject for each group separately
+summaryOC <- list()
+summaryOC$all <- dataWth %>%
+  mutate(Block = case_when(
+    Block %in% c(1, 2) ~ 1,
+    Block %in% c(3, 4) ~ 2,
+    Block %in% c(5, 6) ~ 3
+  )) %>%
+  #filter(Choice < 2) %>%
+  group_by(SubjID, Cost) %>% #group_by(SubjID, Cost, Block) %>%
+  do(optimizeOCModel(., simplify = T)) %>%
+  ungroup()
+
+# plot
+(summaryOC$plot <- ggplot(summaryOC$all, aes(Cost, Gamma, fill = Cost)) +
+    geom_boxplot(show.legend = F) +
+    geom_hline(yintercept = 0.64, alpha = 0.9, color = "gray20", size = 1) +
+    geom_hline(yintercept = 0.7, alpha = 0.9, color = "gray40", size = 1) +
+    geom_hline(yintercept = 0.9, alpha = 0.9, color = "gray60", size = 1) +
+    ylim(0,1.5) +
+    labs(x = "") +
+    scale_fill_manual(values = cols) +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(),
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 16)))
+
+# try to replicate the group-level proportion of acceptances from 16.2
+# this looks pretty much like the empirical proportion data, so the stochasticity is playing a major part in the estimation
+# the estimate probability even matches actual proportions at the single subject level 
+# logis <- mapply(function(g, t) {1 / (1 + exp((-1 * t) * (c(4, 8, 20) - (g * 10))))}, summaryOC$all$Gamma, summaryOC$all$Temperature)
+# colnames(logis) <- unite(summaryOC, test, SubjID, Cost)$test
+# logis2 <- as.data.frame(logis) %>% 
+#   gather(Cost, Probability) %>%
+#   mutate(SubjID = substr(Cost, 1,3), 
+#          Cost = substr(Cost, 5,20),
+#          Reward = rep(c(4,8,20), nrow(.)/3)) %>%
+#   group_by(Cost, Reward) %>%
+#   summarize(propAccept = mean(Probability)) %>%
+#   ggplot(logis2, aes(Reward, propAccept, color = Cost)) +
+#     geom_point(size = 3, show.legend = T) +
+#     geom_line(lwd = 1, show.legend = T) +
+#     scale_color_manual(values = cols) +
+#     scale_fill_manual(values = cols) +
+#     #geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.4, size = 1) +
+#     scale_y_continuous(limits = c(-0.1,1.1), breaks = c(0,0.5,1)) +
+#     scale_x_continuous(breaks = c(4, 8, 12), labels = c("4", "8", "20")) +
+#     labs(y = "Proportion Accepted") +
+#     theme(legend.key = element_blank(),
+#           panel.grid.major = element_blank(),
+#           panel.grid.minor = element_blank(),
+#           panel.background = element_blank(),
+#           axis.line = element_line(colour = "black"),
+#           text = element_text(size = 16))
+```
+
+The figure on the left shows the distribution of fitted gammas for each cost type, and inversely matches the proportion of acceptances described previously. The plot on the right shows the OC for each subject, divided by cost type. The horizontal line denotes total earnings per second under the optimal strategy for the time and reward combinations.
+
+###	WTH: 16.3.5.
+
+*We will cross-validate each subject's OC value using the first four blocks (two cognitive, two physical) for estimation, and the last two blocks (one of each effort type) choices for testing. The estimates will be used to predict acceptances in the testing sample, and the mean percent correctly predicted will be reported for each cost type. This will also provide information on the stability of each participant's choices (4.3.1.).*
+
+``` {r WTH: 16.3.5., echo = FALSE, fig.width=5, fig.height=4, fig.align="center"}
+# subdivide data
+dataTrain <- dataWth %>%
+   filter(Block < 5)
+
+dataTest <- dataWth %>%
+  filter(Block > 4)
+
+# estimate
+# per-cost, but consider the idea above
+OCs_validation <- list()
+temp <- dataTrain %>% filter(Cost == "Wait_C") %>% plyr::dlply("SubjID", identity)
+OCs_validation$Wait_C <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
+temp <- dataTrain %>% filter(Cost == "Wait_P") %>% plyr::dlply("SubjID", identity)
+OCs_validation$Wait_P <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
+temp <- dataTrain %>% filter(Cost == "Cognitive") %>% plyr::dlply("SubjID", identity)
+OCs_validation$Cognitive <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
+temp <- dataTrain %>% filter(Cost == "Physical") %>% plyr::dlply("SubjID", identity)
+OCs_validation$Physical <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
+
+# reshape data
+temp <- bind_rows(OCs_validation) %>% 
+  mutate(SubjID = subjList_wth) %>%
+  gather(Cost, gamma, Wait_C:Physical) %>%
+  left_join(dataTest, ., by = c("SubjID", "Cost")) %>% # assign OCs to each subject per cost type
+  mutate(prediction = Offer > Handling * gamma) %>%
+  # plyr::dlply("SubjID", identity)
+  group_by(SubjID, Cost) %>%
+  summarize(predicted = mean(Choice == prediction))
+
+# plot prediction %
+qplot(Cost, predicted, geom = "boxplot", data = temp) + 
+  ylim(0,1) +
+  theme_classic()
+```
+
+The figure above shows that each participant's estimated gamma successfully predicted choices in the last two blocks to a high degree (suspisiouly, considering the decrease in the acceptance rate as a function of time).  
+
+###	WTH: 16.3.6. 
+
+*The OC estimates for each group will be compared using a repeated measures ANOVA with cost as a factor. This will let us determine which cost type produced the highest discounting.*
+
+``` {r WTH: 16.3.6., echo = FALSE}
+# repeated measures anova
+OCs_anova <- list()
+OCs_anova$aov <- summary(aov(Gamma ~ Cost + Error(SubjID / Cost), data = summaryOC$all))
+
+# table
+pander(OCs_anova$aov)
+
+# do all pairwise comparisons
+OCs_anova$gammas <- summaryOC$all %>% 
+  reshape2::dcast(SubjID ~ Cost, value.var = "Gamma") %>%
+  select(-SubjID)
+
+# perform a paired permutation among every pair of cost types
+OCs_anova$perms <- outer(OCs_anova$gammas, OCs_anova$gammas, FUN = Vectorize(permute), simple = T, paired = T)
+OCs_anova$perms[rbind(c(1,4),c(2,3),c(3,2),c(4,1))] <- NA
+
+# and the effect sizes
+OCs_anova$ES <- abs(outer(OCs_anova$gammas, OCs_anova$gammas, FUN = Vectorize(DescTools::CohenD)))
+OCs_anova$ES[rbind(c(1,4),c(2,3),c(3,2),c(4,1))] <- NA
+```
+
+(note: here 'Cost' is cost type). The ANOVA table shows that there are no significant differences among cost types for the current sample. The following plot shows the resulting p-values from performing a paired permutation analysis among all relevant cost types, with color indicating the effect size of the comparison. The differences only partially match those seen in 16.2.1., so the OC estimates seem noisy.
+
+
+``` {r WTH: 16.3.6. corrplot, echo = FALSE, fig.align="center", fig.width=5, fig.height=5}
+corrplot(OCs_anova$ES,
+         is.corr = F, 
+         p.mat = OCs_anova$perms,
+         type = "upper",
+         insig = "p-value",
+         sig.level = -1,
+         na.label = "square",
+         na.label.col = "grey",
+         method = "color", 
+         tl.col = "black", 
+         tl.cex = 0.8,
+         outline = T)
+```
 
 ## Discussion
