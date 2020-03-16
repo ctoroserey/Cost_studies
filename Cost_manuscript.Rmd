@@ -3,10 +3,10 @@ title: Apparent preferences for cognitive effort fade when multiple forms of eff
 author: "Claudio Toro-Serey^1^2 & Joseph T. McGuire^1^2"
 csl: apa.csl
 output:
+  word_document: default #reference_docx: Style_reference_draft.docx
   pdf_document:
     highlight: haddock
     keep_tex: no
-  word_document: default #reference_docx: Style_reference_draft.docx
 header-includes:
 - \usepackage{setspace}\doublespacing
 - \usepackage[left]{lineno}
@@ -14,7 +14,6 @@ header-includes:
 - \usepackage{float}
 - \newcommand{\beginsupplement}{ \setcounter{table}{0} \renewcommand{\thetable}{S\arabic{table}}
   \setcounter{figure}{0} \renewcommand{\thefigure}{S\arabic{figure}} }
-#subtitle: 'Abbreviated Title: Heterogeneity in the functional topography of mPFC'
 #bibliography: mPFC_paper.bib
 ---
 
@@ -368,7 +367,7 @@ summarizeData <- function(Data = waitData, nSubs = nSubsW, type = "Wait"){
 ```{r Load data for between-subject experiment, echo = FALSE}
 ### data loading and cleaning up
 # forced travels are switched to acceptances, as they reflect a preference for that trial
-# rawChoice will be used to compute the # of mistakes
+# rawChoice will be used to compute the # of mistakes
 # The RT is upper-bounded because a glitch in the code made two 14s trials last longer (among all p's) 
 setwd("./Cost2/data")
 files <- dir(pattern = '_log.csv')
@@ -423,7 +422,8 @@ dataWth <- data_frame(SubjID = files) %>%
          Cost = case_when(Cost == "WAIT_0" ~ "Wait_C",
                            Cost == "COGNITIVE_0" ~ "Cognitive",
                            Cost == "GRIP_1" ~ "Physical",
-                           Cost == "WAIT_1" ~ "Wait_P")) %>%
+                           Cost == "WAIT_1" ~ "Wait_P"),
+         Cost = as.factor(Cost)) %>%
   group_by(SubjID) %>%
   mutate(BlockOrder = ifelse(Btype[1] == 0, "Cognitive1st", "Physical1st"))
 
@@ -457,31 +457,31 @@ Cognitive and physical effort are typically regarded as costly, but recent findi
 
 ### Participants
 
-Both between- and within-subject experiments were pregeristered with the Open Science Framework (https://osf.io/2rsgm/registrations). All experimental procedures were approved by the Boston University Institutional Review Board, and written consent was acquired for all participants. For the between-subject experiment, we recruited individuals until a desired number of 84 eligible participants was achieved (58 Female, median age = 21, range = 18 - 31; number excluded before reaching goal = XX). The sample size was determined by means of power analysis (ANOVA), using a significance level of 0.05, power of 0.8, an effect size of f = 0.45 (calculated from a pilot study), and three groups (one for each cost type). The resulting per-group sample was 20, which we increased to 21 in order to match three possible block orders. We added an extra group of 21 participants who experienced a minimally effortful condition in order to determine whether effort or pure engagement were driving our results.
+  Both between- and within-subject experiments were pregeristered with the Open Science Framework (https://osf.io/2rsgm/registrations). All experimental procedures were approved by the Boston University Institutional Review Board, and written consent was acquired for all participants. For the between-subject experiment, we recruited individuals until a desired number of 84 eligible participants was achieved (58 Female, median age = 21, range = 18 - 31; number excluded before reaching goal = XX). The sample size was determined by means of power analysis (ANOVA), using a significance level of 0.05, power of 0.8, an effect size of f = 0.45 (calculated from a pilot study), and three groups (one for each cost type). The resulting per-group sample was 20, which we increased to 21 in order to match three possible block orders. We added an extra group of 21 participants who experienced a minimally effortful condition in order to determine whether effort or pure engagement were driving our results.
 	We excluded participant datasets based on four preregistered criteria: 1) Consent: If they withdrew their participation; 2) Inattentiveness: a catch trial was placed at the end of each experimental block, asking participants to press a key within 3 seconds (time requirement based on pilot study response times). A participant that failed two or more of these checks was excluded and replaced. 3) Improbable choice behavior: The task was structured so that one reward amount must always be accepted. A participant who quit every trial in at least one block was assumed not to have followed or understood task instructions, or to have disengaged from the task altogether. 4) Performance: In the cognitive effort condition, participants were forced to travel if they made 2 mistakes in a trial (see task procedures below). Any participant with more than 30% forced travels was excluded and replaced. 
 
 ### Foraging Task 
 
-All experimental tasks were implemented using PsychoPy 2.X (CITE) on a Macbook Pro laptop. In this task, participants foraged for monetary rewards in an environment in which each trial required either physical effort or cognitive effort for a set period of time (the “handling time”), or an equivalent unfilled delay. Their goal was to maximize their gains within a fixed amount of time. Participants exerted physical effort by maintaining grip on a handheld dynamometer (XXXX, BIOPAC Systems, United States) using their dominant hand. Gripping requirements were calibrated at 20% of maximum voluntary contraction (MVC, acquired at the beginning of the session). Cognitive effort entailed switching among Stroop, dot motion coherence, and flanker tasks. In Stroop, one of three color names was displayed on the screen (red, blue or green), with a font color that was either congruent (e.g. word red painted in red) or incongruent (e.g. word red painted in blue). Participants had to select the color of the font, not the word displayed (i.e. they had to suppress their tendency to read the word). For motion coherence, 100 solid white dots moved on the screen. A fraction of these dots moved cohesively to the left or right (coherence could be either 30% or 40%, uniformly sampled), while the rest moved in random directions. Participants had to respond with the direction of the cohesive set of dots. REVISE. In flanker, rows of arrowheads pointed either to the left or the right (maximum of 3 rows, 3 to 13 arrowheads per row). Participants responded with the direction of the center arrowhead, which could point in the same or opposite direction from its neighbors. These tasks were configured so that responses always involved a left or right key press (e.g. for Stroop, two colored circles were presented at each side of the screen). During the handling time, cognitive tasks and their configurations were randomly sampled, and were presented for 1 s followed by a 1 s inter-stimulus interval. Participants were asked to respond within each task’s presentation time. Before the experiment, participants trained in each cognitive task until they correctly performed six consecutive ones of each kind.
-Each participant was assigned to one of these types of costs (cognitive effort, physical effort, or delay), and a fourth group of equal size faced an effortless physical task that involved minimal gripping (each group was unaware that other cost conditions existed). On each trial a monetary offer was displayed for 2 s, and participants had the opportunity to expend time and/or effort during the handling time in order to earn it. Upon completion of a trial participants saw a 2 s window displaying the reward obtained, which was followed by a travel time to the next offer. Alternatively, the participant could quit at any point during the handling time by pressing the spacebar on the computer, and immediately start traveling. If participants failed to maintain above-threshold gripping or made two mistakes during the cognitive task, they were forced to travel and missed the reward.
-There were three block types, in which handling times of 2, 10, or 14 seconds were paired with travel times of 14, 6, and 2 seconds, respectively (note that all combinations add up to 16 seconds). Timing parameters were held constant within each 7-min block. Each of these blocks was experienced in a pseudo-randomized order, and repeated in the same order after a short break in order to probe choice stability (total session length = 42 minutes). Reward amounts varied uniformly per trial (4, 8, or 20 cents), such that every reward was presented twice every six trials. This prevented sequences from being dominated by a single amount during any window of time. Timing information was disclosed at the beginning of each block, and rewards displayed before each trial began during a 2 s window. Participants received training prior to the experimental session, and were told about all possible environmental statistics in order to preclude experience-dependent learning. 
-In short, participants faced with different behavioral costs were tasked with deciding their preferred strategy to maximize rewards in fully-disclosed foraging environments of variable richness.
+  All experimental tasks were implemented using PsychoPy 2.X (CITE) on a Macbook Pro laptop. In this task, participants foraged for monetary rewards in an environment in which each trial required either physical effort or cognitive effort for a set period of time (the “handling time”), or an equivalent unfilled delay. Their goal was to maximize their gains within a fixed amount of time. Participants exerted physical effort by maintaining grip on a handheld dynamometer (XXXX, BIOPAC Systems, United States) using their dominant hand. Gripping requirements were calibrated at 20% of maximum voluntary contraction (MVC, acquired at the beginning of the session). Cognitive effort entailed switching among Stroop, dot motion coherence, and flanker tasks. In Stroop, one of three color names was displayed on the screen (red, blue or green), with a font color that was either congruent (e.g. word red painted in red) or incongruent (e.g. word red painted in blue). Participants had to select the color of the font, not the word displayed (i.e. they had to suppress their tendency to read the word). For motion coherence, 100 solid white dots moved on the screen. A fraction of these dots moved cohesively to the left or right (coherence could be either 30% or 40%, uniformly sampled), while the rest moved in random directions. Participants had to respond with the direction of the cohesive set of dots. REVISE. In flanker, rows of arrowheads pointed either to the left or the right (maximum of 3 rows, 3 to 13 arrowheads per row). Participants responded with the direction of the center arrowhead, which could point in the same or opposite direction from its neighbors. These tasks were configured so that responses always involved a left or right key press (e.g. for Stroop, two colored circles were presented at each side of the screen). During the handling time, cognitive tasks and their configurations were randomly sampled, and were presented for 1 s followed by a 1 s inter-stimulus interval. Participants were asked to respond within each task’s presentation time. Before the experiment, participants trained in each cognitive task until they correctly performed six consecutive ones of each kind.
+  Each participant was assigned to one of these types of costs (cognitive effort, physical effort, or delay), and a fourth group of equal size faced an effortless physical task that involved minimal gripping (each group was unaware that other cost conditions existed). On each trial a monetary offer was displayed for 2 s, and participants had the opportunity to expend time and/or effort during the handling time in order to earn it. Upon completion of a trial participants saw a 2 s window displaying the reward obtained, which was followed by a travel time to the next offer. Alternatively, the participant could quit at any point during the handling time by pressing the spacebar on the computer, and immediately start traveling. If participants failed to maintain above-threshold gripping or made two mistakes during the cognitive task, they were forced to travel and missed the reward.
+  There were three block types, in which handling times of 2, 10, or 14 seconds were paired with travel times of 14, 6, and 2 seconds, respectively (note that all combinations add up to 16 seconds). Timing parameters were held constant within each 7-min block. Each of these blocks was experienced in a pseudo-randomized order, and repeated in the same order after a short break in order to probe choice stability (total session length = 42 minutes). Reward amounts varied uniformly per trial (4, 8, or 20 cents), such that every reward was presented twice every six trials. This prevented sequences from being dominated by a single amount during any window of time. Timing information was disclosed at the beginning of each block, and rewards displayed before each trial began during a 2 s window. Participants received training prior to the experimental session, and were told about all possible environmental statistics in order to preclude experience-dependent learning. 
+  In short, participants faced with different behavioral costs were tasked with deciding their preferred strategy to maximize rewards in fully-disclosed foraging environments of variable richness.
 
 ### Operationalization of Cost
 
-Foraging theory posits that accepting a delayed reward depends on the opportunity cost (OC) of time incurred in obtaining it, given by the richness of the environment (Stephens and Krebs, 1977). In this study, the richness of the environment was manipulated by the length of the handling and travel times (i.e. shorter travel times produced richer environments). Since time combinations were fixed per block, we calculated each block’s optimal accept/reject strategy by computing all decision strategies according to the following equation:
+  Foraging theory posits that accepting a delayed reward depends on the opportunity cost (OC) of time incurred in obtaining it, given by the richness of the environment (Stephens and Krebs, 1977). In this study, the richness of the environment was manipulated by the length of the handling and travel times (i.e. shorter travel times produced richer environments). Since time combinations were fixed per block, we calculated each block’s optimal accept/reject strategy by computing all decision strategies according to the following equation:
 
 **INSERT**
 
-where R, H, and P are the reward, handling time, and acceptance probability of trial i, respectively, and T is the travel times. This gives the total reward per second attainable in each block as a function of the lowest amount accepted (i.e. acceptance threshold). Figure X shows possible earnings for each choice strategy, as well as the lowest amount participants should accept in order to maximize their rewards (circled dots). For example, a participant in a 10 s handling block should accept 8-cent and 20-cent rewards (and reject 4-cent rewards) to maximize their reward rate. Significant deviations from the optimal strategy can be understood as reflecting changes in subjective OC. Beyond comparing among cost types, this approach allowed us to test if certain demands boosted the value of offers (i.e. over-accepting low offers).
+  where R, H, and P are the reward, handling time, and acceptance probability of trial i, respectively, and T is the travel times. This gives the total reward per second attainable in each block as a function of the lowest amount accepted (i.e. acceptance threshold). Figure X shows possible earnings for each choice strategy, as well as the lowest amount participants should accept in order to maximize their rewards (circled dots). For example, a participant in a 10 s handling block should accept 8-cent and 20-cent rewards (and reject 4-cent rewards) to maximize their reward rate. Significant deviations from the optimal strategy can be understood as reflecting changes in subjective OC. Beyond comparing among cost types, this approach allowed us to test if certain demands boosted the value of offers (i.e. over-accepting low offers).
 
 ### Analyses
 
-First, we tested whether decision makers integrated delay and reward information. To address the prediction that participants would be more likely to accept higher reward and shorter handling time trials, we fit a logistic regression to each participant’s data to predict trial-wise acceptances, using handling time and reward amount as predictors. The resulting beta coefficients for handling time and reward were pooled across all participants, and we performed a one-sample rank-sum test on each set of coefficients to examine whether they were significantly positive or negative (compared to no effect of 0). We then performed an extension of the logistic regression by adding an autoregressive covariate containing the number of consecutive quits prior to a given trial. This examined the possibility that participant choices were governed by recent quitting history rather than the experimental parameters. Coefficients significantly different from 0 denoted that a participant relied on recent quitting history. 
+  First, we tested whether decision makers integrated delay and reward information. To address the prediction that participants would be more likely to accept higher reward and shorter handling time trials, we fit a logistic regression to each participant’s data to predict trial-wise acceptances, using handling time and reward amount as predictors. The resulting beta coefficients for handling time and reward were pooled across all participants, and we performed a one-sample rank-sum test on each set of coefficients to examine whether they were significantly positive or negative (compared to no effect of 0). We then performed an extension of the logistic regression by adding an autoregressive covariate containing the number of consecutive quits prior to a given trial. This examined the possibility that participant choices were governed by recent quitting history rather than the experimental parameters. Coefficients significantly different from 0 denoted that a participant relied on recent quitting history. 
 	Our foraging task was configured such that over and under accepting were detrimental to total earnings. To confirm this, we fit a general linear model with constant, linear, and quadratic terms to estimate the correspondence between proportion accepted (independent variable) and total earnings (dependent variable). A significant quadratic coefficient thus would signal that the task statistics operated as expected. Next, to determine the optimality of each group’s decisions, performed two-sided one-sample t-tests to see if the proportion of acceptances for each time/reward combination was significantly different from the optimal rate (see Operationalization of Cost above). This resulted in 36 independent tests (3 rewards amounts, 3 handling/travel time combinations, and 4 groups), so we corrected for multiple comparisons using False Discovery Rate (FDR) CHANGE TO COST3 APPROACH.
-Next we compared preferences among cost conditions. We first performed a one-way ANOVA on the proportion of trials accepted using group as a factor. We then compared the proportion completed among all 4 groups using non-parametric permutation contrasts (6 tests). The same approach was used for total earnings. This gave us an initial glimpse on the potential differences in cost among conditions. In order to further look at the effect of delay, work, and rewards, we will perform a repeated measures ANOVA on the proportion completed for each combination of factors. Reward and handling time will be within-subject factors, and condition a between-subjects factor. In support of hypotheses 4.1. and 4.2., we anticipate significant main effects of handling time, reward, and cost condition, but no interactions (MAYBE REMOVE, EXPLAINING WHY IT’S REDUNDANT). We computed the probability of accepting a trial with a mixed-effects logistic regression. Based on the task structure and our main question, our a priori model of interest included cost condition, handling time, and reward amount as fixed main effects, and subject ID as a random effect. Cost condition was modeled with three categorical terms, with the fourth condition as the reference condition. We ran three versions of the model with different reference conditions, in order to test all pairwise differences among the four cost conditions. As preregistered, we anticipated significant main effects (coefficients different than zero) of handling time, reward, and cost condition. We hypothesize that the differences among cost conditions will follow the pattern described in 4.2. We then examined whether this a priori model outperformed both simpler and more complex models. We used both Akaike’s Information Criterion (AIC) and Bayesian Information Criterion (BIC) to determine the model that minimized the negative log-likelihood while penalizing the addition of parameters. The regression with each combination of predictors was fitted in the following order: 1) intercept only; 2) cost type only; 3) handling time only; 4) reward only; 5) condition, handling, and reward main effects (a priori model); 6) adding a handling-by-reward interaction; and 7) adding all three possible two-way interactions. We predicted that model 5 would have the lowest AIC.
-Finally, we modeled the subjective opportunity cost in each condition. We started by addressing the prediction that participants would display consistent choice patterns throughout the session (i.e. that the reward amounts they accepted in a given timing condition would be similar throughout the experiment). This prediction was made because participants had full knowledge of the environment. We computed each participant’s total proportion of acceptances pre- and post-midpoint for every block. For each cost condition separately, we will fit a linear model that predicts post-midpoint acceptance from before-midpoint rates. We will report the slopes and 95% confidence intervals (CI) for each cost group. CIs containing 1 will denote that participants in that group produced consistent choices (CHANGE TO COST3 APPROACH, PERMUTATION).
-Once we established choice stability, we proceeded to estimate the subjective OC of each type of demand (see Operationalization of Cost above). OC were computed as the product of a free parameter (gamma) and the handling time. We used a softmax function to model each participant’s probability of completing a trial based on the difference between the delayed reward’s magnitude and the estimated OC for each cost type. 
+  Next we compared preferences among cost conditions. We first performed a one-way ANOVA on the proportion of trials accepted using group as a factor. We then compared the proportion completed among all 4 groups using non-parametric permutation contrasts (6 tests). The same approach was used for total earnings. This gave us an initial glimpse on the potential differences in cost among conditions. In order to further look at the effect of delay, work, and rewards, we will perform a repeated measures ANOVA on the proportion completed for each combination of factors. Reward and handling time will be within-subject factors, and condition a between-subjects factor. In support of hypotheses 4.1. and 4.2., we anticipate significant main effects of handling time, reward, and cost condition, but no interactions (MAYBE REMOVE, EXPLAINING WHY IT’S REDUNDANT). We computed the probability of accepting a trial with a mixed-effects logistic regression. Based on the task structure and our main question, our a priori model of interest included cost condition, handling time, and reward amount as fixed main effects, and subject ID as a random effect. Cost condition was modeled with three categorical terms, with the fourth condition as the reference condition. We ran three versions of the model with different reference conditions, in order to test all pairwise differences among the four cost conditions. As preregistered, we anticipated significant main effects (coefficients different than zero) of handling time, reward, and cost condition. We hypothesize that the differences among cost conditions will follow the pattern described in 4.2. We then examined whether this a priori model outperformed both simpler and more complex models. We used both Akaike’s Information Criterion (AIC) and Bayesian Information Criterion (BIC) to determine the model that minimized the negative log-likelihood while penalizing the addition of parameters. The regression with each combination of predictors was fitted in the following order: 1) intercept only; 2) cost type only; 3) handling time only; 4) reward only; 5) condition, handling, and reward main effects (a priori model); 6) adding a handling-by-reward interaction; and 7) adding all three possible two-way interactions. We predicted that model 5 would have the lowest AIC.
+  Finally, we modeled the subjective opportunity cost in each condition. We started by addressing the prediction that participants would display consistent choice patterns throughout the session (i.e. that the reward amounts they accepted in a given timing condition would be similar throughout the experiment). This prediction was made because participants had full knowledge of the environment. We computed each participant’s total proportion of acceptances pre- and post-midpoint for every block. For each cost condition separately, we will fit a linear model that predicts post-midpoint acceptance from before-midpoint rates. We will report the slopes and 95% confidence intervals (CI) for each cost group. CIs containing 1 will denote that participants in that group produced consistent choices (CHANGE TO COST3 APPROACH, PERMUTATION).
+  Once we established choice stability, we proceeded to estimate the subjective OC of each type of demand (see Operationalization of Cost above). OC were computed as the product of a free parameter (gamma) and the handling time. We used a softmax function to model each participant’s probability of completing a trial based on the difference between the delayed reward’s magnitude and the estimated OC for each cost type. 
 
  **INSERT**
 
@@ -497,12 +497,12 @@ We collected data from a new sample of 48 eligible participants  (39 Female, med
 
 The original between-subjects task was modified so that participants foraged for cost types in addition to rewards. Every participant experienced all forms of cost (delay, physical effort, and cognitive effort). There were two block types, in which delay trials were interspersed with either physical-effort or cognitive-effort trials. This setup prevented participants from having to rapidly switch between response modalities across trials (i.e. keyboard press and handgrip). Block combinations (i.e. physical/wait and cognitive/wait) were experienced three times by each participant in 7-minute-long, interleaved blocks, thus matching the experiment’s length to the between-subject version. Half of the participants experienced a block sequence that started with the physical block. Timing parameters were matched to the middle condition from Experiment 1 (i.e. 10 s handling and 6 s travel), allowing a balance between acquiring enough observations per trial type and being able to compare results across experiments. Participants were informed that this timing combination would be constant prior to beginning the experiment. Cost type combinations were disclosed at the beginning of each block, and reward/cost offers displayed before each trial begins (e.g. “8 cents for physical effort”). Unlike the previous experiment, participants could make their choice during the offer window (instead of during the handling time). Participants trained in each type of demand until they reached the same criteria as in the between-subject experiment.
 
-### Analyses
+### Analyses
 
 The analytical pipeline for the within-subject study was mostly preserved from the between-subject experiment. We first ran tests to determine whether decision makers integrated reward information. We performed a logistic regression per participant to predict trial-wise acceptances based on reward amounts. The resulting beta coefficients were pooled across all participants, and a one-sample rank-sum test was used to examine whether they were significantly positive or negative (compared to 0). Next, we explored the effects of choice history by adding an autoregressive covariate containing the number of consecutive recent quits. We then confirmed that the under- and over-acceptance were detrimental to total earnings by performing the same quadratic linear model explained above. To determine the optimality of the group’s decisions, we will examine whether each cost type produced a bias to over or under-accept at 4 and 8 cents (assuming that 20 cents were always be accepted, given our design). The reward-maximizing strategy was to always reject 4 cents and accept 8 cents, yielding a combined optimal proportion of acceptances of 50% (see Operationalization of Costs for details). We performed a two-sided one-sample chi-squared test of proportions against the null probability of 0.5 for each type of cost. Therefore, a significant difference indicated that participants either over or under accepted rewards.
-To compare acceptance rates among cost conditions, we first computed the probability of accepting a trial with a mixed-effects logistic regression. The model included cost condition and reward amount as fixed main effects, and subject ID as a random effect (does this make sense? It’s specified just like the previous one). Cost condition was modeled with three categorical terms, with the fourth condition as the reference condition (two effort conditions, and two delay conditions corresponding to each effort type). We ran three versions of the model with different reference conditions, in order to test all relevant pairwise differences among the four cost conditions. Next, we compared this model to both simpler and more complex models using Akaike’s Information Criterion (AIC) and Bayesian Information Criterion (BIC). We added varied model complexity in the following order: 1) intercept only; 2) condition only; 3) reward only; 4) condition and reward main effects (base model); and 5) adding a two-way interaction. We predicted that model 4 would have the last considerable decrease in the negative log-likelihood.
-Next we probed the confidence and consistency with which participants made choices. We computed the proportion of quits that were performed during the choice window versus during the handling time. We interpreted as confidence if a participant made at least 80% of their choices during the offer window. We then computed each participant’s total proportion of acceptances on the first two and last two blocks, and compared them using a paired permutation analysis (5000 iterations).
-To estimate the subjective opportunity cost of each condition, we will use a logistic function to model each participant’s probability of completing a trial based on the difference between the delayed reward’s magnitude and the estimated opportunity cost (OC) for each cost type. OC will be computed as the product of a free parameter (gamma) and the handling time. Both gamma and the temperature parameter of the logistic function will be estimated at the subject level, independently for each subject and cost type. We cross-validated each subject’s OC value using the first four blocks (two cognitive, two physical) for estimation, and the last two blocks (one of each effort type) choices for testing. The estimates were used to predict acceptances in the testing sample, and the mean percent correctly predicted was reported for each cost type. The OC estimates for each group will be compared using a repeated measures ANOVA with cost as a factor. We will perform pairwise paired permutations as post-hoc tests. This will let us determine which cost type produced the highest discounting.
+  To compare acceptance rates among cost conditions, we first computed the probability of accepting a trial with a mixed-effects logistic regression. The model included cost condition and reward amount as fixed main effects, and subject ID as a random effect (does this make sense? It’s specified just like the previous one). Cost condition was modeled with three categorical terms, with the fourth condition as the reference condition (two effort conditions, and two delay conditions corresponding to each effort type). We ran three versions of the model with different reference conditions, in order to test all relevant pairwise differences among the four cost conditions. Next, we compared this model to both simpler and more complex models using Akaike’s Information Criterion (AIC) and Bayesian Information Criterion (BIC). We added varied model complexity in the following order: 1) intercept only; 2) condition only; 3) reward only; 4) condition and reward main effects (base model); and 5) adding a two-way interaction. We predicted that model 4 would have the last considerable decrease in the negative log-likelihood.
+  Next we probed the confidence and consistency with which participants made choices. We computed the proportion of quits that were performed during the choice window versus during the handling time. We interpreted as confidence if a participant made at least 80% of their choices during the offer window. We then computed each participant’s total proportion of acceptances on the first two and last two blocks, and compared them using a paired permutation analysis (5000 iterations).
+  To estimate the subjective opportunity cost of each condition, we will use a logistic function to model each participant’s probability of completing a trial based on the difference between the delayed reward’s magnitude and the estimated opportunity cost (OC) for each cost type. OC will be computed as the product of a free parameter (gamma) and the handling time. Both gamma and the temperature parameter of the logistic function will be estimated at the subject level, independently for each subject and cost type. We cross-validated each subject’s OC value using the first four blocks (two cognitive, two physical) for estimation, and the last two blocks (one of each effort type) choices for testing. The estimates were used to predict acceptances in the testing sample, and the mean percent correctly predicted was reported for each cost type. The OC estimates for each group will be compared using a repeated measures ANOVA with cost as a factor. We will perform pairwise paired permutations as post-hoc tests. This will let us determine which cost type produced the highest discounting.
 
 ## Results
 
@@ -1535,11 +1535,11 @@ lmEarn <- lm(Earnings ~ pComplete + pComplete2, data = temp)
 
 # plot
 (earnFitplot <- ggplot(data = temp, aes(pComplete, Earnings)) + 
-         scale_color_manual(values = cols) + 
+         scale_color_manual(values = colsWth) + 
          geom_point(pch = 21, color = "black", size = 3, show.legend = T) + 
          stat_smooth(aes(y = Earnings), method = "lm", formula = y ~ x + I(x^2), color = "grey30") +
          labs(x = "Proportion Completed", y = "Total Earnings (dollars)") +
-         scale_fill_manual(values = cols) +
+         scale_fill_manual(values = colsWth) +
          ylim(12, 16) +
          theme(panel.grid.major = element_blank(), 
            panel.grid.minor = element_blank(), 
@@ -1659,7 +1659,7 @@ The table shows a significant bias towards low acceptance for 4 and 8 cent rewar
 # # plots
 # (p2 <- ggplot(temp, aes(Cost, pComplete, fill = Cost)) + 
 #         geom_boxplot(show.legend = F) +
-#         scale_fill_manual(values = cols) +
+#         scale_fill_manual(values = colsWth) +
 #         ylim(c(0, 1)) +
 #         labs(y = "Proportion Completed") +
 #         theme(panel.grid.major = element_blank(), 
@@ -1712,8 +1712,8 @@ mixLogis_main$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer
           geom_point(size = 3, show.legend = T) +
           geom_point(aes(y = Optimal), size = 3, pch = 21, fill = "grey75", color = "grey30") +
           geom_line(lwd = 1, show.legend = T) +
-          scale_color_manual(values = cols) +
-          scale_fill_manual(values = cols) +
+          scale_color_manual(values = colsWth) +
+          scale_fill_manual(values = colsWth) +
           geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.4, size = 1) +
           scale_y_continuous(limits = c(0, 1), breaks = c(0,0.5,1)) +
           scale_x_continuous(breaks = c(4, 8, 12), labels = c("4", "8", "20")) +
@@ -1824,7 +1824,7 @@ propFails <- dataWth %>%
 #     #stat_ecdf(lwd = 1.2) +
 #     geom_line(aes(y = 1 - ..y..), stat = 'ecdf', lwd = 1.5) +
 #     geom_vline(xintercept = 2, lty = 2) + # end of the offer period
-#     scale_color_manual(values = cols) +
+#     scale_color_manual(values = colsWth) +
 #     scale_x_continuous(breaks = seq(12), limits = c(0, 14)) +
 #     labs(x = "Time in Cost", y = "Proportion Completed") +
 #     theme(panel.grid.major = element_blank(),
@@ -1852,8 +1852,8 @@ survData <- survfit(Surv(RT, Choice) ~ Cost, data = temp)
 
 autoplot(survData) +
   geom_vline(xintercept = 2, lty = 2) + # end of the grace period for physical trials
-  scale_color_manual(values = cols) +
-  scale_fill_manual(values = cols) +
+  scale_color_manual(values = colsWth) +
+  scale_fill_manual(values = colsWth) +
   scale_x_continuous(breaks = seq(12)) +
   ylim(0, 1) +
   scale_x_continuous(breaks = seq(0, 12), labels = seq(-2, 10)) +
@@ -1969,8 +1969,8 @@ propBlocks <- dataWth %>%
       ylim(0, 1) +
       labs(y = "Proportion Accepted") +
       scale_x_continuous(breaks = c(1, 2, 3)) +
-      scale_color_manual(values = cols) +
-      scale_fill_manual(values = cols) +
+      scale_color_manual(values = colsWth) +
+      scale_fill_manual(values = colsWth) +
       theme(legend.key = element_blank(),
          legend.position = c(0.8, 0.25),
          panel.grid.major = element_blank(),
@@ -1998,8 +1998,8 @@ mid <- dataWth %>%
   ggplot(aes(propAccept_1, propAccept_2, fill = Cost)) +
     geom_point(size = 3, pch = 21, color = "black", show.legend = F) +
     labs(x = "Proportion Accepted - First Block", y = "Proportion Accepted - Last Block") +
-    scale_fill_manual(values = cols) +
-    scale_color_manual(values = cols) +
+    scale_fill_manual(values = colsWth) +
+    scale_color_manual(values = colsWth) +
     xlim(0, 1) +
     ylim(0, 1) +
     geom_abline(slope = 1, intercept = 0, lty = 2) +
@@ -2027,8 +2027,8 @@ pAll <- dataWth %>%
     xlim(0,1) +
     ylim(0,1) +
     geom_abline(slope = 1, intercept = 0, lty = 2) +
-    scale_color_manual(values = cols) +
-    scale_fill_manual(values = cols) +
+    scale_color_manual(values = colsWth) +
+    scale_fill_manual(values = colsWth) +
     theme_classic()
 
 # load the plots
@@ -2063,7 +2063,7 @@ dataWth %>%
     geom_vline(xintercept = 0) +
     geom_path(show.legend = F, alpha = 0.5, linetype = "dashed") +
     geom_point(show.legend = T, pch = 21, color = "black", size = 4) +
-    scale_fill_manual(values = cols) +
+    scale_fill_manual(values = colsWth) +
     annotate("text", x = -0.4, y = 0.6, label = "Increased preference for delay over time", size = 5, color = "grey30") +
     annotate("text", x = -0.5, y = -0.6, label = "All acceptances decreased", size = 5, color = "grey30") +
     annotate("text", x = 0.5, y = 0.6, label = "All acceptances increased", size = 5, color = "grey30") +
@@ -2111,8 +2111,8 @@ dataWth %>%
 #     geom_line(size = 1.5) +
 #     labs(y = "Mean Earnings +- SE (cents)") +
 #     scale_x_continuous(breaks = c(1, 2, 3)) +
-#     scale_color_manual(values = cols) +
-#     scale_fill_manual(values = cols) +
+#     scale_color_manual(values = colsWth) +
+#     scale_fill_manual(values = colsWth) +
 #     theme(legend.key = element_blank(),
 #           #legend.position = c(0.1, 0.8),
 #           panel.grid.major = element_blank(),
@@ -2145,8 +2145,8 @@ Now let's divide them by reward and handling amounts. The plots below show that 
 #     geom_point(size = 3, show.legend = F) +
 #     #geom_point(aes(y = Optimal), size = 3, pch = 21, color = "darkgrey") +
 #     geom_line(show.legend = F) +
-#     scale_color_manual(values = cols) +
-#     scale_fill_manual(values = cols) +
+#     scale_color_manual(values = colsWth) +
+#     scale_fill_manual(values = colsWth) +
 #     geom_errorbar(aes(ymin=propAccept-SE, ymax=propAccept+SE), width=0.2, size=1, show.legend = T) +
 #     scale_y_continuous(limits = c(-0.1,1.1), breaks = c(0,0.5,1)) +
 #     scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
@@ -2174,8 +2174,8 @@ Now let's divide them by reward and handling amounts. The plots below show that 
 #     ggplot(aes(Offer, propAccept, color = Cost)) +
 #       geom_point(size = 3, show.legend = F) +
 #       geom_line(show.legend = F) +
-#       scale_color_manual(values = cols) +
-#       scale_fill_manual(values = cols) +
+#       scale_color_manual(values = colsWth) +
+#       scale_fill_manual(values = colsWth) +
 #       geom_errorbar(aes(ymin=propAccept-SE, ymax=propAccept+SE), width=0.2, size=1, show.legend = F) +
 #       scale_y_continuous(limits = c(-0.1,1.1), breaks = c(0,0.5,1)) +
 #       scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
@@ -2208,8 +2208,8 @@ dataWth %>%
     geom_point(size = 3, show.legend = T) +
     #geom_point(aes(y = Optimal), size = 3, pch = 21, color = "darkgrey") +
     geom_line(size = 1, show.legend = F) +
-    scale_color_manual(values = cols) +
-    scale_fill_manual(values = cols) +
+    scale_color_manual(values = colsWth) +
+    scale_fill_manual(values = colsWth) +
     geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = T) +
     scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
     scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
@@ -2401,16 +2401,16 @@ dataWth %>%
   summarise(Diffscore = sum(Difference)/3) %>%
   spread(Cost, Diffscore) %>%
   ggplot() +
-    geom_point(aes(Cognitive, Wait_C), color = cols[1]) +
-    geom_point(aes(Physical, Wait_P), color = cols[2]) +
+    geom_point(aes(Cognitive, Wait_C), color = colsWth[1]) +
+    geom_point(aes(Physical, Wait_P), color = colsWth[2]) +
     geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
     ylim(-0.5, 0.5) +
     xlim(-0.5, 0.5) +
     #geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
     #geom_boxplot(show.legend = F, size = 1.5) +
     #geom_jitter(width=0.1, alpha = 0.3, show.legend = F) +
-    #scale_color_manual(values = cols) +
-    #scale_fill_manual(values = cols) +
+    #scale_color_manual(values = colsWth) +
+    #scale_fill_manual(values = colsWth) +
     theme(legend.key = element_blank(),
           legend.position = c(0.9, 0.25),
           panel.grid.major = element_blank(), 
@@ -2442,8 +2442,8 @@ dataWth %>%
     geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
     geom_boxplot(show.legend = F, size = 1.5) +
     geom_jitter(width=0.1, alpha = 0.3, show.legend = F) +
-    scale_color_manual(values = cols) +
-    scale_fill_manual(values = cols) +
+    scale_color_manual(values = colsWth) +
+    scale_fill_manual(values = colsWth) +
     theme(legend.key = element_blank(),
           legend.position = c(0.9, 0.25),
           panel.grid.major = element_blank(), 
@@ -2481,7 +2481,7 @@ summaryOC$all <- dataWth %>%
     geom_hline(yintercept = 0.9, alpha = 0.9, color = "gray60", size = 1) +
     ylim(0,1.5) +
     labs(x = "") +
-    scale_fill_manual(values = cols) +
+    scale_fill_manual(values = colsWth) +
     theme(panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           panel.background = element_blank(),
@@ -2503,8 +2503,8 @@ summaryOC$all <- dataWth %>%
 #   ggplot(logis2, aes(Reward, propAccept, color = Cost)) +
 #     geom_point(size = 3, show.legend = T) +
 #     geom_line(lwd = 1, show.legend = T) +
-#     scale_color_manual(values = cols) +
-#     scale_fill_manual(values = cols) +
+#     scale_color_manual(values = colsWth) +
+#     scale_fill_manual(values = colsWth) +
 #     #geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.4, size = 1) +
 #     scale_y_continuous(limits = c(-0.1,1.1), breaks = c(0,0.5,1)) +
 #     scale_x_continuous(breaks = c(4, 8, 12), labels = c("4", "8", "20")) +
