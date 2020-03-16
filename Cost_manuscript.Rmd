@@ -354,7 +354,7 @@ files <- dir(pattern = '_log.csv')
 
 # load data
 dataBtw <- tibble(SubjID = files) %>%
-  mutate(contents = map(SubjID, ~ read_csv(., col_types = cols())))  %>%
+  mutate(contents = map(SubjID, ~ suppressWarnings(read_csv(., col_types = cols()))))  %>%
   mutate(Cost = substring(SubjID, 5, 8),
          Cost = case_when(Cost == "wait" ~ "Wait",
                           Cost == "cogT" ~ "Cognitive",
@@ -362,6 +362,7 @@ dataBtw <- tibble(SubjID = files) %>%
                           Cost == "phea" ~ "Easy"),
          SubjID = as.integer(substring(SubjID, 0, 3))) %>%
   unnest() %>%
+  rename(TrialN = X1) %>%
   mutate(rawChoice = Choice, 
          RT = ifelse(RT > 14.1, 14, RT),
          Choice = ifelse(Choice == 2, 1, Choice), # forced travels (2) become acceptances (1)
@@ -375,8 +376,8 @@ dataBtw <- tibble(SubjID = files) %>%
          ) 
 
 # get a simple subject list and the number of subjects
-subjList_btw <- unique(dataAll$SubjID)
-nSubjs_btw <- length(subjList)
+subjList_btw <- unique(dataBtw$SubjID)
+nSubjs_btw <- length(subjList_btw)
 
 ```
 
@@ -388,13 +389,14 @@ files <- dir(pattern = 'main_log.csv')
 
 # load the data and remove extreme subjects
 dataWth <- data_frame(SubjID = files) %>% 
-  mutate(contents = map(SubjID, ~ read_csv(., col_types = cols())))  %>%
+  mutate(contents = map(SubjID, ~ suppressWarnings(read_csv(., col_types = cols()))))  %>%
   mutate(SubjID = substring(SubjID, 0, 3)) %>%
   unnest() %>%
   mutate(RT = ifelse(RT > 10.1, 10, RT),
          Half = ifelse(Block < 4, "Half_1", "Half_2"),
          Btype = BlockType) %>%
   unite(Cost, Cost, BlockType) %>%
+  rename(TrialN = X1) %>%
   mutate(rawChoice = Choice,
          Choice = ifelse(Choice == 2, 1, Choice),
          Cost = case_when(Cost == "WAIT_0" ~ "Wait_C",
@@ -405,8 +407,8 @@ dataWth <- data_frame(SubjID = files) %>%
   mutate(BlockOrder = ifelse(Btype[1] == 0, "Cognitive1st", "Physical1st"))
 
 # Get just the subject list and number of subjects
-subjList_wth <- unique(data$SubjID)
-nSubjs_wth <- length(subjList)
+subjList_wth <- unique(dataWth$SubjID)
+nSubjs_wth <- length(subjList_wth)
 ```
 
 1.  Department of Psychological and Brain Sciences, Boston University, Boston, USA
