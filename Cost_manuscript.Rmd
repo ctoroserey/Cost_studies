@@ -1,0 +1,51 @@
+---
+title: Apparent preferences for cognitive effort fade when multiple forms of effort and delay are interleaved in a foraging environment
+author: "Claudio Toro-Serey^1^2 & Joseph T. McGuire^1^2"
+csl: apa.csl
+output:
+  word_document: default #reference_docx: Style_reference_draft.docx
+  pdf_document:
+    highlight: haddock
+    keep_tex: no
+header-includes:
+- \usepackage{setspace}\doublespacing
+- \usepackage[left]{lineno}
+- \linenumbers
+- \usepackage{float}
+- \newcommand{\beginsupplement}{ \setcounter{table}{0} \renewcommand{\thetable}{S\arabic{table}}
+  \setcounter{figure}{0} \renewcommand{\thefigure}{S\arabic{figure}} }
+#subtitle: 'Abbreviated Title: Heterogeneity in the functional topography of mPFC'
+#bibliography: mPFC_paper.bib
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.pos = 'H')
+```
+
+1.  Department of Psychological and Brain Sciences, Boston University, Boston, USA
+
+2.  Center for Systems Neuroscience, Boston University, Boston, USA
+
+\bigskip
+
+Corresponding authors: Claudio Toro-Serey (ctoro@bu.edu) & Joseph T. McGuire (jtmcg@bu.edu)
+
+
+\newpage
+
+## Abstract
+
+Cognitive and physical effort are typically regarded as costly, but recent findings have suggested that exerting effort can boost the value of prospects under certain conditions. Here we embedded mental and physical effort in a "diet choice" foraging task, which required decision makers not only to evaluate the magnitude and delay of a focal prospective reward, but also to estimate the general opportunity cost of time. In two experiments, independent sets of participants collected rewards that required equivalent periods of cognitive effort, physical effort, or unfilled delay. Monetary offers varied per trial, and the two experiments differed in whether the type of effort or delay cost was the same on every trial (between-subjects, n=21 per condition), or varied across trials (within-subjects, n=48). Participants were free either to accept or reject the cost/reward prospect offered on each trial. All participants were more likely to accept offers when rewards were higher and delays shorter, in line with a reward-maximizing strategy. Participants almost never reversed their acceptance decisions, and error rates in completing the effort requirement were low and decreased over time. When participants faced only one type of cost, cognitive effort persistently produced the highest acceptance rate compared to trials with an equivalent period of either physical effort or unfilled delay. This could be because cognitive effort was directly rewarding, or because it modulated foraging-related factors such as the perceived duration of delays or the estimated richness of the environment. We theorized that if cognitive effort were intrinsically rewarding, we would observe the same pattern of preferences when participants foraged for varying cost types in addition to rewards. In the within-subject experiment, an initially higher acceptance rate for cognitive effort trials disappeared over time amid an overall decline in acceptance rates as participants gained experience with all three conditions. Our results extend the view that cognitive demands may reduce the discounting effect of delays, but also suggest that differences in cost can eventually fade if individuals actively experience alternative forms of demand. Rather than assigning intrinsic value to cognitive effort, our findings support the idea that a cognitive effort requirement might influence contextual factors such as subjective delay durations or the perceived opportunity cost of time. Such altered estimations can be recalibrated if multiple forms of demand are interleaved.
+
+
+## Introduction
+
+
+## Methods
+
+
+## Results
+
+
+
+## Discussion
