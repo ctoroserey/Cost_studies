@@ -18,8 +18,395 @@ header-includes:
 #bibliography: mPFC_paper.bib
 ---
 
-```{r setup, include = FALSE}
+```{r Global options, include = FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.pos = 'H')
+```
+
+```{r Setup, include = FALSE}
+## libraries
+library(tidyverse)
+library(ggfortify)
+library(knitr)
+library(pander) 
+library(nloptr)
+library(pwr)
+library(lme4)
+#library(lmerTest)
+library(gridExtra)
+library(reshape2)
+library(corrplot)
+
+## aesthetic options
+lbls <- c("Wait","Cognitive","Physical","Easy") # between subj
+colsBtw = c("#78AB05","#D9541A","deepskyblue4", "darkgoldenrod2") # plot colors (wait, effort)
+colsWth <- c("#D9541A", "#78AB05", "dodgerblue4", "deepskyblue3")#"grey30", "grey70") # plot colors (wait, effort)
+lthick = 2 # line thickness for plots
+
+## functions
+# get the number of continuous quits before current trial
+seqQuits <- function(subjData = 1){
+  
+    # get the lag
+    tempSeq <- sequence(rle(subjData)$lengths) # sequence
+    tempSeq[subjData==1] <- 0 # not interested in completed runs, just quits
+    tempSeq <- c(0,tempSeq) # lag it so it can be used as a t-1 regressor
+
+    # return data so that the length is equivalent
+    out <- tempSeq[1:length(subjData)]
+    
+    return(out)
+    
+}
+
+# generic permutation for 2 groups
+permute <- function(group1 = 1, group2 = 2, statType = mean, nPerms = 5000, paired = FALSE, simple = FALSE){
+  
+    # prep data
+    summaryPerm <- list()
+    lOne <- length(group1)
+    lTwo <- length(group2)
+    bigSample <- c(group1,group2)  
+    
+    if (paired == FALSE) {
+      
+        
+        for (i in 1:nPerms){
+          
+            # relabel samples
+            tempBig <- sample(bigSample)
+            tempOne <- tempBig[1:lOne]
+            tempTwo <- tempBig[(lOne+1):length(bigSample)]
+            
+            # stats
+            tempDiffs <- statType(tempOne,na.rm=T) - statType(tempTwo,na.rm=T)
+            summaryPerm$jointDist[i] <- tempDiffs # statType(tempDiffs, na.rm = T) 
+          
+        }  
+        
+    } else {
+      
+        for (i in 1:nPerms){
+          
+            # shift labels in a pairwise fashion
+            tempDiffs <- statType((-1)^rbinom(lOne,1,0.5) * (group1 - group2))
+            summaryPerm$jointDist[i] <- tempDiffs
+          
+        }
+      
+    }
+  
+    # get the observed difference
+    diffs <- statType(group1,na.rm=T) - statType(group2,na.rm=T)
+    observedAbs <- abs(diffs) # maybe leave it as means here
+    observed <- diffs
+    summaryPerm$Pval <- 2 * (1 - ecdf(summaryPerm$jointDist)(observedAbs))
+    if (length(unique(abs(summaryPerm$jointDist))) == 1) {summaryPerm$Pval <- 1} # if the difference is always the same, then p = 1
+    summaryPerm$Observed <- observed
+    
+    # return the results
+    if (simple) {
+      
+      return(summaryPerm$Pval)
+      
+    } else if (!simple) {
+      
+      return(summaryPerm)
+      
+    }
+    
+}
+
+# Non-parametric Bootstrap for a single group
+bootstrap <- function(group = 1, statType = mean, B = 5000){
+  
+    # prep param
+    bootStats <- rep(0,B)
+    
+    # iterate
+    for(b in 1:B){
+      
+      # wait group
+      x <- sample(group,length(group),replace=T)  
+      bootStats[b] <- statType(x,na.rm = T)
+      
+    }
+    
+    return(bootStats)
+    
+}
+
+# basic power calculation for a one way ANOVA
+powerCalc <- function(d = 1.2, Za = 1.96, Zb = 0.842){
+  
+  out <- 2*((Za + Zb)/d)^2 + (0.25*(Za^2))
+  
+  return(round(out))
+  
+}
+
+# OC-specific computation of the negative log likelihood for model optimization
+negLogLik <- function(params, choice, handling, reward) {
+  gamma <- exp(params[2]) * handling
+  model <- exp(params[1]) * (reward - gamma)
+  p = 1 / (1 + exp(-model))
+  p[p == 1] <- 0.999
+  p[p == 0] <- 0.001
+  tempChoice <- rep(NA, length(choice))
+  tempChoice[choice == 1] <- log(p[choice == 1])
+  tempChoice[choice == 0] <- log(1 - p[choice == 0]) # log of probability of choice 1 when choice 0 occurred
+  negLL <- -sum(tempChoice) 
+  return(negLL)
+}
+
+# optimize the OC model
+optimizeOCModel <- function(Data, Algorithm = "NLOPT_LN_NEWUOA", simplify = F, optfun = negLogLik) {
+  
+  # Data: The participant's log
+  # Algorithm: probably let be
+  # optfun: an external function to minimize (in this case OC, separately defined as negloglik)
+  
+  # Prep data
+  handling <- Data$Handling
+  reward <- Data$Offer
+  choice <- Data$Choice
+  
+  # Prep list of results to be returned
+  out <- list()
+  out$percentQuit <- mean(choice == 0) * 100
+  out$percentAccept <- mean(choice== 1) * 100 
+  miss <- (choice != 1) & (choice != 0)
+  out$percentMiss <- mean(miss)  * 100
+  choice <- choice[!miss]
+  reward <- as.numeric(reward[!miss])
+  handling <- as.numeric(handling[!miss])
+  
+  # Establish lower and upper bounds
+  LB <- round(log((min(reward)/max(handling)) * 0.99), digits = 4)
+  UB <- round(log((max(reward)/min(handling)) * 1.01), digits = 4) # in reality this should be the second largest, since no one would reject the highest val
+  
+  # Begin defining parameters
+  # If choices are one-sided (i.e. all accepted)
+  if ((sum(choice) == length(choice)) | (sum(choice) == 0)) {
+    ifelse(sum(choice) == length(choice), out$Gamma <- exp(LB), out$Gamma <- exp(UB)) 
+    out$Scale <- 1 # it was NA, but in theory a temperature of 1 also indicates noiseless estimates, and allows for easier fit computations
+    out$LL <- 0
+  } else {
+    # Create a feasible region (search space)
+    params <- as.matrix(expand.grid(scale = c(-1, 1), gamma = seq(LB, UB, length = 3)))
+    # Create a list to check the minimization of the negative log lik.
+    info <- list()
+    info$negLL <- Inf
+    # Define the options to be used during optimization
+    # Consider looking into other optimization algorithms and global minima
+    opts <- list("algorithm" = Algorithm,
+               "xtol_rel" = 1.0e-8)
+    # Optimize the sOC over all possible combinations of starting points
+    for (i in seq(nrow(params))) {
+      tempInfo <- nloptr(x0 = params[i, ], 
+                   eval_f = optfun, 
+                   lb = c(log(0.001), LB),
+                   ub = c(-log(0.001), UB),
+                   opts = opts,
+                   choice = choice, 
+                   handling = handling,
+                   reward = reward)
+      if (tempInfo$objective < info$negLL) {
+        #print("Minimized")
+        info$negLL <- tempInfo$objective
+        info$params <- tempInfo$solution
+      }
+    }
+    out$Gamma <- exp(info$params[2])
+    out$Scale <- exp(info$params[1])
+    out$LL <- -info$negLL
+  }
+  
+  # Summarize the outputs
+  out$LL0 <- log(0.5) * length(choice)
+  out$Rsquared <- 1 - (out$LL/out$LL0)
+  out$subjOC <- out$Gamma * handling
+  out$p <- 1 / (1 + exp(-(out$Scale*(reward - out$subjOC))))
+  out$predicted <- reward > out$subjOC
+  out$predicted[out$predicted == TRUE] <- 1
+  out$percentPredicted <- mean(out$predicted == choice) 
+  
+  # adjust the probabilities in case of extreme gammas
+  if (out$Gamma <= exp(LB)) {
+    out$Gamma <- exp(LB) # temporary condition because Nlopt is not respecting the lower bound
+    out$p <- rep(1, length(choice))
+  } else if (out$Gamma == exp(UB)) {
+    out$p <- rep(0, length(choice))
+  } 
+  
+  # if doing this with dplyr::do(), return a simplified data.frame instead with the important parameters
+  if (simplify) {
+    out <- data.frame(out[c(seq(8), 12)])
+  }   
+  
+  return(out)
+
+}
+
+# summary matrices for refrence-changing models
+betaMatrix <- function(model, rearrange = NA) {
+# get a similarity matrix of the resulting coefficient pairings for the cost conditions
+# first, do a full_join based on column names on the list of coefficient vectors from each dummy code relevel
+# then match the names of columns and rows so NAs are in the diagonal
+  
+  # get the names of the reference group per model iteration
+  refnames <- names(model)
+  
+  # coefficient matrix
+  temp <- lapply(model, function(data) {coefficients(data)$SubjID[1, 2:4]})
+  mixCoeffs <- bind_rows(temp) 
+  preln <- ifelse("Cost" %in% substr(names(mixCoeffs), 1, 4), 4, 5) # count how many characters precede the name of each cost (diff across studies)
+  dimnames(mixCoeffs) <- list(refnames, substr(names(mixCoeffs), preln + 1, 20))
+  mixCoeffs <- as.matrix(mixCoeffs[, match(rownames(mixCoeffs), colnames(mixCoeffs))])
+  mixCoeffs[is.na(mixCoeffs)] <- 0
+  
+  # now the pvals
+  temp <- lapply(model, function(data) {as.list(summary(data)$coefficients[2:4, 4])})
+  mixPvals <- as.matrix(bind_rows(temp)) 
+  dimnames(mixPvals) <- list(refnames, substr(colnames(mixPvals), preln + 1, 20))
+  mixPvals <- as.matrix(mixPvals[, match(rownames(mixPvals), colnames(mixPvals))])
+  mixPvals[is.na(mixPvals)] <- 1
+
+  # if you would like to re-arrange the coefficient order, supply a vector with the desired sequence
+  if (length(rearrange) > 1) {
+    mixCoeffs <- mixCoeffs[rearrange, rearrange]
+    dimnames(mixCoeffs) <- list(rearrange, rearrange)
+    mixPvals <- mixPvals[rearrange, rearrange]
+    dimnames(mixPvals) <- list(rearrange, rearrange)
+  }
+  
+  # combine matrices into list to return
+  out <- list(Betas = round(mixCoeffs, digits = 2),
+              Pvals = round(mixPvals, digits = 5))
+  
+  return(out)
+  
+}
+
+# gather basic data (this is better as a function, then rbind)
+summarizeData <- function(Data = waitData, nSubs = nSubsW, type = "Wait"){
+  
+  tempSummary <- data.frame(group = rep(type, nSubs))
+  
+  if (type == "Cognitive") {
+    
+    for (subj in seq(nSubs)){
+      
+        # Choice index
+        tempChoice <- Data[[subj]]$Choice
+        
+        # Proportion complete
+        tempSummary[subj,2] <- mean(tempChoice)
+      
+        # earnings
+        tempSummary[subj,3] <- sum(Data[[subj]]$Offer[tempChoice==1])
+        
+        # RTs
+        tempSummary[subj,4] <- median(Data[[subj]]$`Choice RT`[tempChoice==0])
+    
+        # Mistakes (only for cognitive effort group)
+        tempMistakes <- sum(cogDataLong[[subj]]$`Trial Outcome`=="Forced travel") # how many forced travel trials
+        tempTrialnum <- length(Data[[subj]]$Choice) # how many decision trials
+        tempSummary[subj,5] <- tempMistakes / (tempMistakes + tempTrialnum) # proportion of forced travels throughout the exp        
+    
+    }    
+    
+  } else {
+    
+    for (subj in seq(nSubs)){
+        
+        # choice index
+        tempChoice <- Data[[subj]]$Choice
+      
+        # propotion complete
+        tempSummary[subj,2] <- mean(tempChoice)
+        
+        # earnings
+        tempSummary[subj,3] <- sum(Data[[subj]]$Offer[tempChoice==1])
+        
+        # RTs
+        tempSummary[subj,4] <- median(Data[[subj]]$RT[tempChoice==0])
+        
+        # Mistakes (to allow for mistakes on the cognitive group)
+        tempSummary[subj,5] <- NA
+        
+    }
+  
+  }
+  
+  return(tempSummary)
+  
+}
+
+```
+
+``` {r Load data for between-subject experiment, echo = FALSE}
+### data loading and cleaning up
+# forced travels are switched to acceptances, as they reflect a preference for that trial
+# rawChoice will be used to compute the # of mistakes
+# The RT is upper-bounded because a glitch in the code made two 14s trials last longer (among all p's) 
+setwd("./Cost2/data")
+files <- dir(pattern = '_log.csv')
+
+# load data
+dataBtw <- tibble(SubjID = files) %>%
+  mutate(contents = map(SubjID, ~ read_csv(., col_types = cols())))  %>%
+  mutate(Cost = substring(SubjID, 5, 8),
+         Cost = case_when(Cost == "wait" ~ "Wait",
+                          Cost == "cogT" ~ "Cognitive",
+                          Cost == "phys" ~ "Physical",
+                          Cost == "phea" ~ "Easy"),
+         SubjID = as.integer(substring(SubjID, 0, 3))) %>%
+  unnest() %>%
+  mutate(rawChoice = Choice, 
+         RT = ifelse(RT > 14.1, 14, RT),
+         Choice = ifelse(Choice == 2, 1, Choice), # forced travels (2) become acceptances (1)
+         Half = ifelse(Block < 4, "Half_1", "Half_2"),
+         Cost = factor(Cost, levels = c("Physical", "Cognitive", "Wait", "Easy")),
+         optimal = case_when(
+          (Handling == 10 & Offer < 8) ~ 0,
+          (Handling == 14 & Offer < 20) ~ 0,
+          TRUE ~ 1
+          )
+         ) 
+
+# get a simple subject list and the number of subjects
+subjList_btw <- unique(dataAll$SubjID)
+nSubjs_btw <- length(subjList)
+
+```
+
+```{r Load data for within-subject experiment, echo = FALSE}
+# First looks at the new data
+# The RT is upper-bounded because a glitch in the code made one 10s last 14s
+setwd('./Cost3/data/')
+files <- dir(pattern = 'main_log.csv')
+
+# load the data and remove extreme subjects
+dataWth <- data_frame(SubjID = files) %>% 
+  mutate(contents = map(SubjID, ~ read_csv(., col_types = cols())))  %>%
+  mutate(SubjID = substring(SubjID, 0, 3)) %>%
+  unnest() %>%
+  mutate(RT = ifelse(RT > 10.1, 10, RT),
+         Half = ifelse(Block < 4, "Half_1", "Half_2"),
+         Btype = BlockType) %>%
+  unite(Cost, Cost, BlockType) %>%
+  mutate(rawChoice = Choice,
+         Choice = ifelse(Choice == 2, 1, Choice),
+         Cost = case_when(Cost == "WAIT_0" ~ "Wait_C",
+                           Cost == "COGNITIVE_0" ~ "Cognitive",
+                           Cost == "GRIP_1" ~ "Physical",
+                           Cost == "WAIT_1" ~ "Wait_P")) %>%
+  group_by(SubjID) %>%
+  mutate(BlockOrder = ifelse(Btype[1] == 0, "Cognitive1st", "Physical1st"))
+
+# Get just the subject list and number of subjects
+subjList_wth <- unique(data$SubjID)
+nSubjs_wth <- length(subjList)
 ```
 
 1.  Department of Psychological and Brain Sciences, Boston University, Boston, USA
