@@ -443,7 +443,7 @@ report_p <- function(pval) {
   # do p < 0.001 or round depending on the value
   adapted_p <- ifelse(pval < 0.001, "< 0.001", paste("=", round(pval, digits = 2)))
   
-  print(adapted_p)
+  return(adapted_p)
 }
 ```
 
@@ -590,7 +590,7 @@ In this talk, I'll show you how we'veused this framework to understand the inher
 
 ### Participants 
 
-  We collected data from a new sample of 48 eligible participants  (39 Female, median age = 21, range = 18 - 36). Sample size was once again determined by means of power analysis (repeated measures ANOVA), using a significance level of 0.05, power of 0.8, a desired effect size of f=0.5, and four factors (one for each condition). The resulting sample size was 45, which we increased to 48 in order to balance the potential order of blocks. We excluded participants using the same criteria as in the between-subject experiment.
+  We collected data from a new sample of 48 eligible participants  (39 Female, median age = 21, range = 18 - 36). Sample size was once again determined by means of power analysis (repeated measures ANOVA), using a significance level of 0.05, power of 0.8, a desired effect size of f = 0.5, and four factors (one for each condition). The resulting sample size was 45, which we increased to 48 in order to balance the potential order of blocks. We excluded participants using the same criteria as in the between-subject experiment.
 
 ### Foraging Task Adaptation
 
@@ -598,7 +598,7 @@ In this talk, I'll show you how we'veused this framework to understand the inher
 
 ### Analyseses
 
-  The analytical pipeline for the within-subject study was mostly preserved from the between-subject experiment. We first ran tests to determine whether decision makers integrated reward information. We performed a logistic regression per participant to predict trial-wise acceptances based on reward amounts. The resulting beta coefficients were pooled across all participants, and a one-sample rank-sum test was used to examine whether they were significantly positive or negative (compared to 0). Next, we explored the effects of choice history by adding an autoregressive covariate containing the number of consecutive recent quits. We then confirmed that the under- and over-acceptance were detrimental to total earnings by performing the same quadratic linear model explained above. To determine the optimality of the group’s decisions, we will examine whether each cost type produced a bias to over or under-accept at 4 and 8 cents (assuming that 20 cents were always be accepted, given our design). The reward-maximizing strategy was to always reject 4 cents and accept 8 cents, yielding a combined optimal proportion of acceptances of 50% (see Operationalization of Costs for details). We performed a two-sided one-sample chi-squared test of proportions against the null probability of 0.5 for each type of cost. Therefore, a significant difference indicated that participants either over or under accepted rewards.
+  The analytical pipeline for the within-subject study was mostly preserved from the between-subject experiment. We first ran tests to determine whether decision makers integrated reward information. We performed a logistic regression per participant to predict trial-wise acceptances based on reward amounts. The resulting beta coefficients were pooled across all participants, and a one-sample rank-sum test was used to examine whether they were significantly positive or negative (compared to 0). Next, we explored the effects of choice history by adding an autoregressive covariate containing the number of consecutive recent quits. We then confirmed that the under- and over-acceptance were detrimental to total earnings by performing the same quadratic linear model explained above. To determine the optimality of the group’s decisions, we examined whether each cost type produced a bias to over or under-accept at 4 and 8 cents (assuming that 20 cents were always be accepted, given our design). The reward-maximizing strategy was to always reject 4 cents and accept 8 cents, yielding a combined optimal proportion of acceptances of 50% (see Operationalization of Costs for details). We performed a two-sided one-sample chi-squared test of proportions against the null probability of 0.5 for each type of cost. Therefore, a significant difference indicated that participants either over or under accepted rewards.
   
   To compare acceptance rates among cost conditions, we first computed the probability of accepting a trial with a mixed-effects logistic regression. The model included cost condition and reward amount as fixed main effects, and subject ID as a random effect (handling time is not modeled, as participants experienced a single time combination). Cost condition was modeled with three categorical terms, with the fourth condition as the reference condition (two effort conditions, and two delay conditions corresponding to each effort type). We ran three versions of the model with different reference conditions, in order to test all relevant pairwise differences among the four cost conditions. We compared the a priori model to alternative parameterizations using AIC and BIC, varying model complexity in the following order: 1) intercept only; 2) condition only; 3) reward only; 4) condition and reward main effects (a priori model); and 5) adding a two-way interaction. We predicted that model 4 would have the last considerable decrease in the negative log-likelihood. Models with similar AIC were formally compared using the analysis-of-deviance approach from the between-subjects experiment.
   
@@ -731,20 +731,33 @@ optimalProp_cost <- temp %>%
   summarise(propDeviations = round(mean(significant) * 100))
 
 
-# # potential visualization, though difficult to interpret
-# temp %>% 
-#   filter(Cost != "Easy") %>%
-#   select(Handling, Cost, Offer, significant) %>%
-#   ggplot(aes(Cost, interaction(Offer, Handling), fill = significant)) +
-#   geom_tile(color = "white") +
-#   theme_minimal()
+# ## if you want to replicate the cost 3 method
+# # this says that all but easy deviated from optimality in the observed direction
+# temp <- dataBtw %>%
+#   group_by(Cost) %>%
+#   filter(Offer < 20, Handling == 10) %>%
+#   summarize(propAccept = mean(Choice),
+#             accept = sum(Choice),
+#             quit = sum(Choice == 0))
+# 
+# temp2 <- apply(temp, 1, function(row) {prop.test(as.numeric(row[3]), sum(as.numeric(row[3:4])), p = 0.5, conf.level = 0.95)})
+#   
+#   
+# # store stats in a dataframe
+# news <- data.frame(probability = sapply(temp2, "[[", "estimate"),
+#                                    chisquared = sapply(temp2, "[[", "statistic"),
+#                                    confint = t(sapply(temp2, "[[", "conf.int")),
+#                                    pval = sapply(temp2, "[[", "p.value"))
+# rownames(news) <- temp$Cost
+
+
 ```
 
   In this experiment, groups faced with different behavioral costs (physical effort, cognitive effort, or delay) were tasked with deciding their preferred strategy to maximize rewards in fully-disclosed foraging environments of variable richness. Environmental richness was dictated by the time it took to obtain a reward (the handling time) and the time between trials (the travel time). We hypothesized that participants would approximate reward-maximizing behavior by preferring higher rewards and shorter delays, but that changing the cost required to obtain rewards would uniformly increase or decrease this choice pattern. Specifically, we predicted that participants confronted with cognitive demands would be more likely to accept trials than those faced with physical effort and delay, regardless of handling time and reward amount.
   
   To address the first hypothesis, we first confirmed that increasing handling times and reward amounts produced the expected reduction and increase in acceptance probabilities, respectively. Since participants in the effort groups were forced to travel when they failed to perform above threshold (see Methods), we distinguish between acceptances (entering the handling period) and completions (successfully obtaining a reward). Individual-specific logistic regression coefficients for handling time were significantly lower than 0 (mean $\beta$ = `r mean(coeffRH_mean[2], na.rm = T)`, SE = `r coeffRH_se[2]`; Wilcoxon test: V = `r rankHand$statistic`, *p* `r report_p(rankHand$p.value)`), whereas increasing the reward amount resulted in higher acceptance probabilities (mean $\beta$ = `r coeffRH_mean[1]`, SE = `r coeffRH_se[1]`; Wilcoxon test: V = `r rankOffer$statistic`, p `r report_p(rankOffer$p.value)`). We next examined whether choices could also have been affected by recent choice history (i.e. if too many sequential quits promoted acceptances regardless of reward amount) by adding a regressor to the model that tracked the number of consecutive quits preceding a trial. This auto-regressive coefficient was not significantly different than 0 (mean $\beta$ = `r coeffRHAR_mean[3]`, SE = `r coeffRHAR_se[3]`; Wilcoxon test: V = `r rankRHAR$statistic`, p `r ifelse(rankRHAR$p.value < 0.001, "< 0.001", paste("=", round(rankRHAR$p.value, digits = 2)))`), and the 95% confidence interval (CI) of these coefficients contained 0 in `r round((sum(AR_CIs) / nSubjs_btw) * 100)`% of our participants. This indicates that offer patterns did not influence participant behavior.
   
-  **Maybe put this as an addendum to the mixed effects analysis of proportion of acceptances, after mixed models** . The foraging task was configured so that there was an optimal, reward-maximizing strategy (see Operationalization of Cost in Methods). Because of this, participants were told to consider their strategies carefully, as accepting everything would not maximize their gains. Figure X shows that participants who over- or under-accepted earned the least (general linear model with quadratic term, F = `r round(summary(lmEarn)$fstatistic[1], digits = 2)`, Beta = `r summary(lmEarn)$coefficients[3,1]`, SE = `r round(summary(lmEarn)$coefficients[3, 2], digits = 2)`, R-squared = `r round(summary(lmEarn)$r.squared, digits = 2)`). Two-sided, one-sample t-tests against the optimal proportion of acceptances (i.e. $\mu$ = 0 or 1) for each combination of cost type, handling time, and offer showed that participants significantly deviated from optimality in `r round(optimalProp)` of combinations (*p* < 0.05, FDR corrected), with the proportion of deviations being lowest for the wait group (Wait = `r filter(optimalProp_cost, Cost == "Wait")[2]`, physical = `r filter(optimalProp_cost, Cost == "Physical")[2]`, Cognitive = `r filter(optimalProp_cost, Cost == "Cognitive")[2]`, Easy = `r filter(optimalProp_cost, Cost == "Easy")[2]`). Together, these results suggest that participants were adequately influenced by the rewarding statistics of the environment, even though they did not always perform optimally.
+  **Maybe put this as an addendum to the mixed effects analysis of proportion of acceptances, after mixed models** . The foraging task was configured so that there was an optimal, reward-maximizing strategy (see Operationalization of Cost in Methods). Because of this, participants were told to consider their strategies carefully, as accepting everything would not maximize their gains. Figure X shows that participants who over- or under-accepted earned the least (general linear model with quadratic term, F = `r round(summary(lmEarn)$fstatistic[1], digits = 2)`, Beta = `r summary(lmEarn)$coefficients[3,1]`, SE = `r round(summary(lmEarn)$coefficients[3, 2], digits = 2)`, R-squared = `r round(summary(lmEarn)$r.squared, digits = 2)`, *p* `r report_p(summary(lmEarn)$coefficients[3, 4])`). Two-sided, one-sample t-tests against the optimal proportion of acceptances (i.e. $\mu$ = 0 or 1) for each combination of cost type, handling time, and offer showed that participants significantly deviated from optimality in `r round(optimalProp)`% of combinations (*p* < 0.05, FDR corrected), with the proportion of deviations being lowest for the wait group (Wait = `r filter(optimalProp_cost, Cost == "Wait")[2]`%, physical = `r filter(optimalProp_cost, Cost == "Physical")[2]`%, Cognitive = `r filter(optimalProp_cost, Cost == "Cognitive")[2]`%, Easy = `r filter(optimalProp_cost, Cost == "Easy")[2]`%). Together, these results suggest that participants were adequately influenced by the rewarding statistics of the environment, even though they did not always perform optimally.
 
 ### **Between-subjects: Comparisons among the four delay and effort conditions**
 
@@ -857,9 +870,9 @@ propFails <- dataBtw %>%
 
 ```
 
-  The next set of analyses examined the hypothesis that choice differences among costs would be characterized by more acceptances by the cognitive group **not quite**. Figure X shows that the cognitive effort group consistently accepted more offers, which resulted in lower earnings. One-way ANOVAs showed that differences among groups were significant both for overall acceptance rates (F = `r round(propAov[[1]][1, 4], digits = 2)`, *p* `r report_p(propAov[[1]][1, 5])`), and total earnings (F = `r round(earnAov[[1]][1, 4], digits = 2)`, *p* `r report_p(earnAov[[1]][1, 5])`). Post-hoc permutations (5000 iterations) comparing mean acceptance rates between every pair of costs confirmed that acceptance rates of the cognitive effort group (mean = `r filter(overallSumms, Cost == "Cognitive") %>% select(mProp)`, SD = `r filter(overallSumms, Cost == "Cognitive") %>% select(sdProp)`) were higher than those of the physical (mean = `r filter(overallSumms, Cost == "Physical") %>% select(mProp)`, SD = `r filter(overallSumms, Cost == "Physical") %>% select(sdProp)`; permuted *p* = `r report_p(filter(propTests, contrast == "Physical < Cognitive") %>% select(permPval))`, Cohen's D = `r filter(propTests, contrast == "Physical < Cognitive") %>% select(cohenD)`) and wait groups (mean = `r filter(overallSumms, Cost == "Wait") %>% select(mProp)`, SD = `r filter(overallSumms, Cost == "Wait") %>% select(sdProp)`; permuted *p* = `r report_p(filter(propTests, contrast == "Cognitive > Wait") %>% select(permPval))`, Cohen's D = `r filter(propTests, contrast == "Cognitive > Wait") %>% select(cohenD)`). It also showed that those faced with the easy task accepted more than those in the wait group, although responses from the easy group were more variable (mean Easy = `r filter(overallSumms, Cost == "Easy") %>% select(mProp)`, SD = `r filter(overallSumms, Cost == "Easy") %>% select(sdProp)`; permuted *p* = `r report_p(filter(propTests, contrast == "Wait < Easy") %>% select(permPval))`, Cohen's D = `r filter(propTests, contrast == "Wait < Easy") %>% select(cohenD)` (all other *p* > 0.05). The proportion of forced travels for cognitive effort was `r round(propFails[2, 2], digits = 2)` across participants (and 0 for either physical or easy conditions), making performance an unlikely explanation for the observed differences in choice. 
+  The next set of analyses examined the hypothesis that choice differences among costs would be characterized by more acceptances by the cognitive group **not quite**. Figure X shows that the cognitive effort group consistently accepted more offers, which resulted in lower earnings. One-way ANOVAs showed that differences among groups were significant both for overall acceptance rates (F = `r round(propAov[[1]][1, 4], digits = 2)`, *p* `r report_p(propAov[[1]][1, 5])`), and total earnings (F = `r round(earnAov[[1]][1, 4], digits = 2)`, *p* `r report_p(earnAov[[1]][1, 5])`). Post-hoc permutations (5000 iterations) comparing mean acceptance rates between every pair of costs confirmed that acceptance rates of the cognitive effort group (mean = `r filter(overallSumms, Cost == "Cognitive") %>% select(mProp)`, SD = `r filter(overallSumms, Cost == "Cognitive") %>% select(sdProp)`) were higher than those of the physical (mean = `r filter(overallSumms, Cost == "Physical") %>% select(mProp)`, SD = `r filter(overallSumms, Cost == "Physical") %>% select(sdProp)`; permuted *p* `r report_p(filter(propTests, contrast == "Physical < Cognitive") %>% select(permPval))`, Cohen's D = `r filter(propTests, contrast == "Physical < Cognitive") %>% select(cohenD)`) and wait groups (mean = `r filter(overallSumms, Cost == "Wait") %>% select(mProp)`, SD = `r filter(overallSumms, Cost == "Wait") %>% select(sdProp)`; permuted *p* `r report_p(filter(propTests, contrast == "Cognitive > Wait") %>% select(permPval))`, Cohen's D = `r filter(propTests, contrast == "Cognitive > Wait") %>% select(cohenD)`). It also showed that those faced with the easy task accepted more than those in the wait group, although responses from the easy group were more variable (mean Easy = `r filter(overallSumms, Cost == "Easy") %>% select(mProp)`, SD = `r filter(overallSumms, Cost == "Easy") %>% select(sdProp)`; permuted *p* `r report_p(filter(propTests, contrast == "Wait < Easy") %>% select(permPval))`, Cohen's D = `r filter(propTests, contrast == "Wait < Easy") %>% select(cohenD)` (all other *p* > 0.05). The proportion of forced travels for cognitive effort was `r round(propFails[2, 2], digits = 2)` across participants (and 0 for either physical or easy conditions), making performance an unlikely explanation for the observed differences in choice. 
   
-  We repeated these pairwise permutation to identify differences in earnings. In line with the earnings results from the previous section (see Figure X), the additional acceptances produced by the cognitive effort group resulted in significantly lower earnings (mean = `r filter(overallSumms, Cost == "Cognitive") %>% select(mEarn)`, SD = `r filter(overallSumms, Cost == "Cognitive") %>% select(sdEarn)`) than both physical (mean = `r filter(overallSumms, Cost == "Physical") %>% select(mEarn)`, SD = `r filter(overallSumms, Cost == "Physical") %>% select(sdEarn)`; permuted *p* = `r report_p(filter(earnTests, contrast == "Physical > Cognitive") %>% select(permPval))`, Cohen's D = `r filter(earnTests, contrast == "Physical > Cognitive") %>% select(cohenD)`) and wait groups (mean = `r filter(overallSumms, Cost == "Wait") %>% select(mEarn)`, SD = `r filter(overallSumms, Cost == "Wait") %>% select(sdEarn)`; permuted *p* = `r report_p(filter(earnTests, contrast == "Cognitive < Wait") %>% select(permPval))`, Cohen's D = `r filter(earnTests, contrast == "Cognitive < Wait") %>% select(cohenD)`). In addition, we found that the wait group earned more than the physical (permuted *p* = `r report_p(filter(earnTests, contrast == "Physical < Wait") %>% select(permPval))`, Cohen's D = `r filter(earnTests, contrast == "Physical < Wait") %>% select(cohenD)`) and easy groups (mean Easy = `r filter(overallSumms, Cost == "Easy") %>% select(mEarn)`, SD = `r filter(overallSumms, Cost == "Easy") %>% select(sdEarn)`; permuted *p* = `r report_p(filter(earnTests, contrast == "Wait > Easy") %>% select(permPval))`, Cohen's D = `r filter(earnTests, contrast == "Wait > Easy") %>% select(cohenD)`).
+  We repeated these pairwise permutation to identify differences in earnings. In line with the earnings results from the previous section (see Figure X), the additional acceptances produced by the cognitive effort group resulted in significantly lower earnings (mean = `r filter(overallSumms, Cost == "Cognitive") %>% select(mEarn)`, SD = `r filter(overallSumms, Cost == "Cognitive") %>% select(sdEarn)`) than both physical (mean = `r filter(overallSumms, Cost == "Physical") %>% select(mEarn)`, SD = `r filter(overallSumms, Cost == "Physical") %>% select(sdEarn)`; permuted *p* `r report_p(filter(earnTests, contrast == "Physical > Cognitive") %>% select(permPval))`, Cohen's D = `r filter(earnTests, contrast == "Physical > Cognitive") %>% select(cohenD)`) and wait groups (mean = `r filter(overallSumms, Cost == "Wait") %>% select(mEarn)`, SD = `r filter(overallSumms, Cost == "Wait") %>% select(sdEarn)`; permuted *p* `r report_p(filter(earnTests, contrast == "Cognitive < Wait") %>% select(permPval))`, Cohen's D = `r filter(earnTests, contrast == "Cognitive < Wait") %>% select(cohenD)`). In addition, we found that the wait group earned more than the physical (permuted *p* `r report_p(filter(earnTests, contrast == "Physical < Wait") %>% select(permPval))`, Cohen's D = `r filter(earnTests, contrast == "Physical < Wait") %>% select(cohenD)`) and easy groups (mean Easy = `r filter(overallSumms, Cost == "Easy") %>% select(mEarn)`, SD = `r filter(overallSumms, Cost == "Easy") %>% select(sdEarn)`; permuted *p* `r report_p(filter(earnTests, contrast == "Wait > Easy") %>% select(permPval))`, Cohen's D = `r filter(earnTests, contrast == "Wait > Easy") %>% select(cohenD)`).
   These findings provide a first glimpe at differences in cost, showing that individuals in the wait condition accepted the least and earned the most. Moreover, they suggest that cognitive demands can boost the value of an offer instead, even when accepting it negatively impacts total earnings.
 
 ``` {r BTW: 16.2.2. rmANOVA, echo=FALSE,fig.align="center",fig.width=5,fig.height=4, results = 'asis'}
@@ -1508,7 +1521,7 @@ summaryOC$predicted <- dataBtw %>%
 
 ### **Within-subjects: Tests of whether decision makers integrate reward information**
 
-  This experiment probed whether the value-modulatory effects of each type of demand depended on the ability to obtain rewards through other behavioral means. If the cost or value of a demand are intrinsic, the relative preferences displayed above should be robust to alternatives. The experimental setup was mostly preserved, with 3 key differences: 1) all participants experienced cognitive effort, physical effort, and delay; 2) each block contained offers with one type of effort and passive waiting (allowing for comparisons in acceptances through the common wait condition). and 3) the handling and travel times were fixed at 10 s and 6 s, respectively. We therefore compared choices from the within-subjects experiment to the matching time condition from the between-subjects experiment.
+  This experiment probed whether the value-modulatory effects of each type of demand depended on the ability to obtain rewards through other behavioral means. If the cost or value of a demand are intrinsic, the relative preferences displayed above should be robust to alternatives. The experimental setup was mostly preserved, with 3 key differences: 1) all participants experienced cognitive effort, physical effort, and delay; 2) each block contained offers with one type of effort and passive waiting (allowing for comparisons in acceptances through the common wait condition). and 3) the handling and travel times were fixed at 10 s and 6 s, respectively. We therefore compared choices from the within-subjects experiment to the matching time condition from the between-subjects experiment. We hypothesized that reward decision patterns would match those of the previous experiment, and that interleaving effort and delay would produce persistent preferences for passive delay trials.
 	
 ``` {r WTH: 16.1.1. reward coefficients, fig.align = "center", fig.width = 4, fig.height = 4, echo = FALSE}
 # adapt the data so the fits are only performed on choices, not failed attempts (revisit?)
@@ -1567,12 +1580,6 @@ baseCoeffs <- baseCoeffs %>%
 baseCoeffs$AR_effect <- apply(baseCoeffs, 1, function(x) (!(as.numeric(x["AR_CILow"]) <= 0 & as.numeric(x["AR_CIHigh"]) >= 0)))
 ```
 
-  Analyses from the previous experiment were repurposed to examine cost differences within individuals. We begun by testing the prediction that rewards would positively influence choices. A Wilcoxon signed rank test showed that individual logistic coefficients for reward amount were significantly greater than 0 (mean $\beta$ = `r round(mean(baseCoeffs$Offer), digits = 2)`, SD = `r round(sd(baseCoeffs$Offer), digits = 2)`; V = `r wilcox.test(baseCoeffs$Offer)$statistic`, *p* `r report_p(wilcox.test(baseCoeffs$Offer)$p.value)`), once again confirming that participants were properly influenced by reward amounts. Adding a coefficient that tracked prior consecutive quits indicated that only `r sum(baseCoeffs$AR_effect)` individuals were influenced by recent quit history, thus discarding systematic sequential effects.
-
-###	WTH: 16.1.3. 
-
-*A general linear model with constant, linear, and quadratic terms will be used to estimate the correspondence between proportion accepted (independent variable) and total earnings (dependent variable). No other covariates will be used, as this analysis is to confirm that over and under accepting are detrimental to total earnings. The quadratic term will be defined as the squared deviation from the optimal overall acceptance rate?*
-	
 ``` {r WTH: 16.1.3. prop accept x earnings, echo = FALSE, include = T, fig.align="center",fig.width=4,fig.height=4}
 # Notes: I also performed this comparing halves and block types x half, and it doesn't look like participants were accepting less to make more.
 # calculate the proportions and earnings per subject, while keeping group info
@@ -1619,88 +1626,47 @@ lmEarn <- lm(Earnings ~ pComplete + pComplete2, data = temp)
 # permute(PPearn$Half_1, PPearn$Half_2, paired = TRUE)
 ```
 
-The table shows the results from this linear model. In accord with the design of the experimental task, participants who either rejected or accepted too many trials received the least amount of money overall. This is confirmed by significance of the quadratic term below.
-
-``` {r WTH: 16.1.3. Earnings table, echo=FALSE,fig.align="center",fig.width=9,fig.height=5}
-# Summary table for the linear model
-panderOptions("digits", 2)
-pander(lmEarn, style = "rmarkdown")
-```  
-
-###	WTH: 16.1.4. 
-
-*To determine the optimality of the group's decisions, we will examine whether each cost type produced a bias to over or under-accept at 4 and 8 cents (assuming that 20 cents will always be accepted). The reward-maximizing strategy is to always reject 4 cents and accept 8 cents, yielding a combined optimal proportion of acceptances of 50%. We will perform a two-sided one-sample chi-squared test of proportions against the null probability of 0.5 for each type of cost. We will report the estimated overall proportion of acceptances for these rewards along with the statistics to show the direction of the bias.*
-
-``` {r WTH: 16.1.4., echo = FALSE, fig.align="center",fig.width=6,fig.height=4}
-# get the proportion of acceptances per reward and trial type across subjects, and do a one sample t test versus a null mu given by the optimal strategy
-# note that in the very likely case that every participant will accept or reject for a given reward/cost (i.e. sd = 0): 
-# I am just providing a pseudo pvalue as 1 minus the diff. between prevalent choice and the null (so, removing the standard deviation from the t test equation, otherwise you can't divide by 0)
-# this is just to track the optimality.
-# I am also adding the mean/sd of acceptances per cost/reward and optimality as reference
-# summary_costvsreward <- data %>% 
-#                           group_by(SubjID, Offer, Cost) %>% 
-#                           summarize(prop = mean(Choice)) %>%
-#                           group_by(Offer, Cost) %>%
-#                           summarize(pval = ifelse(sd(prop) == 0, 
-#                                                   1 - (mean(prop) - ifelse(mean(Offer) == 4, 0, 1)), 
-#                                                   t.test(prop, mu = (ifelse(mean(Offer) == 4, 0, 1)))$p.value),
-#                                     propAccept = mean(prop),
-#                                     sdAccept = sd(prop)) %>%
-#                           ungroup() %>%
-#                           mutate(Optimal = rep(c(0,1,1), each = 4),
-#                                  Padjusted = p.adjust(pval, method = "BY"))
-# 
-# temp <- data %>%
-#   group_by(SubjID, Offer, Cost) %>%
-#   filter(Offer < 20) %>%
-#   summarize(propAccept = mean(Choice)) %>% 
-#   spread(Cost, propAccept) %>% 
-#   ungroup() %>% 
-#   select(Cognitive:Wait_P) %>% 
-#   apply(., 2, t.test, mu = 0.5) 
-# 
-# summary_costvsreward <- data.frame(tstat = sapply(temp, "[[", "statistic"), 
-#                                    pval = sapply(temp, "[[", "p.value"))
-# rownames(summary_costvsreward) <- names(temp)
-
-# get quits and acceptances per cost type for each subject
-# revisit this eventually to clean it up
+``` {r WTH: 16.1.4. optimality, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
+# get quits and acceptances per cost type 
 temp <- dataWth %>%
-  group_by(SubjID, Offer, Cost) %>%
+  group_by(Cost) %>%
   filter(Offer < 20) %>%
   summarize(propAccept = mean(Choice),
             accept = sum(Choice),
-            quit = sum(Choice == 0)) %>% 
-  gather(act, counts, accept:quit) %>% 
-  unite(temp, Cost, act, sep = ".") %>% 
-  select(SubjID, Offer, temp, counts) %>% 
-  spread(temp, counts) %>%
-  ungroup() %>% 
-  select(Cognitive.accept:Wait_P.quit) 
+            quit = sum(Choice == 0))
 
 # perform a prop.test based on the group's acceptances and quits per cost
-temp2 <- lapply(seq(1, 8, by = 2), function(i) {prop.test(sum(temp[,i]), sum(temp[,i] + temp[,i+1]), p = 0.5, conf.level = 0.95)})
-
-# store stats in a dataframe
+temp2 <- apply(temp, 1, function(row) {prop.test(as.numeric(row[3]), sum(as.numeric(row[3:4])), p = 0.5, conf.level = 0.95)})
+  
+  
+# store stats in a dataframe and round up to the second digits for reporting
 summary_costvsreward <- data.frame(probability = sapply(temp2, "[[", "estimate"),
-                                   chisquared = sapply(temp2, "[[", "statistic"), 
+                                   chisquared = sapply(temp2, "[[", "statistic"),
                                    confint = t(sapply(temp2, "[[", "conf.int")),
-                                   pval = sapply(temp2, "[[", "p.value"))
-rownames(summary_costvsreward) <- unique(gsub("[.].*","",names(temp)))
+                                   pval = sapply(temp2, "[[", "p.value")) %>% round(., digits = 2)
+rownames(summary_costvsreward) <- temp$Cost
 
-rm(temp, temp2)
+rm(temp2)
 
-# create table
-pander(round(summary_costvsreward, digits = 4))
+
+## no differences in earnings
+earnings_within <- dataWth %>%
+  group_by(SubjID, Cost) %>%
+  filter(rawChoice == 1) %>%
+  summarise(earning = sum(Offer) / 100) %>%
+  group_by(Cost) %>%
+  summarise(mEarn = mean(earning),
+            sdEarn = sd(earning)) %>%
+  mutate_if(is.numeric, round, digits = 2)
+
+
 ```
 
-The table shows a significant bias towards low acceptance for 4 and 8 cent rewards for all but one condition (wait trials associated with cognitive effort). The plot in 16.2.1. shows the proportion of acceptances per reward for each cost condition.
+  Analyses from the previous experiment were repurposed to examine cost differences within individuals. We begun by testing the prediction that rewards would positively influence choices. A Wilcoxon signed rank test showed that individual logistic coefficients for reward amount were significantly greater than 0 (mean $\beta$ = `r round(mean(baseCoeffs$Offer), digits = 2)`, SD = `r round(sd(baseCoeffs$Offer), digits = 2)`; V = `r wilcox.test(baseCoeffs$Offer)$statistic`, *p* `r report_p(wilcox.test(baseCoeffs$Offer)$p.value)`), once again confirming that participants were properly influenced by reward amounts. Adding a coefficient that tracked prior consecutive quits indicated that only `r sum(baseCoeffs$AR_effect)` individuals were influenced by recent quit history, thus discarding systematic sequential effects. In terms of earnings, a linear model predicting earnings once again showed that participants who accepted too few or too many trials earned the least, in line with the experimental design (Figure X; general linear model with quadratic term, F = `r round(summary(lmEarn)$fstatistic[1], digits = 2)`, Beta = `r round(summary(lmEarn)$coefficients[3,1], digits= 2)`, SE = `r round(summary(lmEarn)$coefficients[3, 2], digits = 2)`, R-squared = `r round(summary(lmEarn)$r.squared, digits = 2)`, *p* `r report_p(summary(lmEarn)$coefficients[3, 4])`). When assessing the optimality of acceptances for 4 and 8 cents (99% of 20 cent offers were accepted), chi-squared tests against the optimal of 50% showed that participants under-accepted physical effort trials (proportion accepted = `r round(summary_costvsreward["Physical", "probability"], digits = 2)`, $\chi^2$ = `r round(summary_costvsreward["Physical", "chisquared"], digits = 2)`, *p* `r report_p(summary_costvsreward["Physical", "pval"])`; all other *p* > 0.05). Despite this deviation, participants earned a similar monetary amount per cost on average (mean Cognitive = `r filter(earnings_within, Cost == "Cognitive")$mEarn`, SD = `r filter(earnings_within, Cost == "Cognitive")$sdEarn`; mean Wait-cognitive = `r filter(earnings_within, Cost == "Wait_C")$mEarn`, SD = `r filter(earnings_within, Cost == "Wait_C")$sdEarn`; mean Physical = `r filter(earnings_within, Cost == "Physical")$mEarn`, SD = `r filter(earnings_within, Cost == "Physical")$sdEarn`; mean Wait-physical = `r filter(earnings_within, Cost == "Wait_P")$mEarn`, SD = `r filter(earnings_within, Cost == "Wait_P")$sdEarn`). These results convey that participants in both experiments were similarly influenced by the characteristics of the environment, although participants in the present experiment gravitated more towards optimality (**big caveat: the same percentage can be produced by many non-optimal combinations, including accepting half of each reward. So neither approach really gets at this too well.**).
+  
+
 
 ### **Within-subjects: Comparisons among the four delay and effort conditions**
-
-###	WTH: 16.2.1. 
-
-*We will compute the probability of accepting a trial with a mixed-effects logistic regression. Based on the task structure and our main question, our a priori model of interest will include cost condition and reward amount as fixed main effects, and subject ID as a random effect. Cost condition will be modeled with three categorical terms, with the fourth condition as the reference condition (two effort conditions, and two delay conditions corresponding to each effort type). We will run three versions of the model with different reference conditions, in order to test all relevant pairwise differences among the four cost conditions (per 4.2). We anticipate significant main effects (coefficients different than zero) for reward and cost condition. We hypothesize that the differences among cost conditions will follow the pattern described in 4.2.* 
 
 ``` {r WTH: 16.2.1. Overall Proportion diffs, fig.align = "center", fig.width = 6, fig.height = 4, echo = FALSE}  
 # ## ECDF of proportion completed per cost type
@@ -1723,12 +1689,9 @@ The table shows a significant bias towards low acceptance for 4 and 8 cent rewar
 #             axis.line = element_line(colour = "black"),
 #             text = element_text(size = 16)))
 
-
 ```
 
-
-
-``` {r WTH: 16.2.1., echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 5}
+``` {r WTH: 16.2.1. mixed effect models, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 5}
 # both methods yield similar outputs, at least coefficients and pvalues
 # but the likelihoods will differ of course. The second one might be better in terms of computational needs.
 # method 1
@@ -1783,9 +1746,10 @@ mixLogis_main$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer
 
 ```
 
+  Next, we addressed the hypothesis that passive waiting trials would be less costly than effortful ones. As can be seen on Figure X, even though the reward acceptance pattern was similar to the between-subjects experiment (Figure X), differences among cost conditions were less evident. Moreover, these differences contradicted our predictions, as cognitive effort remained as the least costly type of demand. We tested this observation through a mixed effects logistic regression, with main fixed effects for offer amount and cost, and random subject-wise intercepts (the reference cost category was rotated in order to perform all possible pairwise comparisons).
 
 
-The plot above shows that the pattern of reward acceptances does indeed resemble that from the between-subject experiment for an equivalent time combination. However, the differences in cost are mostly reversed from the previous experiment, following the order stipulated in 4.2. The matrix below shows the coefficients for all cost comparisons, with coefficient size in color and respective p-values enclosed in each box. This figure formally confirms the pattern seen above, although the wait conditions do trend towards significance.
+
 
 ``` {r WTH: 16.2.1. corrplot, echo = FALSE, fig.align="center", fig.width=5, fig.height=4}
 # get summary of coeffs
