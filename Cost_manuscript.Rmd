@@ -3,10 +3,10 @@ title: Apparent preferences for cognitive effort fade when multiple forms of eff
 author: "Claudio Toro-Serey^1,2 & Joseph T. McGuire^1,2"
 csl: apa.csl
 output:
-  word_document: default #reference_docx: Style_reference_draft.docx
   pdf_document:
     highlight: haddock
     keep_tex: no
+  word_document: default #reference_docx: Style_reference_draft.docx
 header-includes:
 - \usepackage{setspace}\doublespacing
 - \usepackage[left]{lineno}
@@ -1936,7 +1936,7 @@ accDiff <- dataWth %>%
             propAccept_2 = mean(Choice[Half == "Half_2"])) %>%
   mutate(Diff = propAccept_2 - propAccept_1)
   
-corDiff <- cor(t1$Diff, propFails_wth$propFails)
+corDiff <- cor(accDiff$Diff, propFails_wth$propFails)
 
 ```
 
