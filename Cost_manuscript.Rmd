@@ -704,7 +704,7 @@ lmEarn <- lm(Earnings ~ pComplete + pComplete2, data = temp)
 
 
 ## plot
-earnFitplot <- ggplot(data = temp, aes(pComplete, Earnings)) +
+earnFitplot_btw <- ggplot(data = temp, aes(pComplete, Earnings)) +
          scale_color_manual(values = colsBtw) +
          geom_point(aes(fill = Cost), pch = 21, color = "black", size = 3, show.legend = F) +
          stat_smooth(aes(y = Earnings), method = "lm", formula = y ~ x + I(x^2), color = "grey30") +
@@ -895,7 +895,7 @@ propFails <- dataBtw %>%
 
 ```{r General prop & earnings plots (Fig. 3), fig.width = 10, fig.height = 4, fig.align = "center", fig.cap = "Left: Proportion accepted per cost. Middle: Total number of dollars earned by each group by the end of the experiment. Right: The relationship between proportion accepted and total earned. Consistent with the foraging design, participants who over and under accepted earned the least."}
 # plots generated in 16.2.1. and 16.1.3.
- prop1 | earnings1 | earnFitplot
+ prop1 | earnings1 | earnFitplot_btw
 ```
 
   The next set of analyses examined the hypothesis that choice differences among costs would be characterized by more acceptances by the effort groups. Figure 3 (left) shows that the cognitive effort group consistently accepted more offers, which resulted in lower earnings (middle). One-way ANOVAs showed that differences among groups were significant both for overall acceptance rates (F(`r propAov[[1]]$Df[1]`, `r propAov[[1]]$Df[2]`) = `r round(propAov[[1]][1, 4], digits = 2)`, *p* `r report_p(propAov[[1]][1, 5])`), and total earnings (F(`r earnAov[[1]]$Df[1]`, `r earnAov[[1]]$Df[2]`) = `r round(earnAov[[1]][1, 4], digits = 2)`, *p* `r report_p(earnAov[[1]][1, 5])`). Post-hoc permutations (5000 iterations) comparing mean acceptance rates between every pair of costs confirmed that acceptance rates of the cognitive effort group (mean = `r filter(overallSumms, Cost == "Cognitive")$mProp`, SD = `r filter(overallSumms, Cost == "Cognitive")$sdProp`) were higher than those of the physical (mean = `r filter(overallSumms, Cost == "Physical")$mProp`, SD = `r filter(overallSumms, Cost == "Physical")$sdProp`; *p* `r report_p(filter(propTests, contrast == "Physical < Cognitive")$permPval)`, Cohen's D = `r filter(propTests, contrast == "Physical < Cognitive")$cohenD`) and wait groups (mean = `r filter(overallSumms, Cost == "Wait")$mProp`, SD = `r filter(overallSumms, Cost == "Wait")$sdProp`; *p* `r report_p(filter(propTests, contrast == "Cognitive > Wait")$permPval)`, Cohen's D = `r filter(propTests, contrast == "Cognitive > Wait")$cohenD`). It also showed that those faced with the easy task accepted more than those in the wait group, although responses from the easy group were more variable (mean Easy = `r filter(overallSumms, Cost == "Easy")$mProp`, SD = `r filter(overallSumms, Cost == "Easy")$sdProp`; *p* `r report_p(filter(propTests, contrast == "Wait < Easy")$permPval)`, Cohen's D = `r filter(propTests, contrast == "Wait < Easy")$cohenD`) (all other *p* > 0.05). The proportion of forced travels for cognitive effort was `r round(propFails[2, 2], digits = 2)` across participants (and 0 for either physical or easy conditions), making performance an unlikely explanation for the observed differences in choice. 
@@ -1026,20 +1026,20 @@ diag(mixSummary_btw$Pvals) <- NA
 # plot coefficients and pvalues in a matrix
 # invert colors
 col2 <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0", "#FFFFFF", "#FDDBC7", "#F4A582", "#D6604D", "#B2182B", "#67001F"))
-
-corrplot(mixSummary_btw$Betas, 
-         is.corr = F, 
-         p.mat = mixSummary_btw$Pvals, 
-         type = "lower",
-         outline = T,
-         #insig = "p-value",
-         sig.level = 0.05, 
-         na.label = "square", 
-         na.label.col = "grey",
-         method = "color", 
-         tl.col = "black",
-         tl.cex = 0.8,
-         col = col2(200))
+# 
+# corrplot(mixSummary_btw$Betas, 
+#          is.corr = F, 
+#          p.mat = mixSummary_btw$Pvals, 
+#          type = "lower",
+#          outline = T,
+#          #insig = "p-value",
+#          sig.level = 0.05, 
+#          na.label = "square", 
+#          na.label.col = "grey",
+#          method = "color", 
+#          tl.col = "black",
+#          tl.cex = 0.8,
+#          col = col2(200))
 
 ```
 
@@ -1118,7 +1118,7 @@ include_graphics("./Images/FIG4.png")
 
   However, our hypothesis stated that differences in cost would be uniform across handling times and rewards. We therefore distilled the previous analysis to examine choice behavior for every combination of experimental parameters. Figure 4A shows the mean proportion of acceptances (± SEM) per combination of handling time, reward, and cost, with optimal acceptance rates depicted by the gray circles. Qualitatively, the figure confirms two important predictions. First, participants adapted to the richness of the each timing block, showing a pattern of acceptances that resembled the optimal strategy regardless of the cost they faced. Second, differences in cost were consistent across blocks, and acceptances were highest for the cognitive effort group. The optimality of the strategies produced by each cost depended on the richness of the block. This can help explain why the wait group earned the most despite having similar acceptance rates to the physical group, as the former was closer to optimality in the richest environment.
   
-  In order to test these qualitative observations, we computed the probability of accepting a trial with a mixed-effects logistic regression (see Methods for details). As predicted, and confirming previous results, the model showed significant main effects of handling time (global intercept = `r round(fixef(mixLogis_main$Wait)["(Intercept)"], digits = 2)`, $\beta$ = `r round(fixef(mixLogis_main$Wait)["Handling"], digits = 2)`, SE = `r round(summary(mixLogis_main$Wait)[[10]]["Handling", "Std. Error"], digits = 2)`, *p* `r report_p(summary(mixLogis_main$Wait)[[10]]["Handling", "Pr(>|z|)"])`) and offer amount ($\beta$ = `r round(fixef(mixLogis_main$Wait)["Offer"], digits = 2)`, SE = `r round(summary(mixLogis_main$Wait)[[10]]["Offer", "Std. Error"], digits = 2)`, *p* `r report_p(summary(mixLogis_main$Wait)[[10]]["Offer", "Pr(>|z|)"])`). In order to show the comparisons among all conditions, Figure 4B portrays the coefficients (color scale), and significance that resulted from switching the reference cost condition ("X" marks non-significant comparisons). The matrix of coefficients conveys that the cognitive effort group was significantly more likely to accept any offer than the physical and wait groups, but not the easy group.
+  In order to test these qualitative observations, we computed the probability of accepting a trial with a mixed-effects logistic regression (see Methods for details). As predicted, and confirming previous results, the model showed significant main effects of handling time (global intercept = `r round(fixef(mixLogis_main$Wait)["(Intercept)"], digits = 2)`, $\beta$ = `r round(fixef(mixLogis_main$Wait)["Handling"], digits = 2)`, SE = `r round(summary(mixLogis_main$Wait)[[10]]["Handling", "Std. Error"], digits = 2)`, *p* `r report_p(summary(mixLogis_main$Wait)[[10]]["Handling", "Pr(>|z|)"])`) and offer amount ($\beta$ = `r round(fixef(mixLogis_main$Wait)["Offer"], digits = 2)`, SE = `r round(summary(mixLogis_main$Wait)[[10]]["Offer", "Std. Error"], digits = 2)`, *p* `r report_p(summary(mixLogis_main$Wait)[[10]]["Offer", "Pr(>|z|)"])`). In order to show the comparisons among all conditions, Figure 4B portrays the coefficients (color scale), and significance that resulted from switching the reference cost condition ("X" marks non-significant comparisons). The matrix of coefficients conveys that the cognitive effort group was significantly more likely to accept any offer than the physical ($\beta$ = `r round(mixSummary_btw$Betas["Physical", "Cognitive"], digits = 2)`, *p* `r report_p(mixSummary_btw$Pvals["Physical", "Cognitive"])`) and wait groups ($\beta$ = `r round(mixSummary_btw$Betas["Wait", "Cognitive"], digits = 2)`, *p* `r report_p(mixSummary_btw$Pvals["Wait", "Cognitive"])`), but not the easy group.
   
   We next examined whether choice behavior could be better explained by environmental statistics alone, or if cost conditions changed the way handling time and offer amount interacted to influence choices. Figure 4C shows AIC and BIC values for models of increasing complexity, starting with an intercept-only configuration (see Methods for details). Here we focus on AIC, as both metrics yielded comparable results. As predicted, the a priori model with all main effects performed better than those relying on a single parameter (a priori model $R^2$ = `r round(mixLogis_compare$AllMainRsq, digits = 2)`), as well as the model with main effects for handling time and reward amount (AIC~a-priori~ = `r filter(ME_evals$abicLogis_compare, Model == "AllMain")$AIC`, AIC~handling/reward~ = `r filter(ME_evals$abicLogis_compare, Model == "HR")$AIC`, $\chi^2$(`r ME_evals$HRvMain[[7]][2]`) = `r round(ME_evals$HRvMain$Chisq[2], digits = 2)`, *p* `r report_p(ME_evals$HRvMain[[8]][2])`). However, against our prediction, the a priori model was outperformed by models that added an interaction between handling and reward (AIC~HR_interaction~ = `r filter(ME_evals$abicLogis_compare, Model == "HR_interaction")$AIC`, $\chi^2$(`r ME_evals$MainvHRint[[7]][2]`) = `r round(ME_evals$MainvHRint$Chisq[2], digits = 2)`, *p* `r report_p(ME_evals$MainvHRint[[8]][2])`) as well as one that considered all possible interactions (AIC~all_interactions~ = `r filter(ME_evals$abicLogis_compare, Model == "Interaction")$AIC`, $\chi^2$(`r ME_evals$MainvAllint[[7]][2]`) = `r round(ME_evals$MainvAllint$Chisq[2], digits = 2)`, *p* `r report_p(ME_evals$MainvAllint[[8]][2])`). These improvements were driven by the fact that differences in offer acceptances among costs were never present for 20 cents (all *p* values for interactions containing offer amount < 0.001). As the highest reward should always be accepted in prey foraging environments, we conclude that the most parsimonious explanation of choice behavior comes from the a priori model containing all main effects. In combination with the pattern observed in Figure 4A, these results confirm that handling and reward amounts were similarly integrated across groups, but that the absolute rate of acceptances was affected by the cost faced (and was highest for those confronted with cognitive demands).
 
@@ -1203,7 +1203,7 @@ prepost_btw$CohenD <- sapply(temp, function(data) {DescTools::CohenD(data$propAc
 prepost_btw$Perms <- sapply(temp, function(data) {permute(data$propAccept_1, data$propAccept_2, paired = T, simple = T)})
 ```
 
-``` {r BTW: 16.3.2. Plot Pre/Post, echo=FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
+``` {r BTW: 16.3.2. Plot Pre/Post, echo = FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
 # scatter plot of pre/post acceptances
 # first calculate the mean acceptances per cost/half to draw horizontal and vertical lines on the plot
 df_mean <- dataBtw %>%
@@ -1259,7 +1259,7 @@ prepost_btw$propBlocks <- dataBtw %>%
                            scale_color_manual(values = colsBtw) +
                            scale_fill_manual(values = colsBtw) +
                            theme(legend.key = element_blank(),
-                                 legend.position = c(0.8, 0.25),
+                                 legend.position = c(0.8, 0.3),
                                  panel.grid.major = element_blank(),
                                  panel.grid.minor = element_blank(),
                                  panel.background = element_blank(),
@@ -1274,20 +1274,20 @@ prepost_btw$propBlocks <- dataBtw %>%
 # pander(prepost$summary, style = "rmarkdown", split.table = 110)
 ```
 
+  Before computationally modeling behavior, we asked whether foragers had a stable representation of their environment. Since participants had complete a priori knowledge of the statistics of each environment, and were unaware of any other cost groups that could modulate the subjective cost of their assigned demand, we expected them to 1) show confidence in their choices by not quitting mid-handling time; and 2) adopt the same strategy while re-experiencing each environment. We investigated the first prediction by plotting a survival curve of trial quits across all participants (Figure 5, top-left), with black crosses signaling either completed trials (at 2 s, 10 s, and 14 s) or forced travels. This qualitative analysis shows that most decisions to quit happened within the first second into the handling time, and participants rarely quit during the handling time. Physical and easy groups show slightly lagged responses because the experiment allowed a one-second grace period for participants to begin gripping (marked by the dashed line). This resulted in some individuals choosing to wait for that second to indicate an offer rejection (the censor at 4s in the physical group was a completion during a 2 s handling trial that was incorrectly recorded as 4 s by the experimental code). Plotting the quitting time distributions across blocks for the first handling second (ECDFs on Figure 5, top-right) shows that participants in the wait and cognitive groups responded faster as the experiment progressed. These response time observations suggest clarity in participant preferences.
+  
 ```{r Survival and prepost plots (Fig. 5), fig.width = 8, fig.height = 7, fig.align = "center", fig.cap = "Top: Survival curve (left), and distribution of times when participants quit a trial over time. Bottom: Proportion accepted in the second half as a function of first half acceptances (left). Dashed lines indicate the mean for each group. On the right, the proportion accepted over time per group. The order of blocks was repeated in the second half (indicated by the black dashed line)."}
 # plots generated in 16.3.1. and 16.3.2.
 (suppressWarnings(survPlot_btw) | RTplot_btw) / (prepost_btw$scatterplot | prepost_btw$propBlocks)
 ```
 
-  Before computationally modeling behavior, we asked whether foragers had a stable representation of their environment. Since participants had complete a priori knowledge of the statistics of each environment, and were unaware of any other cost groups that could modulate the subjective cost of their assigned demand, we expected them to 1) show confidence in their choices by not quitting mid-handling time; and 2) adopt the same strategy while re-experiencing each environment. We investigated the first prediction by plotting a survival curve of trial quits across all participants (Figure 5, top-left), with black crosses signaling either completed trials (at 2 s, 10 s, and 14 s) or forced travels. This qualitative analysis shows that most decisions to quit happened within the first second into the handling time, and participants rarely quit during the handling time. Physical and easy groups show slightly lagged responses because the experiment allowed a one-second grace period for participants to begin gripping (marked by the dashed line). This resulted in some individuals choosing to wait for that second to indicate an offer rejection (the censor at 4s in the physical group was a completion during a 2 s handling trial that was incorrectly recorded as 4 s by the experimental code). Plotting the quitting time distributions across blocks for the first handling second (ECDFs on Figure 5, top-right) shows that participants in the wait and cognitive groups responded faster as the experiment progressed. These response time observations suggest clarity in participant preferences.
-  
   We tested the second prediction (i.e. strategy stability) by comparing acceptances rates throughout the experiment. The scatter plot on Figure 5 (bottom-left) shows the overall proportion accepted by each participant before and after the mid-point break (colored dashed lines indicate the mean for that group). Paired permutations showed no acceptance rate differences for wait and easy groups (*p* > 0.05), but we found significantly lower acceptances for physical (*p* `r report_p(prepost_btw$Perms[1])`, Cohen's D = `r round(prepost_btw$CohenD[1], digits = 2)`) and cognitive (*p* `r report_p(prepost_btw$Perms[2])`, Cohen's D = `r round(prepost_btw$CohenD[2], digits = 2)`) groups. The decline in acceptances appeared to be gradual for the cognitive group, but not for the physical group (Figure 5, bottom-right). An explanation for these results is that these conditions became costlier due to fatigue, thus providing evidence that our cognitive and physical manipulations were effortful.
   
   It is possible that this reduction in acceptances affected the relative differences among conditions. We addressed this possibility by examining pre-post acceptance rates for each handling time and reward combination. Figure 6 (left) shows the proportion of acceptances for each offer combination, with each half depicted on each column. This collage suggests that changes in choice behavior for effortful groups were mostly driven by the longest handling time, in in line with reports where value is discounted as the length of the required effort increases (Treadway et al, 2009). Regardless, the relative differences in acceptances among cost groups remain mostly untouched. We tested this observation by repeating the winning mixed-effects model from the previous section (i.e. all main effects) on each experimental half separately. We replicated the matrix of coefficients from the previous section (Figure 6, right), with each half mirrored along the diagonal (i.e. the top triangle shows the coefficients for the second half of the experiment). Together, these results suggest that decision makers had a strong representation of the environment by showing that 1) participants were confident in their choices and strategies; 2) cognitive and physical costs produced the expected fatigue from exerting effort; and 3) despite the resulting reduction of acceptances, the relative cost of each condition was consistent throughout the experiment.
 
 ``` {r BTW: 16.3.2. Plot Pre/Post reward x handling, echo=FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
 # this plot divides the proportion of acceptances for each reward/handling combination per half of the experiment
-prepostPlot <-dataBtw %>%
+hrprepostPlot_btw <-dataBtw %>%
   group_by(SubjID) %>%
   mutate(Half = ifelse(Half == "Half_1", "First Half", "Second Half")) %>%
   group_by(SubjID, Half, Handling, Cost, Offer) %>%
@@ -1579,8 +1579,6 @@ summaryOC$plot
   Together, these findings suggest that 1) foraging paradigms can provide a reference point to evaluate how different demands modulate value; 2) a simple OC model can approximate people's behavior in such single-option, take it or leave it choices; and 3) when foraging in environments of equivalent richness, cognifitvely effortful demands can increase the attractiveness of offers rather than discount them (unlike other forms of cost). In the next experiment we explored whether this apparent value was inherent or malleable.
 
 
-
-
 ### **Within-subjects: Tests of whether decision makers integrate reward information**
 
   This experiment probed whether the value-modulatory effects of each type of demand depended on the ability to obtain rewards through other behavioral means. If the cost or value of a demand are intrinsic, the relative preferences displayed above should be robust to alternatives. The experimental setup was mostly preserved, with 3 key differences. First, all participants experienced cognitive effort, physical effort, and delay. Second, each block contained offers with one type of effort and passive waiting (allowing for comparisons in acceptances through the common wait condition). We refer to observations from each block's wait trials by their effort pair (i.e. "Wait_C" for cognitive, and "Wait_P" for physical). Finally, in this experiment the handling and travel times were fixed at 10 s and 6 s, respectively. We therefore compared choices from the within-subjects experiment to the matching time condition from the between-subjects experiment. We hypothesized that reward decision patterns would match those of the previous experiment, and that interleaving effort and delay would produce persistent preferences for passive delay trials.
@@ -1642,7 +1640,7 @@ baseCoeffs <- baseCoeffs %>%
 baseCoeffs$AR_effect <- apply(baseCoeffs, 1, function(x) (!(as.numeric(x["AR_CILow"]) <= 0 & as.numeric(x["AR_CIHigh"]) >= 0)))
 ```
 
-``` {r WTH: 16.1.3. prop accept x earnings, echo = FALSE, include = T, fig.align="center",fig.width=4,fig.height=4}
+``` {r WTH: 16.1.3. prop accept x earnings, echo = FALSE, include = T, fig.align="center",fig.width = 4, fig.height = 4}
 # Notes: I also performed this comparing halves and block types x half, and it doesn't look like participants were accepting less to make more.
 # calculate the proportions and earnings per subject, while keeping group info
 temp <- dataWth %>%
@@ -1658,7 +1656,7 @@ temp <- dataWth %>%
 lmEarn <- lm(Earnings ~ pComplete + pComplete2, data = temp)
 
 # plot
-(earnFitplot <- ggplot(data = temp, aes(pComplete, Earnings)) + 
+earnFitplot_wth <- ggplot(data = temp, aes(pComplete, Earnings)) + 
          scale_color_manual(values = colsWth) + 
          geom_point(pch = 21, color = "black", size = 3, show.legend = T) + 
          stat_smooth(aes(y = Earnings), method = "lm", formula = y ~ x + I(x^2), color = "grey30") +
@@ -1669,7 +1667,7 @@ lmEarn <- lm(Earnings ~ pComplete + pComplete2, data = temp)
            panel.grid.minor = element_blank(), 
            panel.background = element_blank(), 
            axis.line = element_line(colour = "black"),
-           text = element_text(size = 16)))
+           text = element_text(size = 16))
 
 # extra analyses
 # a pre-post paired permutation on earnigs confirms no differences (more evidence in section 16.3.3--prepost)
@@ -1724,7 +1722,7 @@ earnings_within <- dataWth %>%
 
 ```
 
-  Analyses from the previous experiment were repurposed to examine cost differences within individuals. We begun by testing the prediction that rewards would positively influence choices. A Wilcoxon signed rank test showed that individual logistic coefficients for reward amount were significantly greater than 0 (mean $\beta$ = `r round(mean(baseCoeffs$Offer), digits = 2)`, SD = `r round(sd(baseCoeffs$Offer), digits = 2)`; V = `r wilcox.test(baseCoeffs$Offer)$statistic`, *p* `r report_p(wilcox.test(baseCoeffs$Offer)$p.value)`), once again confirming that participants were properly influenced by reward amounts. Adding a coefficient that tracked prior consecutive quits indicated that only `r sum(baseCoeffs$AR_effect)` individuals were influenced by recent quit history, thus discarding systematic sequential effects. In terms of earnings, a linear model predicting earnings once again showed that participants who accepted too few or too many trials earned the least, in line with the experimental design (Figure X; general linear model with quadratic term, F = `r round(summary(lmEarn)$fstatistic[1], digits = 2)`, Beta = `r round(summary(lmEarn)$coefficients[3,1], digits= 2)`, SE = `r round(summary(lmEarn)$coefficients[3, 2], digits = 2)`, R-squared = `r round(summary(lmEarn)$r.squared, digits = 2)`, *p* `r report_p(summary(lmEarn)$coefficients[3, 4])`). When assessing the optimality of acceptances for 4 and 8 cents (99% of 20 cent offers were accepted), chi-squared tests against the optimal of 50% showed that participants under-accepted physical effort trials (proportion accepted = `r round(summary_costvsreward["Physical", "probability"], digits = 2)`, $\chi^2$ = `r round(summary_costvsreward["Physical", "chisquared"], digits = 2)`, *p* `r report_p(summary_costvsreward["Physical", "pval"])`; all other *p* > 0.05). Despite this deviation, participants earned a similar monetary amount per cost on average (mean Cognitive = `r filter(earnings_within, Cost == "Cognitive")$mEarn`, SD = `r filter(earnings_within, Cost == "Cognitive")$sdEarn`; mean Wait_C = `r filter(earnings_within, Cost == "Wait_C")$mEarn`, SD = `r filter(earnings_within, Cost == "Wait_C")$sdEarn`; mean Physical = `r filter(earnings_within, Cost == "Physical")$mEarn`, SD = `r filter(earnings_within, Cost == "Physical")$sdEarn`; mean Wait_P = `r filter(earnings_within, Cost == "Wait_P")$mEarn`, SD = `r filter(earnings_within, Cost == "Wait_P")$sdEarn`). These results convey that participants in both experiments were similarly influenced by the characteristics of the environment, although participants in the present experiment gravitated more towards optimality (**big caveat: the same percentage can be produced by many non-optimal combinations, including accepting half of each reward. So neither approach really gets at this too well.**).
+  Analyses from the previous experiment were repurposed to examine cost differences within individuals. We begun by testing the prediction that rewards would positively influence choices. A Wilcoxon signed rank test showed that individual logistic coefficients for reward amount were significantly greater than 0 (mean $\beta$ = `r round(mean(baseCoeffs$Offer), digits = 2)`, SD = `r round(sd(baseCoeffs$Offer), digits = 2)`; V = `r wilcox.test(baseCoeffs$Offer)$statistic`, *p* `r report_p(wilcox.test(baseCoeffs$Offer)$p.value)`), once again confirming that participants were properly influenced by reward amounts. Adding a coefficient that tracked prior consecutive quits indicated that only `r sum(baseCoeffs$AR_effect)` individuals were influenced by recent quit history (95% CI above or below 0), thus discarding systematic sequential effects. In terms of earnings, a linear model predicting earnings once again showed that participants who completed too few or too many trials earned the least, in line with the experimental design (Figure 8A; general linear model with quadratic term, F = `r round(summary(lmEarn)$fstatistic[1], digits = 2)`, Beta = `r round(summary(lmEarn)$coefficients[3,1], digits= 2)`, SE = `r round(summary(lmEarn)$coefficients[3, 2], digits = 2)`, R-squared = `r round(summary(lmEarn)$r.squared, digits = 2)`, *p* `r report_p(summary(lmEarn)$coefficients[3, 4])`). When assessing the optimality of acceptances for 4 and 8 cents (99% of 20 cent offers were accepted), chi-squared tests against the optimal rate of 50% showed that participants under-accepted physical effort trials (proportion accepted = `r round(summary_costvsreward["Physical", "probability"], digits = 2)`, $\chi^2$ = `r round(summary_costvsreward["Physical", "chisquared"], digits = 2)`, *p* `r report_p(summary_costvsreward["Physical", "pval"])`; all other *p* > 0.05). Despite this deviation, participants earned a similar monetary amount per cost on average (mean Cognitive = `r filter(earnings_within, Cost == "Cognitive")$mEarn`, SD = `r filter(earnings_within, Cost == "Cognitive")$sdEarn`; mean Wait_C = `r filter(earnings_within, Cost == "Wait_C")$mEarn`, SD = `r filter(earnings_within, Cost == "Wait_C")$sdEarn`; mean Physical = `r filter(earnings_within, Cost == "Physical")$mEarn`, SD = `r filter(earnings_within, Cost == "Physical")$sdEarn`; mean Wait_P = `r filter(earnings_within, Cost == "Wait_P")$mEarn`, SD = `r filter(earnings_within, Cost == "Wait_P")$sdEarn`). These results convey that participants in both experiments were similarly influenced by the characteristics of the environment, although participants in the present experiment gravitated more towards optimality (**caveat: the same percentage can be produced by many non-optimal combinations, including accepting half of each reward. So neither approach really gets at this too well.**).
   
 
 
@@ -1779,7 +1777,7 @@ mixLogis_main$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer
 
 
 # plot proportion accepted per trial/offer combo
-(n2 <- dataWth %>%
+hrPlot_wth <- dataWth %>%
         filter(Choice < 2) %>%
         group_by(Cost, Offer) %>%
         summarise(propAccept = mean(Choice),
@@ -1804,40 +1802,42 @@ mixLogis_main$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer
                 panel.grid.minor = element_blank(),
                 panel.background = element_blank(),
                 axis.line = element_line(colour = "black"),
-                text = element_text(size = 22)))
+                text = element_text(size = 22))
 
 ```
 
 ``` {r WTH: 16.2.1. mixed effects matrix, echo = FALSE, fig.align = "center", fig.width = 5,  fig.height = 4}
 # get summary of coeffs
 rearrange <- c("Cognitive", "Wait_C", "Wait_P", "Physical")
-mixSummary <- betaMatrix(mixLogis_main, rearrange = rearrange)
-diag(mixSummary$Pvals) <- NA
+mixSummary_wth <- betaMatrix(mixLogis_main, rearrange = rearrange)
+diag(mixSummary_wth$Pvals) <- NA
 
 # remove uninteresting comparisons
-mixSummary$Betas[rbind(c(3, 1), c(4,2))] <- NA
-mixSummary$Pvals[rbind(c(3, 1), c(4,2))] <- NA
+mixSummary_wth$Betas[rbind(c(3, 1), c(4,2))] <- NA
+mixSummary_wth$Pvals[rbind(c(3, 1), c(4,2))] <- NA
 
-# invert colors
-col2 <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0", "#FFFFFF", "#FDDBC7", "#F4A582", "#D6604D", "#B2182B", "#67001F"))
+# corrplot makes it difficult to use this in complex layouts, so the code has been commented out to save resources
 
-corrplot(mixSummary$Betas, 
-         is.corr = F, 
-         p.mat = mixSummary$Pvals, 
-         type = "lower",
-         outline = T,
-         #insig = "p-value",
-         sig.level = 0.05, 
-         na.label = "square", 
-         na.label.col = "grey",
-         method = "color", 
-         tl.col = "black",
-         tl.cex = 0.8,
-         col = col2(200))
+# # invert colors
+# col2 <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0", "#FFFFFF", "#FDDBC7", "#F4A582", "#D6604D", "#B2182B", "#67001F"))
+
+# corrplot(mixSummary$Betas, 
+#          is.corr = F, 
+#          p.mat = mixSummary$Pvals, 
+#          type = "lower",
+#          outline = T,
+#          #insig = "p-value",
+#          sig.level = 0.05, 
+#          na.label = "square", 
+#          na.label.col = "grey",
+#          method = "color", 
+#          tl.col = "black",
+#          tl.cex = 0.8,
+#          col = col2(200))
          
 ```
 
-``` {r WTH: 16.2.2. ME model comparison, echo = FALSE, fig.align="center", fig.width=6, fig.height=4}
+``` {r WTH: 16.2.2. ME model comparison, echo = FALSE, fig.align="center", fig.width = 6, fig.height = 4}
 # fit ME logistic at increasing model complexities
 mixLogis_compare <- list()
 mixLogis_compare$Base <- glmer(cbind(totalAccepted, totalQuits) ~ 1 + (1 | SubjID), family = "binomial", data = mixData) # intercept only
@@ -1854,12 +1854,18 @@ abicLogis_compare <- data.frame(Model = names(mixLogis_compare),
 
 
 # plot 
-(mixLogis_compare$plot <- abicLogis_compare %>% 
+mixLogis_compare$plot <- abicLogis_compare %>% 
   gather(Comparison, Value, AIC:BIC) %>%
   mutate(Model = factor(Model, levels = names(mixLogis_compare))) %>%
   ggplot(aes(Model, Value, fill = Comparison)) +
     geom_point(color = "black", pch = 21, size = 3) +
-    theme_classic())
+    theme(legend.position = c(0.8, 0.8),
+      legend.key = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.background = element_blank(),
+      axis.line = element_line(colour = "black"),
+      text = element_text(size = 16))
 
 # analysis of deviance
 mixLogis_compare$aod <- anova(mixLogis_compare$Reward, mixLogis_compare$AllMain, mixLogis_compare$Interaction)
@@ -1868,14 +1874,19 @@ mixLogis_compare$aod <- anova(mixLogis_compare$Reward, mixLogis_compare$AllMain,
 mixLogis_compare$Rsq <- 1 - (deviance(mixLogis_compare$AllMain)/deviance(mixLogis_compare$Base)) # denominator is the null deviance
 ```
 
-  Next, we addressed the hypothesis that passive waiting trials would be less costly than effortful ones. As can be seen on Figure X, even though the reward acceptance pattern at 10 s handling was similar to the between-subjects experiment (Figure X), differences among cost conditions were less evident. Moreover, these differences contradicted our predictions, as cognitive effort remained as the least costly type of demand. We tested this observation through a mixed effects logistic regression, with main fixed effects for offer amount and cost, and random subject-wise intercepts (the reference cost category was rotated in order to perform all possible pairwise comparisons). The model confirmed that increases in offer amount made acceptances significantly more likely (global intercept = `r round(fixef(mixLogis_main$Cognitive)["(Intercept)"], digits = 2)`, $\beta$ = `r round(fixef(mixLogis_main$Cognitive)["Offer"], digits = 2)`, SE = `r round(summary(mixLogis_main$Cognitive)[[10]]["Offer", "Std. Error"], digits = 2)`, *p* `r report_p(summary(mixLogis_main$Cognitive)[[10]]["Offer", "Pr(>|z|)"])`). As in the previous section, pairwise comparison results are shown on the matrix in Figure X. This plot omits comparisons between effort and wait trials from different blocks, as these are not considered in our original predictions **(rephrase, with the understanding that Wait_C > Physical)**. The only significant difference was the higher likelihood to accept cognitive offers compared to physical ones ($\beta$ = `r round(mixSummary$Betas["Physical", "Cognitive"], digits = 2)`, *p* `r report_p(mixSummary$Pvals["Physical", "Cognitive"])`). This initial result suggests that differences in cost decrease if individuals are able to evaluate all of them. 
+  Next, we addressed the hypothesis that passive waiting trials would be less costly than effortful ones. As can be seen on Figure 8B, even though the reward acceptance pattern at 10 s handling was similar to the between-subjects experiment (Figure 4A), differences among cost conditions were less evident. Moreover, these differences contradicted our predictions, as cognitive effort remained as the least costly type of demand. We tested this observation through a mixed effects logistic regression, with main fixed effects for offer amount and cost, and random subject-wise intercepts (the reference cost category was rotated in order to perform all possible pairwise comparisons). The model confirmed that increases in offer amount made acceptances significantly more likely (global intercept = `r round(fixef(mixLogis_main$Cognitive)["(Intercept)"], digits = 2)`, $\beta$ = `r round(fixef(mixLogis_main$Cognitive)["Offer"], digits = 2)`, SE = `r round(summary(mixLogis_main$Cognitive)[[10]]["Offer", "Std. Error"], digits = 2)`, *p* `r report_p(summary(mixLogis_main$Cognitive)[[10]]["Offer", "Pr(>|z|)"])`). As in the previous section, pairwise comparison results are shown on the matrix in Figure 8C. This plot omits comparisons between effort and wait trials from different blocks, as these are not considered in our original predictions. The only significant difference was the higher likelihood to accept cognitive offers compared to physical ones ($\beta$ = `r round(mixSummary_wth$Betas["Physical", "Cognitive"], digits = 2)`, *p* `r report_p(mixSummary_wth$Pvals["Physical", "Cognitive"])`). This initial result suggests that differences in cost decrease if individuals are able to evaluate all of them. 
   
-  We then repeated the model comparison approach from the between-subject section, evaluating models ranging in complexity from intercept-only to a two-way interaction between cost and reward. Even though the a priori model with all main effects explained a large portion of the variance (`r round(mixLogis_compare$Rsq, digits = 2)`), there were similar AIC and BIC values for any model including reward amount (Figure X). An analysis of deviance among the three models showed that adding cost condition to reward amount significantly reduced model deviance (AIC~a_priori~ = `r abicLogis_compare["AllMain", "AIC"]`, AIC~reward~ = `r abicLogis_compare["Reward", "AIC"]`, $\chi^2$(`r mixLogis_compare$aod[[7]][2]`) = `r mixLogis_compare$aod$Chisq[2]`, *p* `r report_p(mixLogis_compare$aod[[8]][2])`). However, probing the interaction between these features significantly improved fits further (AIC~Interaction~ = `r abicLogis_compare["Interaction", "AIC"]`, $\chi^2$(`r mixLogis_compare$aod[[7]][3]`) = `r mixLogis_compare$aod$Chisq[3]`, *p* `r report_p(mixLogis_compare$aod[[8]][3])`). (**discuss with Joe: the interaction flips results over, such that both waits > pysical effort = cognitive effort...as predicted originally? Can't wrap my head around that yet, so this conclusion is pending**)
+```{r Earnings, prop completed, ME plots (Fig. 8), fig.width = 8, fig.height = 7, fig.align = "center", fig.cap = "A: Quadratic relationship between trial completions and total earnings. B: proportion of acceptances of each reward per cost condition. C: Matrix of mixed-effects coefficients showing comparisons among costs (while controlling for reward amount). Crosses mark non-significant comparisons. D: AIC and BIC values for models of increasing complexity (a priori = AllMain)."}
+
+include_graphics("./Images/FIG8.png")
+```
+
+  We then repeated the model comparison approach from the between-subject section, evaluating models ranging in complexity from intercept-only to a two-way interaction between cost and reward. Even though the a priori model with all main effects explained a large portion of the variance ($R^2$ = `r round(mixLogis_compare$Rsq, digits = 2)`), there were similar AIC and BIC values for any model including reward amount (Figure 8D). An analysis of deviance among the three models showed that adding cost condition to reward amount significantly improved fit (AIC~reward~ = `r filter(abicLogis_compare, Model == "Reward")$AIC`, AIC~a-priori~ = `r filter(abicLogis_compare, Model == "AllMain")$AIC`, $\chi^2$(`r mixLogis_compare$aod[[7]][2]`) = `r round(mixLogis_compare$aod$Chisq[2], digits = 2)`, *p* `r report_p(mixLogis_compare$aod[[8]][2])`). However, probing the interaction between these features significantly improved fits from the main effects model (AIC~Interaction~ = `r filter(abicLogis_compare, Model == "Interaction")$AIC`, $\chi^2$(`r mixLogis_compare$aod[[7]][3]`) = `r round(mixLogis_compare$aod$Chisq[3], digits = 2)`, *p* `r report_p(mixLogis_compare$aod[[8]][3])`). (**discuss with Joe: the interaction flips results over, such that both waits > pysical effort = cognitive effort...as predicted originally? Can't wrap my head around that yet, so this conclusion is pending**)
 
 
 ### **Within-subjects: Modeling the subjective opportunity cost in each condition**
 
-``` {r WTH: 16.3.1. RT, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
+``` {r WTH: 16.3.1. surv and RT, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4, include = FALSE}
 # Survival curve for quits and response time ECDFs across blocks
 # 1 - Choice is to reverse the coding of choices, since the survival package assumes 0 = censor
 # to note re: x-axis. In this exp, p's could quit within the 2s offer window. Cost 2 didn't allow that, so it counts from when trial begins.
@@ -1895,7 +1906,7 @@ survPlot_wth <- autoplot(survData) +
   ylim(0, 1) +
   scale_x_continuous(breaks = seq(0, 12), labels = seq(-2, 10)) +
   labs(x = "Time in Trial", y = "Proportion Accepted", fill = "Cost", color = "Cost") +
-  theme(legend.position = c(0.8, 0.3),
+  theme(legend.position = "none",
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
@@ -1918,7 +1929,6 @@ RTplot_wth <- dataWth %>%
       axis.line = element_line(colour = "black"),
       text = element_text(size = 16))
 
-survPlot_wth | RTplot_wth
 ```
 
 ``` {r WTH: 16.3.2. quits in offer vs handling, echo = FALSE}
@@ -1938,7 +1948,7 @@ propQuits_wth <- dataWth %>%
 
 ```
 
-  We next examined the stability in people's choices. If the cost of a particular demand was intrinsic, then its effect on choices should have been consistent as participants explored alternative costs. We started by examining whether individuals regreted engaging in a particular offer. Participants could quit either during the offer period (2 s) or during the handling time (10 s), allowing for a total of 12 seconds to give up on the current trial. The survival curve on Figure X shows quitting throughout the trial for all participants. Censored points signal completions (at end of interval) and forced travels (throughout the trial). Similar to before, the survival analysis suggests that participants made most of their choices quickly within the offer window. In fact, the mean percentage of quits during the handling time was `r round(mean(propQuits_wth$propAccept), digits = 2)`% (SD = `r round(sd(propQuits_wth$propAccept), digits = 2)`), with only `r sum(propQuits_wth$propAccept > 0.2)` participants quitting over 20% of trials during the handling time. Moreover, the cumulative quitting time distributions show that participant responses during the offer window became faster over time (Figure X). Once in the handling time, the overall proportion of forced travels in the effortful trials was relatively low for both cognitive (mean = `r round(mean(filter(propFails_wth, Cost == "Cognitive")$propFails), digits = 2)`%, SD = `r round(sd(filter(propFails_wth, Cost == "Cognitive")$propFails), digits = 2)`) and physical (mean = `r round(mean(filter(propFails_wth, Cost == "Physical")$propFails), digits = 2)`%, SD = `r round(sd(filter(propFails_wth, Cost == "Physical")$propFails), digits = 2)`) conditions. Similar to the between-subjects experiment, these results suggest that decision makers were confident in their adopted strategies, and were able to perform the tasks well.
+  We next examined the stability in people's choices. If the cost of a particular demand was intrinsic, then its effect on choices should have been consistent as participants explored alternative costs. We started by examining whether individuals regreted engaging in a particular offer. Participants could quit either during the offer period (2 s) or during the handling time (10 s), allowing for a total of 12 seconds to give up on the current trial. The survival curve on Figure 9A shows quitting instances within trials for all participants. Censored points signal completions (at end of interval) and forced travels (throughout the trial). Similar to before, the survival analysis suggests that participants made most of their choices quickly within the offer window. In fact, the mean percentage of quits during the handling time was `r round(mean(propQuits_wth$propAccept), digits = 2)`% (SD = `r round(sd(propQuits_wth$propAccept), digits = 2)`), with only `r sum(propQuits_wth$propAccept > 20)` participants quitting over 20% of trials during the handling time. Moreover, the cumulative quitting time distributions show that participant responses during the offer window became faster over time (Figure 9B). Once in the handling time, the overall proportion of forced travels in the effortful trials was relatively low for both cognitive (mean = `r round(mean(filter(propFails_wth, Cost == "Cognitive")$propFails), digits = 2)`%, SD = `r round(sd(filter(propFails_wth, Cost == "Cognitive")$propFails), digits = 2)`) and physical (mean = `r round(mean(filter(propFails_wth, Cost == "Physical")$propFails), digits = 2)`%, SD = `r round(sd(filter(propFails_wth, Cost == "Physical")$propFails), digits = 2)`) conditions. Similar to the between-subjects experiment, these results suggest that decision makers were confident in their adopted strategies, and were able to perform the tasks well.
 
 ``` {r WTH: 16.3.3. pre-post, echo = FALSE, fig.align = "center", fig.width = 8, fig.height = 4, include = F}
 # # restructure the data
@@ -1998,7 +2008,7 @@ corDiff <- cor(accDiff$Diff, propFails_wth$propFails)
 ``` {r WTH: 16.3.3. pre-post plots, echo = FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
 # various plots
 # acceptances across blocks
-propBlocks <- dataWth %>%
+prepost_wth$propBlocks <- dataWth %>%
     filter(Choice < 2) %>%
     group_by(SubjID) %>%
     mutate(Block = case_when(
@@ -2021,7 +2031,7 @@ propBlocks <- dataWth %>%
       scale_color_manual(values = colsWth) +
       scale_fill_manual(values = colsWth) +
       theme(legend.key = element_blank(),
-         legend.position = c(0.8, 0.25),
+         legend.position = c(0.8, 0.3),
          panel.grid.major = element_blank(),
          panel.grid.minor = element_blank(),
          panel.background = element_blank(),
@@ -2041,7 +2051,7 @@ df_mean <- dataWth %>%
                       propAccept_2 = round(mean(pAccept_2), digits = 2),
                       sdAccept_2 = round(sd(pAccept_2), digits = 2))
 
-mid <- dataWth %>%
+prepost_wth$scatterplot <- dataWth %>%
   filter(Choice < 2, !(Block %in% c(3,4))) %>%
   group_by(SubjID, Cost) %>%
   summarise(propAccept_1 = mean(Choice[Half=="Half_1"]),
@@ -2064,8 +2074,6 @@ mid <- dataWth %>%
        axis.line = element_line(colour = "black"),
        text = element_text(size = 16))
 
-
-mid | propBlocks
 
 
 # ## PROPORTION OF COGNITIVE ACCEPTANCES NOT DIFFERENT BETWEEN FIRST HALF OF WITHIN AND BETWEEN EXPERIMENTS
@@ -2258,7 +2266,7 @@ mid | propBlocks
 # 
 # grid.arrange(t1, t3, ncol = 2)
 
-(hrPlot_wth <- dataWth %>%
+hrprepostPlot_wth <- dataWth %>%
   group_by(SubjID) %>%
   mutate(Block = case_when(
     Block %in% c(1, 2) ~ 1,
@@ -2267,7 +2275,7 @@ mid | propBlocks
   )) %>%
   #filter(Half == "Half_1", Offer < 20) %>%
   filter(Block != 2) %>%
-  mutate(Block = ifelse(Block == 1, "First Block", "Last Block")) %>%
+  mutate(Block = ifelse(Block == 1, "First Two Blocks", "Last Two Blocks")) %>%
   group_by(Cost, Block, Offer) %>%
   summarise(propAccept = mean(Choice),
             SE = sd(Choice) / sqrt(nSubjs_wth)) %>%
@@ -2290,7 +2298,7 @@ mid | propBlocks
           panel.grid.minor = element_blank(), 
           panel.background = element_blank(), 
           axis.line = element_line(colour = "black"),
-          text = element_text(size = 16)))
+          text = element_text(size = 16))
 
 ```
 
@@ -2355,18 +2363,18 @@ betaMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
 pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
 
 # aand plot
-corrplot(betaMat, 
-         is.corr = F, 
-         p.mat = pvalMat, 
-         outline = T,
-         #insig = "p-value",
-         sig.level = 0.05, 
-         na.label = "square", 
-         na.label.col = "grey",
-         method = "color", 
-         tl.col = "black",
-         tl.cex = 0.8,
-         col = col2(200))
+# corrplot(betaMat, 
+#          is.corr = F, 
+#          p.mat = pvalMat, 
+#          outline = T,
+#          #insig = "p-value",
+#          sig.level = 0.05, 
+#          na.label = "square", 
+#          na.label.col = "grey",
+#          method = "color", 
+#          tl.col = "black",
+#          tl.cex = 0.8,
+#          col = col2(200))
 ```
 
 ``` {r WTH: 16.3.3 temp plot, echo = FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
@@ -2517,7 +2525,18 @@ corrplot(betaMat,
 #           text = element_text(size = 22))
 ```
 
-  However, against our predictions, participants accepted significantly fewer trials on the second half of the experiment, regardless of cost (paired permutations; Cognitive: mean~pre~ = `r filter(df_mean, Cost == "Cognitive")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Cognitive")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Cognitive")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Cognitive")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Cognitive"]])` Cohen's D = `r round(prepost_wth$CohenD[["Cognitive"]], digits = 2)`; Physical: mean~pre~ = `r filter(df_mean, Cost == "Physical")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Physical")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Physical")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Physical")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Physical"]])` Cohen's D = `r round(prepost_wth$CohenD[["Physical"]], digits = 2)`; Wait_C:  mean~pre~ = `r filter(df_mean, Cost == "Wait_C")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Wait_C")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Wait_C")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Wait_C")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Wait_C"]])` Cohen's D = `r round(prepost_wth$CohenD[["Wait_C"]], digits = 2)`; Wait_P: mean~pre~ = `r filter(df_mean, Cost == "Wait_P")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Wait_P")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Wait_P")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Wait_P")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Wait_P"]])` Cohen's D = `r round(prepost_wth$CohenD[["Wait_P"]], digits = 2)`; Figure X). The reduction in acceptances was not driven by a performance decline, as the difference in acceptance rates was not significantly correlated with the proportion of forced travels across individuals (Pearson R = `r round(corDiff, digits = 2)`, *p* > 0.05). Notably, the pattern of choices from the first half of the experiment resembled that from the matching handling/travel block from the between-subject experiment (Figure X). Mixed effects logistic regressions on each half separately confirmed this observation. The matrix on Figure X shows the coefficient magnitude for all pairwise comparisons among costs (computed by rotating the reference cost condition in the model), with crosses signaling non-significant coefficients (*p* > 0.05). This plot shows that the relative preference for cognitive effort seen previously was preserved at the beginning of the experiment (lower triangle), but that it disappeared over time amid an overall decline in acceptance rates as participants gained experience with all three conditions (upper triangle).
+```{r Survival and prepost plots (Fig. 9), fig.width = 8, fig.height = 7, fig.align = "center", fig.cap = "Top: Survival curve (left), and distribution of quitting times over time (right). Bottom: Proportion accepted in the second half as a function of first half acceptances (left). Dashed lines indicate the mean for each cost. On the right, the proportion accepted every time participants experienced a given block type."}
+# plots generated in 16.3.1. and 16.3.3.
+(suppressWarnings(survPlot_wth) | suppressWarnings(RTplot_wth)) / (prepost_wth$scatterplot | prepost_wth$propBlocks)
+```
+
+  However, against our predictions, participants accepted significantly fewer trials on the second half of the experiment, regardless of cost (paired permutations; Cognitive: mean~pre~ = `r filter(df_mean, Cost == "Cognitive")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Cognitive")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Cognitive")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Cognitive")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Cognitive"]])` Cohen's D = `r round(prepost_wth$CohenD[["Cognitive"]], digits = 2)`; Physical: mean~pre~ = `r filter(df_mean, Cost == "Physical")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Physical")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Physical")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Physical")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Physical"]])` Cohen's D = `r round(prepost_wth$CohenD[["Physical"]], digits = 2)`; Wait_C:  mean~pre~ = `r filter(df_mean, Cost == "Wait_C")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Wait_C")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Wait_C")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Wait_C")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Wait_C"]])` Cohen's D = `r round(prepost_wth$CohenD[["Wait_C"]], digits = 2)`; Wait_P: mean~pre~ = `r filter(df_mean, Cost == "Wait_P")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Wait_P")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Wait_P")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Wait_P")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Wait_P"]])` Cohen's D = `r round(prepost_wth$CohenD[["Wait_P"]], digits = 2)`; Figure 10). The reduction in acceptances was not driven by a performance decline, as the difference in acceptance rates was not significantly correlated with the proportion of forced travels across individuals (Pearson's r = `r round(corDiff, digits = 2)`, *p* > 0.05). Notably, the pattern of choices from the first half of the experiment resembled that from the matching handling/travel block from the between-subject experiment (Figure 4A). Mixed effects logistic regressions on each half separately confirmed this observation. The matrix on Figure 10 shows the coefficient magnitude for all pairwise comparisons among costs (computed by rotating the reference cost condition in the model), with crosses signaling non-significant coefficients (*p* > 0.05). This plot shows that the relative preference for cognitive effort seen previously was preserved at the beginning of the experiment (lower triangle), but that it disappeared over time amid an overall decline in acceptance rates as participants gained experience with all three conditions (upper triangle).
+  
+```{r Prepost mixed effects plots (Fig. 10), fig.align = "center", fig.cap = "Acceptance rates over time. Left: Proportion accepted in the first two and last two blocks of the experiment. An initial preference for cognitive effort trials fades amid a global decrease in acceptance rates. Right: Mixed effects coefficient matrix for each half separately. The pattern from the first half resembles what was observed in the between-subjects experiment."}
+include_graphics("./Images/FIG10.png")
+
+```
+
 
 ### WTH: 16.3.4. (OC MODELING: SKIP)
 
@@ -2540,7 +2559,7 @@ summaryOC$all <- dataWth %>%
   ungroup()
 
 # plot
-(summaryOC$plot <- ggplot(summaryOC$all, aes(Cost, Gamma, fill = Cost)) +
+summaryOC$plot <- ggplot(summaryOC$all, aes(Cost, Gamma, fill = Cost)) +
     geom_boxplot(show.legend = F) +
     geom_hline(yintercept = 0.64, alpha = 0.9, color = "gray20", size = 1) +
     geom_hline(yintercept = 0.7, alpha = 0.9, color = "gray40", size = 1) +
@@ -2552,7 +2571,7 @@ summaryOC$all <- dataWth %>%
           panel.grid.minor = element_blank(),
           panel.background = element_blank(),
           axis.line = element_line(colour = "black"),
-          text = element_text(size = 16)))
+          text = element_text(size = 16))
 
 # try to replicate the group-level proportion of acceptances from 16.2
 # this looks pretty much like the empirical proportion data, so the stochasticity is playing a major part in the estimation
@@ -2620,9 +2639,9 @@ temp <- bind_rows(OCs_validation) %>%
   summarize(predicted = mean(Choice == prediction))
 
 # plot prediction %
-qplot(Cost, predicted, geom = "boxplot", data = temp) + 
-  ylim(0,1) +
-  theme_classic()
+# qplot(Cost, predicted, geom = "boxplot", data = temp) + 
+#   ylim(0,1) +
+#   theme_classic()
 ```
 
 The figure above shows that each participant's estimated gamma successfully predicted choices in the last two blocks to a high degree (suspisiouly, considering the decrease in the acceptance rate as a function of time).  
@@ -2637,10 +2656,10 @@ OCs_anova <- list()
 OCs_anova$aov <- summary(aov(Gamma ~ Cost + Error(SubjID / Cost), data = summaryOC$all))
 
 # table
-pander(OCs_anova$aov)
+#pander(OCs_anova$aov)
 
 # do all pairwise comparisons
-OCs_anova$gammas <- summaryOC$all %>% 
+OCs_anova$gammas <- summaryOC$all %>% 
   reshape2::dcast(SubjID ~ Cost, value.var = "Gamma") %>%
   select(-SubjID)
 
@@ -2657,18 +2676,18 @@ OCs_anova$ES[rbind(c(1,4),c(2,3),c(3,2),c(4,1))] <- NA
 
 
 ``` {r WTH: 16.3.6. corrplot, echo = FALSE, fig.align="center", fig.width=5, fig.height=5}
-corrplot(OCs_anova$ES,
-         is.corr = F, 
-         p.mat = OCs_anova$perms,
-         type = "upper",
-         insig = "p-value",
-         sig.level = -1,
-         na.label = "square",
-         na.label.col = "grey",
-         method = "color", 
-         tl.col = "black", 
-         tl.cex = 0.8,
-         outline = T)
+# corrplot(OCs_anova$ES,
+#          is.corr = F, 
+#          p.mat = OCs_anova$perms,
+#          type = "upper",
+#          insig = "p-value",
+#          sig.level = -1,
+#          na.label = "square",
+#          na.label.col = "grey",
+#          method = "color", 
+#          tl.col = "black", 
+#          tl.cex = 0.8,
+#          outline = T)
 ```
 
 ## Discussion
