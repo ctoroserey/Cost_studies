@@ -46,7 +46,7 @@ lthick = 2 # line thickness for plots
 
 ## functions
 # parameter recovery function
-test_params <- function(params = list(Gamma = 1), model = expr(params$Gamma * Handling), subjData, handling = c(2, 10, 14), offer = c(4, 8, 20), plot = F) {
+testParams <- function(params = list(Gamma = 1), model = expr(params$Gamma * Handling), subjData, handling = c(2, 10, 14), offer = c(4, 8, 20), plot = F) {
   
   # this just computes choices made by a given parameterized model
   # or compares a putative model with participant choices
@@ -504,10 +504,10 @@ dataWth <- data_frame(SubjID = files) %>%
   rename(TrialN = X1) %>%
   mutate(rawChoice = Choice,
          Choice = ifelse(Choice == 2, 1, Choice),
-         Cost = case_when(Cost == "WAIT_0" ~ "Wait_C",
+         Cost = case_when(Cost == "WAIT_0" ~ "Wait-C",
                            Cost == "COGNITIVE_0" ~ "Cognitive",
                            Cost == "GRIP_1" ~ "Physical",
-                           Cost == "WAIT_1" ~ "Wait_P"),
+                           Cost == "WAIT_1" ~ "Wait-P"),
          Cost = as.factor(Cost)) %>%
   group_by(SubjID) %>%
   mutate(BlockOrder = ifelse(Btype[1] == 0, "Cognitive1st", "Physical1st"))
@@ -1581,7 +1581,7 @@ summaryOC$plot
 
 ### **Within-subjects: Tests of whether decision makers integrate reward information**
 
-  This experiment probed whether the value-modulatory effects of each type of demand depended on the ability to obtain rewards through other behavioral means. If the cost or value of a demand are intrinsic, the relative preferences displayed above should be robust to alternatives. The experimental setup was mostly preserved, with 3 key differences. First, all participants experienced cognitive effort, physical effort, and delay. Second, each block contained offers with one type of effort and passive waiting (allowing for comparisons in acceptances through the common wait condition). We refer to observations from each block's wait trials by their effort pair (i.e. "Wait_C" for cognitive, and "Wait_P" for physical). Finally, in this experiment the handling and travel times were fixed at 10 s and 6 s, respectively. We therefore compared choices from the within-subjects experiment to the matching time condition from the between-subjects experiment. We hypothesized that reward decision patterns would match those of the previous experiment, and that interleaving effort and delay would produce persistent preferences for passive delay trials.
+  This experiment probed whether the value-modulatory effects of each type of demand depended on the ability to obtain rewards through other behavioral means. If the cost or value of a demand are intrinsic, the relative preferences displayed above should be robust to alternatives. The experimental setup was mostly preserved, with 3 key differences. First, all participants experienced cognitive effort, physical effort, and delay. Second, each block contained offers with one type of effort and passive waiting (allowing for comparisons in acceptances through the common wait condition). We refer to observations from each block's wait trials by their effort pair (i.e. "Wait-C" for cognitive, and "Wait-P" for physical). Finally, in this experiment the handling and travel times were fixed at 10 s and 6 s, respectively. We therefore compared choices from the within-subjects experiment to the matching time condition from the between-subjects experiment. We hypothesized that reward decision patterns would match those of the previous experiment, and that interleaving effort and delay would produce persistent preferences for passive delay trials.
 	
 ``` {r WTH: 16.1.1. reward coefficients, fig.align = "center", fig.width = 4, fig.height = 4, echo = FALSE}
 # adapt the data so the fits are only performed on choices, not failed attempts (revisit?)
@@ -1722,7 +1722,7 @@ earnings_within <- dataWth %>%
 
 ```
 
-  Analyses from the previous experiment were repurposed to examine cost differences within individuals. We begun by testing the prediction that rewards would positively influence choices. A Wilcoxon signed rank test showed that individual logistic coefficients for reward amount were significantly greater than 0 (mean $\beta$ = `r round(mean(baseCoeffs$Offer), digits = 2)`, SD = `r round(sd(baseCoeffs$Offer), digits = 2)`; V = `r wilcox.test(baseCoeffs$Offer)$statistic`, *p* `r report_p(wilcox.test(baseCoeffs$Offer)$p.value)`), once again confirming that participants were properly influenced by reward amounts. Adding a coefficient that tracked prior consecutive quits indicated that only `r sum(baseCoeffs$AR_effect)` individuals were influenced by recent quit history (95% CI above or below 0), thus discarding systematic sequential effects. In terms of earnings, a linear model predicting earnings once again showed that participants who completed too few or too many trials earned the least, in line with the experimental design (Figure 8A; general linear model with quadratic term, F = `r round(summary(lmEarn)$fstatistic[1], digits = 2)`, Beta = `r round(summary(lmEarn)$coefficients[3,1], digits= 2)`, SE = `r round(summary(lmEarn)$coefficients[3, 2], digits = 2)`, R-squared = `r round(summary(lmEarn)$r.squared, digits = 2)`, *p* `r report_p(summary(lmEarn)$coefficients[3, 4])`). When assessing the optimality of acceptances for 4 and 8 cents (99% of 20 cent offers were accepted), chi-squared tests against the optimal rate of 50% showed that participants under-accepted physical effort trials (proportion accepted = `r round(summary_costvsreward["Physical", "probability"], digits = 2)`, $\chi^2$ = `r round(summary_costvsreward["Physical", "chisquared"], digits = 2)`, *p* `r report_p(summary_costvsreward["Physical", "pval"])`; all other *p* > 0.05). Despite this deviation, participants earned a similar monetary amount per cost on average (mean Cognitive = `r filter(earnings_within, Cost == "Cognitive")$mEarn`, SD = `r filter(earnings_within, Cost == "Cognitive")$sdEarn`; mean Wait_C = `r filter(earnings_within, Cost == "Wait_C")$mEarn`, SD = `r filter(earnings_within, Cost == "Wait_C")$sdEarn`; mean Physical = `r filter(earnings_within, Cost == "Physical")$mEarn`, SD = `r filter(earnings_within, Cost == "Physical")$sdEarn`; mean Wait_P = `r filter(earnings_within, Cost == "Wait_P")$mEarn`, SD = `r filter(earnings_within, Cost == "Wait_P")$sdEarn`). These results convey that participants in both experiments were similarly influenced by the characteristics of the environment, although participants in the present experiment gravitated more towards optimality (**caveat: the same percentage can be produced by many non-optimal combinations, including accepting half of each reward. So neither approach really gets at this too well.**).
+  Analyses from the previous experiment were repurposed to examine cost differences within individuals. We begun by testing the prediction that rewards would positively influence choices. A Wilcoxon signed rank test showed that individual logistic coefficients for reward amount were significantly greater than 0 (mean $\beta$ = `r round(mean(baseCoeffs$Offer), digits = 2)`, SD = `r round(sd(baseCoeffs$Offer), digits = 2)`; V = `r wilcox.test(baseCoeffs$Offer)$statistic`, *p* `r report_p(wilcox.test(baseCoeffs$Offer)$p.value)`), once again confirming that participants were properly influenced by reward amounts. Adding a coefficient that tracked prior consecutive quits indicated that only `r sum(baseCoeffs$AR_effect)` individuals were influenced by recent quit history (95% CI above or below 0), thus discarding systematic sequential effects. In terms of earnings, a linear model predicting earnings once again showed that participants who completed too few or too many trials earned the least, in line with the experimental design (Figure 8A; general linear model with quadratic term, F = `r round(summary(lmEarn)$fstatistic[1], digits = 2)`, Beta = `r round(summary(lmEarn)$coefficients[3,1], digits= 2)`, SE = `r round(summary(lmEarn)$coefficients[3, 2], digits = 2)`, R-squared = `r round(summary(lmEarn)$r.squared, digits = 2)`, *p* `r report_p(summary(lmEarn)$coefficients[3, 4])`). When assessing the optimality of acceptances for 4 and 8 cents (99% of 20 cent offers were accepted), chi-squared tests against the optimal rate of 50% showed that participants under-accepted physical effort trials (proportion accepted = `r round(summary_costvsreward["Physical", "probability"], digits = 2)`, $\chi^2$ = `r round(summary_costvsreward["Physical", "chisquared"], digits = 2)`, *p* `r report_p(summary_costvsreward["Physical", "pval"])`; all other *p* > 0.05). Despite this deviation, participants earned a similar monetary amount per cost on average (mean Cognitive = `r filter(earnings_within, Cost == "Cognitive")$mEarn`, SD = `r filter(earnings_within, Cost == "Cognitive")$sdEarn`; mean Wait-C = `r filter(earnings_within, Cost == "Wait-C")$mEarn`, SD = `r filter(earnings_within, Cost == "Wait-C")$sdEarn`; mean Physical = `r filter(earnings_within, Cost == "Physical")$mEarn`, SD = `r filter(earnings_within, Cost == "Physical")$sdEarn`; mean Wait-P = `r filter(earnings_within, Cost == "Wait-P")$mEarn`, SD = `r filter(earnings_within, Cost == "Wait-P")$sdEarn`). These results convey that participants in both experiments were similarly influenced by the characteristics of the environment, although participants in the present experiment gravitated more towards optimality (**caveat: the same percentage can be produced by many non-optimal combinations, including accepting half of each reward. So neither approach really gets at this too well.**).
   
 
 
@@ -1768,10 +1768,10 @@ mixData <- dataWth %>%
             propAccepted = mean(Choice))
 
 mixLogis_main$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
-mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait_C"))
-mixLogis_main$Wait_C <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
-mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait_P"))
-mixLogis_main$Wait_P <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-C"))
+mixLogis_main$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-P"))
+mixLogis_main$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
 mixLogis_main$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 
@@ -1808,7 +1808,7 @@ hrPlot_wth <- dataWth %>%
 
 ``` {r WTH: 16.2.1. mixed effects matrix, echo = FALSE, fig.align = "center", fig.width = 5,  fig.height = 4}
 # get summary of coeffs
-rearrange <- c("Cognitive", "Wait_C", "Wait_P", "Physical")
+rearrange <- c("Cognitive", "Wait-C", "Wait-P", "Physical")
 mixSummary_wth <- betaMatrix(mixLogis_main, rearrange = rearrange)
 diag(mixSummary_wth$Pvals) <- NA
 
@@ -1934,7 +1934,7 @@ RTplot_wth <- dataWth %>%
 ``` {r WTH: 16.3.2. quits in offer vs handling, echo = FALSE}
 # Proportion of forced travels per subject and cost type
 propFails_wth <- dataWth %>%
-  filter(!Cost %in% c("Wait_C", "Wait_P")) %>%
+  filter(!Cost %in% c("Wait-C", "Wait-P")) %>%
   group_by(SubjID, Cost) %>%
   summarise(propFails = mean(rawChoice == 2) * 100) 
 
@@ -2085,7 +2085,7 @@ prepost_wth$scatterplot <- dataWth %>%
 # 
 # wth <- dataWth %>%
 #   filter(Block < 3) %>%
-#   mutate(Cost2 = ifelse(Cost %in% c("Wait_P", "Wait_C"), "Wait", Cost)) %>%
+#   mutate(Cost2 = ifelse(Cost %in% c("Wait-P", "Wait-C"), "Wait", Cost)) %>%
 #   group_by(SubjID, Cost2) %>%
 #   summarise(pAccept = mean(Choice)) %>%
 #   plyr::dlply("Cost2", identity)
@@ -2100,7 +2100,7 @@ prepost_wth$scatterplot <- dataWth %>%
 # # wait vs effort across effort conditions
 # pAll <- dataWth %>%
 #   filter(Choice < 2) %>%
-#   mutate(Cost2 = ifelse(!(Cost %in%  c("Wait_C", "Wait_P")), "EFFORT", "WAIT"),
+#   mutate(Cost2 = ifelse(!(Cost %in%  c("Wait-C", "Wait-P")), "EFFORT", "WAIT"),
 #          BlockType = ifelse(gsub(".*_", "", Cost) == 1, "Physical", "Cognitive")) %>%
 #   group_by(SubjID, BlockType) %>%
 #   summarise(Wait_accept = mean(Choice[Cost2 == "WAIT"]),
@@ -2139,7 +2139,7 @@ prepost_wth$scatterplot <- dataWth %>%
 #   group_by(SubjID, Cost) %>%
 #   summarise(Diffscore = sum(Difference)/3) %>%
 #   mutate(Type = ifelse(Cost %in% c("Cognitive", "Physical"), "Effort", "Delay"),
-#          Cost = ifelse(Cost %in% c("Cognitive", "Wait_C"), "Cognitive", "Physical")) %>%
+#          Cost = ifelse(Cost %in% c("Cognitive", "Wait-C"), "Cognitive", "Physical")) %>%
 #   spread(Type, Diffscore) %>%
 #   ggplot(aes(Effort, Delay, group = SubjID, fill = Cost)) +
 #     geom_hline(yintercept = 0) +
@@ -2315,10 +2315,10 @@ mixData <- dataWth %>%
             propAccepted = mean(Choice))
 
 mixLogis_pre$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
-mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait_C"))
-mixLogis_pre$Wait_C <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
-mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait_P"))
-mixLogis_pre$Wait_P <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-C"))
+mixLogis_pre$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-P"))
+mixLogis_pre$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
 mixLogis_pre$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 
@@ -2334,10 +2334,10 @@ mixData <- dataWth %>%
             propAccepted = mean(Choice))
 
 mixLogis_post$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
-mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait_C"))
-mixLogis_post$Wait_C <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
-mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait_P"))
-mixLogis_post$Wait_P <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-C"))
+mixLogis_post$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-P"))
+mixLogis_post$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
 mixLogis_post$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 
@@ -2394,7 +2394,7 @@ pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
 #   ungroup() %>%
 #   select(-c(`1`, `3`)) %>%
 #   spread(Cost, diff) %>%
-#   ggplot(aes(Cognitive, Wait_C, fill = as.character(Offer))) +
+#   ggplot(aes(Cognitive, Wait-C, fill = as.character(Offer))) +
 #     geom_point(pch = 21, color = "black", size = 3) +
 #     geom_hline(yintercept = 0) +
 #     geom_vline(xintercept = 0) +
@@ -2403,7 +2403,7 @@ pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
 #     xlim(-1, 1) +
 #     labs(#title = "P(Accepted): Last - First Block",
 #          x = "P(Cognitive): Last - First",
-#          y = "P(Wait_C): Last - First",
+#          y = "P(Wait-C): Last - First",
 #          fill = "Offer") +
 #     theme(legend.key = element_blank(),
 #           legend.background = element_rect(fill = "grey80"),
@@ -2430,7 +2430,7 @@ pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
 #   ungroup() %>%
 #   select(-c(`1`, `3`)) %>%
 #   spread(Cost, diff) %>%
-#   ggplot(aes(Physical, Wait_P, fill = as.character(Offer))) +
+#   ggplot(aes(Physical, Wait-P, fill = as.character(Offer))) +
 #     geom_point(pch = 21, color = "black", size = 3, show.legend = F) +
 #     geom_hline(yintercept = 0) +
 #     geom_vline(xintercept = 0) +
@@ -2439,7 +2439,7 @@ pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
 #     xlim(-1, 1) +
 #     labs(#title = "P(Accepted): Last - First Block",
 #          x = "P(Physical): Last - First",
-#          y = "P(Wait_P): Last - First",
+#          y = "P(Wait-P): Last - First",
 #          fill = "Offer") +
 #     theme(legend.position = c(0.8, 0.8),
 #           panel.grid.major = element_blank(), 
@@ -2473,8 +2473,8 @@ pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
 #   summarise(Diffscore = sum(Difference)/3) %>%
 #   spread(Cost, Diffscore) %>%
 #   ggplot() +
-#     geom_point(aes(Cognitive, Wait_C), color = colsWth[1]) +
-#     geom_point(aes(Physical, Wait_P), color = colsWth[2]) +
+#     geom_point(aes(Cognitive, Wait-C), color = colsWth[1]) +
+#     geom_point(aes(Physical, Wait-P), color = colsWth[2]) +
 #     geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
 #     ylim(-0.5, 0.5) +
 #     xlim(-0.5, 0.5) +
@@ -2530,7 +2530,7 @@ pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
 (suppressWarnings(survPlot_wth) | suppressWarnings(RTplot_wth)) / (prepost_wth$scatterplot | prepost_wth$propBlocks)
 ```
 
-  However, against our predictions, participants accepted significantly fewer trials on the second half of the experiment, regardless of cost (paired permutations; Cognitive: mean~pre~ = `r filter(df_mean, Cost == "Cognitive")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Cognitive")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Cognitive")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Cognitive")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Cognitive"]])` Cohen's D = `r round(prepost_wth$CohenD[["Cognitive"]], digits = 2)`; Physical: mean~pre~ = `r filter(df_mean, Cost == "Physical")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Physical")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Physical")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Physical")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Physical"]])` Cohen's D = `r round(prepost_wth$CohenD[["Physical"]], digits = 2)`; Wait_C:  mean~pre~ = `r filter(df_mean, Cost == "Wait_C")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Wait_C")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Wait_C")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Wait_C")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Wait_C"]])` Cohen's D = `r round(prepost_wth$CohenD[["Wait_C"]], digits = 2)`; Wait_P: mean~pre~ = `r filter(df_mean, Cost == "Wait_P")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Wait_P")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Wait_P")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Wait_P")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Wait_P"]])` Cohen's D = `r round(prepost_wth$CohenD[["Wait_P"]], digits = 2)`; Figure 10). The reduction in acceptances was not driven by a performance decline, as the difference in acceptance rates was not significantly correlated with the proportion of forced travels across individuals (Pearson's r = `r round(corDiff, digits = 2)`, *p* > 0.05). Notably, the pattern of choices from the first half of the experiment resembled that from the matching handling/travel block from the between-subject experiment (Figure 4A). Mixed effects logistic regressions on each half separately confirmed this observation. The matrix on Figure 10 shows the coefficient magnitude for all pairwise comparisons among costs (computed by rotating the reference cost condition in the model), with crosses signaling non-significant coefficients (*p* > 0.05). This plot shows that the relative preference for cognitive effort seen previously was preserved at the beginning of the experiment (lower triangle), but that it disappeared over time amid an overall decline in acceptance rates as participants gained experience with all three conditions (upper triangle).
+  However, against our predictions, participants accepted significantly fewer trials on the second half of the experiment, regardless of cost (paired permutations; Cognitive: mean~pre~ = `r filter(df_mean, Cost == "Cognitive")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Cognitive")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Cognitive")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Cognitive")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Cognitive"]])` Cohen's D = `r round(prepost_wth$CohenD[["Cognitive"]], digits = 2)`; Physical: mean~pre~ = `r filter(df_mean, Cost == "Physical")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Physical")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Physical")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Physical")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Physical"]])` Cohen's D = `r round(prepost_wth$CohenD[["Physical"]], digits = 2)`; Wait-C:  mean~pre~ = `r filter(df_mean, Cost == "Wait-C")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Wait-C")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Wait-C")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Wait-C")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Wait-C"]])` Cohen's D = `r round(prepost_wth$CohenD[["Wait-C"]], digits = 2)`; Wait-P: mean~pre~ = `r filter(df_mean, Cost == "Wait-P")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Wait-P")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Wait-P")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Wait-P")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Wait-P"]])` Cohen's D = `r round(prepost_wth$CohenD[["Wait-P"]], digits = 2)`; Figure 10). The reduction in acceptances was not driven by a performance decline, as the difference in acceptance rates was not significantly correlated with the proportion of forced travels across individuals (Pearson's r = `r round(corDiff, digits = 2)`, *p* > 0.05). Notably, the pattern of choices from the first half of the experiment resembled that from the matching handling/travel block from the between-subject experiment (Figure 4A). Mixed effects logistic regressions on each half separately confirmed this observation. The matrix on Figure 10 shows the coefficient magnitude for all pairwise comparisons among costs (computed by rotating the reference cost condition in the model), with crosses signaling non-significant coefficients (*p* > 0.05). This plot shows that the relative preference for cognitive effort seen previously was preserved at the beginning of the experiment (lower triangle), but that it disappeared over time amid an overall decline in acceptance rates as participants gained experience with all three conditions (upper triangle).
   
 ```{r Prepost mixed effects plots (Fig. 10), fig.align = "center", fig.cap = "Acceptance rates over time. Left: Proportion accepted in the first two and last two blocks of the experiment. An initial preference for cognitive effort trials fades amid a global decrease in acceptance rates. Right: Mixed effects coefficient matrix for each half separately. The pattern from the first half resembles what was observed in the between-subjects experiment."}
 include_graphics("./Images/FIG10.png")
@@ -2619,10 +2619,10 @@ dataTest <- dataWth %>%
 # estimate
 # per-cost, but consider the idea above
 OCs_validation <- list()
-temp <- dataTrain %>% filter(Cost == "Wait_C") %>% plyr::dlply("SubjID", identity)
-OCs_validation$Wait_C <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
-temp <- dataTrain %>% filter(Cost == "Wait_P") %>% plyr::dlply("SubjID", identity)
-OCs_validation$Wait_P <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
+temp <- dataTrain %>% filter(Cost == "Wait-C") %>% plyr::dlply("SubjID", identity)
+OCs_validation$`Wait-C` <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
+temp <- dataTrain %>% filter(Cost == "Wait-P") %>% plyr::dlply("SubjID", identity)
+OCs_validation$`Wait-P` <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
 temp <- dataTrain %>% filter(Cost == "Cognitive") %>% plyr::dlply("SubjID", identity)
 OCs_validation$Cognitive <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
 temp <- dataTrain %>% filter(Cost == "Physical") %>% plyr::dlply("SubjID", identity)
@@ -2631,7 +2631,7 @@ OCs_validation$Physical <- sapply(temp, function(Data) {optimizeOCModel(Data)$Ga
 # reshape data
 temp <- bind_rows(OCs_validation) %>% 
   mutate(SubjID = subjList_wth) %>%
-  gather(Cost, gamma, Wait_C:Physical) %>%
+  gather(Cost, gamma, `Wait-C`:Physical) %>%
   left_join(dataTest, ., by = c("SubjID", "Cost")) %>% # assign OCs to each subject per cost type
   mutate(prediction = Offer > Handling * gamma) %>%
   # plyr::dlply("SubjID", identity)
@@ -2659,7 +2659,7 @@ OCs_anova$aov <- summary(aov(Gamma ~ Cost + Error(SubjID / Cost), data = summary
 #pander(OCs_anova$aov)
 
 # do all pairwise comparisons
-OCs_anova$gammas <- summaryOC$all %>% 
+OCs_anova$gammas <- summaryOC$all %>% 
   reshape2::dcast(SubjID ~ Cost, value.var = "Gamma") %>%
   select(-SubjID)
 
