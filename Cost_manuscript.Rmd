@@ -659,7 +659,7 @@ plot_handoffer <- qplot(data = temp, x = Var1, y = value, geom = "boxplot") +
                          panel.grid.minor = element_blank(), 
                          panel.background = element_blank(), 
                          axis.line = element_line(colour = "black"),
-                         text = element_text(size = 16))
+                         text = element_text(size = 22))
 ```
 
 ``` {r BTW: 16.1.2. AR, echo = FALSE, include = FALSE}
@@ -925,7 +925,7 @@ propFails <- dataBtw %>%
 # rwd <- c(4, 8, 20)
 # handling <- c(14, 10, 2) + 2 # add 2 to H and T to account for offer and reward disclosure windows
 # travel <- c(2, 6, 14) + 2
-# sapply(3:1, function(thresh) {(sum(tail(rwd, n = thresh))) / ((handling * thresh) + (travel * 3))})
+# rwdRates <- sapply(3:1, function(thresh) {(sum(tail(rwd, n = thresh))) / ((handling * thresh) + (travel * 3))})
 # 
 # as_tibble(rwdRates) %>% 
 #   mutate(Handling = handling) %>%
@@ -944,7 +944,7 @@ propFails <- dataBtw %>%
 #     geom_point(aes(Reward, Optimal), pch = 21, color = "black", fill = NA, size = 7, show.legend = F) +
 #     scale_color_manual(values = c("purple", "grey50", "darkgoldenrod3")) +
 #     ylim(0, 1.2) +
-#     labs(y = "Expected eward per sec.", x = "Reward acceptance threshold") +
+#     labs(y = "Expected reward per sec.", x = "Reward acceptance threshold") +
 #     theme(legend.position = c(0.85, 0.2),
 #           legend.key = element_blank(),
 #           panel.grid.major = element_blank(), 
@@ -976,7 +976,7 @@ hrPlot_btw <- dataBtw %>%
               text = element_text(size = 12))
 
 # snippet on rmANOVA
-# These intuitions were formally tested using a repeated measures ANOVA, whose results are presented in the table below. Overall, the analysis partially confirmed our predictions. While all main effects were significant, there was an unexpected significant condition-by-reward interaction, which could be due to the performance of the "easy" group relative to their peers. Importantly, we found that the interaction between all three main parameters was not significant, thus suggesting that the effects of handling and reward on choices were not different across groups.
+# These intuitions were formally tested using a repeated measures ANOVA, whose results are presented in the table below. Overall, the analysis partially confirmed our predictions. While all main effects were significant, there was an unexpected significant condition-by-reward interaction, which could be due to the performance of the "easy" group relative to their peers. Importantly, we found that the interaction between all three main parameters was not significant, thus suggesting that the effects of handling and reward on choices were not different across groups.
 
 ```
 
@@ -1107,7 +1107,7 @@ ABIC_plot_btw <- ME_evals$abicLogis_compare %>%
             panel.grid.minor = element_blank(),
             panel.background = element_blank(),
             axis.line = element_line(colour = "black"),
-            text = element_text(size = 16))
+            text = element_text(size = 22))
     
 ```
 
@@ -1833,6 +1833,8 @@ mixSummary_wth$Pvals[rbind(c(3, 1), c(4,2))] <- NA
 #          method = "color", 
 #          tl.col = "black",
 #          tl.cex = 0.8,
+#          cl.length = 5,
+#          cl.lim = c(-2.0001, 2.0001),
 #          col = col2(200))
          
 ```
@@ -2691,3 +2693,7 @@ OCs_anova$ES[rbind(c(1,4),c(2,3),c(3,2),c(4,1))] <- NA
 ```
 
 ## Discussion
+
+
+- Talk about future experiments: if this is subjective time, changing the pacing of the tasks should change the acceptance rates for cognitive effort
+- It's true that we didnt calibrate cog effort per subject. But instead we brought all subjects to the same level of performance, and we saw that as time progressed they became less likely to accept longer periods of effort. 
