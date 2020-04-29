@@ -480,6 +480,25 @@ dataBtw <- tibble(SubjID = files) %>%
           )
          ) 
 
+# load the cognitive task performance logs
+setwd("./extras")
+files <- dir(pattern = '_log.csv')
+
+dataBtw_coglogs <- tibble(SubjID = files) %>%
+  mutate(contents = map(SubjID, ~ suppressWarnings(read_csv(., col_types = cols()))))  %>%
+  unnest() %>%
+  rename(Offer = Reward) %>%
+  mutate(SubjID = substring(SubjID, 8, 10),
+         Trial_Time = round(Choice.RT),
+         Choice = ifelse(Choice == 2, 1, Choice), # forced travels (2) become acceptances (1)
+         Half = ifelse(Block < 4, "Half_1", "Half_2"),
+         optimal = case_when(
+          (Handling == 10 & Offer < 8) ~ 0,
+          (Handling == 14 & Offer < 20) ~ 0,
+          TRUE ~ 1
+          )
+         ) 
+
 # get a simple subject list and the number of subjects
 subjList_btw <- unique(dataBtw$SubjID)
 nSubjs_btw <- length(subjList_btw)
@@ -511,6 +530,21 @@ dataWth <- data_frame(SubjID = files) %>%
          Cost = as.factor(Cost)) %>%
   group_by(SubjID) %>%
   mutate(BlockOrder = ifelse(Btype[1] == 0, "Cognitive1st", "Physical1st"))
+
+# load the cognitive task performance logs
+files <- dir(pattern = 'coglog')
+colname <- c("Handling", "Offer", "Outcome", "RT", "Trial_Time", "ExpTime", "Trial_outcome","Type", "Setup")
+
+dataWth_coglogs <- data_frame(SubjID = files) %>% 
+  mutate(contents = map(SubjID, ~ suppressWarnings(read_csv(., col_names = colname, col_types = cols()))),
+         SubjID = substring(SubjID, 8, 10)) %>%
+  unnest() %>%
+  mutate(Trial_time = ifelse(RT > 10.1, 10, RT),
+         Trial_Time = round(Trial_Time)) %>%
+  group_by(SubjID) %>%
+  mutate(Half = ifelse(ExpTime < (max(ExpTime) / 2), "Half_1", "Half_2")) %>%
+  ungroup()
+
 
 # Get just the subject list and number of subjects
 subjList_wth <- unique(dataWth$SubjID)
@@ -1265,6 +1299,27 @@ prepost_btw$propBlocks <- dataBtw %>%
                                  panel.background = element_blank(),
                                  axis.line = element_line(colour = "black"),
                                  text = element_text(size = 14))
+
+
+# RTs for the cognitive tasks as a function of handling time, offer, and experimental half
+prepost_btw$cogtaskRTs <- dataBtw_coglogs %>%
+  filter(Choice == 1,
+         Handling > 2) %>%
+  group_by(SubjID, Handling, Offer, Trial_Time, Half) %>%
+  summarise(mRT = mean(Task.RT)) %>%
+  group_by(Handling, Offer, Trial_Time, Half) %>%
+  summarise(meanRT = mean(mRT),
+            seRT = sd(mRT, na.rm = T) / sqrt(21)) %>%
+  ungroup() %>%
+  mutate(Offer = factor(Offer, levels = c(4, 8, 20))) %>% 
+  ggplot(aes(Trial_Time, meanRT, group = Offer, color = Offer)) +
+    geom_line() +
+    geom_line(aes(Trial_Time, meanRT + seRT, group = Offer, color = Offer), linetype = "dashed") +
+    geom_line(aes(Trial_Time, meanRT - seRT, group = Offer, color = Offer), linetype = "dashed") +
+    geom_point(size = 2) +
+    ylim(0.2, 1) +
+    facet_wrap(vars(Handling, Half)) +
+    theme_classic()
 
 
 ```
@@ -2077,6 +2132,27 @@ prepost_wth$scatterplot <- dataWth %>%
        text = element_text(size = 16))
 
 
+prepost_wth$cogtaskRTs <- dataWth_coglogs %>%
+  filter(Outcome > 0) %>%
+  mutate(Outcome = ifelse(Outcome == 2, 0, Outcome)) %>%
+  group_by(SubjID, Offer, Trial_Time, Half) %>%
+  summarise(mRT = mean(RT),
+            pComplete = mean(Outcome)) %>%
+  group_by(Offer, Trial_Time, Half) %>%
+  summarise(meanRT = mean(mRT),
+            seRT = sd(mRT, na.rm = T) / sqrt(48),
+            meanProp = mean(pComplete),
+            seProp = sd(pComplete) / sqrt(48)) %>%
+  ungroup() %>%
+  mutate(Offer = factor(Offer, levels = c(4, 8, 20))) %>%
+  ggplot(aes(Trial_Time, meanRT, group = Offer, color = Offer)) +
+    geom_line() +
+    geom_line(aes(Trial_Time, meanRT + seRT, group = Offer, color = Offer), linetype = "dashed") +
+    geom_line(aes(Trial_Time, meanRT - seRT, group = Offer, color = Offer), linetype = "dashed") +
+    geom_point(size = 2) +
+    ylim(0.2, 1) +
+    facet_wrap(vars(Half)) +
+    theme_classic()
 
 # ## PROPORTION OF COGNITIVE ACCEPTANCES NOT DIFFERENT BETWEEN FIRST HALF OF WITHIN AND BETWEEN EXPERIMENTS
 # btw <- dataBtw %>%
