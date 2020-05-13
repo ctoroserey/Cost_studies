@@ -339,6 +339,81 @@ optimizeOCModel <- function(Data, Algorithm = "NLOPT_LN_NEWUOA", simplify = F, o
 
 }
 
+# simpler form of optimization that allows inputting any model expression into a single function call
+optimizeModel <- function(subjData, params, model, simplify = F) {
+  # this function finds the combination of parameter values that minimizes the neg log likelihood of a logistic regression
+  # used to rely on NLOPTR, but it's too cumbersome for the low-dimensional estimates I'm performing.
+  #
+  # subjData: a participant's log
+  # params: a list of vectors. Each vector is the possible values a given parameter can take. Names in list must match model expression
+  # model: using `expr()`, define the model (use <param>[[1]] for free parameters to be estimated. R limitation.). Ex: expr(temp[[1]] * (reward - (gamma[[1]] * handling)))
+  
+  
+  # extract basic choice information
+  handling <- subjData$Handling
+  reward <- subjData$Offer
+  choice <- subjData$Choice
+  rt <- subjData$RT
+  cost <- subjData$Cost
+  trial <- subjData$TrialN
+  rawChoice <- subjData$rawChoice
+  
+  # combine parameters into every possible combination
+  params <- expand.grid(params)
+  
+  # Prep list of results to be returned
+  out <- list()
+  out$percentQuit <- mean(choice == 0) * 100
+  out$percentAccept <- mean(choice == 1) * 100 
+  
+  LLs <- sapply(seq(nrow(params)), function(i) {
+    
+    # isolate the parameters for this iteration
+    # and then store them as variables
+    # FIGURE OUT HOW TO NOT STORE THEM AS DATAFRAMES
+    pars <- params[i, ]
+    lapply(seq_along(pars), function(variable) {assign(colnames(pars)[variable], pars[variable], envir = .GlobalEnv)})
+    
+    # estimate the probability of acceptance per the model
+    p = 1 / (1 + exp(-eval(model)))
+    p[p == 1] <- 0.999
+    p[p == 0] <- 0.001
+    
+    # get the likelihood of the observations based on the model
+    tempChoice <- rep(NA, length(choice))
+    tempChoice[choice == 1] <- log(p[choice == 1])
+    tempChoice[choice == 0] <- log(1 - p[choice == 0]) # log of probability of choice 1 when choice 0 occurred
+    negLL <- -sum(tempChoice)
+  })
+  
+  # chosen parameters  
+  out$LL <- min(LLs)
+  chosen_params <- params[which(LLs == out$LL), ]
+  lapply(seq_along(chosen_params), function(variable) {assign(colnames(chosen_params)[variable], chosen_params[variable], envir = .GlobalEnv)})
+  
+  # Summarize the outputs
+  out$LL0 <- -(log(0.5) * length(choice))
+  out$Rsquared <- 1 - (out$LL / out$LL0) # pseudo r-squred, quantifying the proportion of deviance reduction vs chance
+  out$probAccept <- 1 / (1 + exp(-eval(model)))
+  out$Params <- chosen_params
+  #out$predicted <- reward > out$subjOC
+  #out$predicted[out$predicted == TRUE] <- 1
+  #out$percentPredicted <- mean(out$predicted == choice) 
+  
+  # if doing this with dplyr::do(), return a simplified data.frame instead with the important parameters
+  if (simplify) {
+    out <- round(data.frame(out[-6]), digits = 2)
+    colnames(out) <- c("percentQuit",
+                       "percentAccept",
+                       "LL",
+                       "LL0",
+                       "Rsq",
+                       colnames(chosen_params))
+  }
+  
+  return(out)
+}
+
 # summary matrices for refrence-changing models
 betaMatrix <- function(model, rearrange = NA) {
 # get a similarity matrix of the resulting coefficient pairings for the cost conditions
