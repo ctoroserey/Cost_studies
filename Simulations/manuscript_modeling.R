@@ -88,9 +88,10 @@ optimizeModel <- function(subjData, params, model, simplify = F) {
 # model to be fit
 # make sure that you specify the inverse temperature
 # extra parameters as dfs for now, that's why the `[[1]]`
-model_expr <- expr(temp[[1]] * (reward - (gamma[[1]] * handling)))
+model_expr <- expr(temperature[[1]] * (reward - (Gamma[[1]] * handling)))
 
 # create a list with possible starting values for model parameters
+# parameter names must match model ones
 spaceSize <- 100
 params <- list(temperature = seq(-1, 1, length.out = spaceSize), 
                Gamma = seq(0.25, 1.5, length.out = spaceSize))
