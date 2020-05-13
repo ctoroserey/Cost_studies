@@ -6,14 +6,23 @@
 # the idea being that you can enter a model and data, and the function will return the lowest LL and associated parameters
 # maybe also R-squares and things in the current optimization function
 
-negLogLik <- function(params, model, choice, handling, reward) {
-  p = 1 / (1 + exp(-eval(model)))
-  p[p == 1] <- 0.999
-  p[p == 0] <- 0.001
-  tempChoice <- rep(NA, length(choice))
-  tempChoice[choice == 1] <- log(p[choice == 1])
-  tempChoice[choice == 0] <- log(1 - p[choice == 0]) # log of probability of choice 1 when choice 0 occurred
-  negLL <- -sum(tempChoice)
+negLogLik <- function(subjData, params, model) {
+  
+  handling <- subjData$Handling
+  reward <- subjData$Offer
+  choice <- subjData$Choice
+  
+  LLs <- apply(params, 2, function(i) {
+    p = 1 / (1 + exp(-eval(model)))
+    p[p == 1] <- 0.999
+    p[p == 0] <- 0.001
+    tempChoice <- rep(NA, length(choice))
+    tempChoice[choice == 1] <- log(p[choice == 1])
+    tempChoice[choice == 0] <- log(1 - p[choice == 0]) # log of probability of choice 1 when choice 0 occurred
+    negLL <- -sum(tempChoice)
+  })
+    
+    
   return(negLL)
 }
 
@@ -30,9 +39,7 @@ params_grid <- as.matrix(expand.grid(params))
 subj <- 190
 Data <- dataBtw %>%
   filter(SubjID == subj)
-handling <- Data$Handling
-reward <- Data$Offer
-choice <- Data$Choice
+
 
 t <- sapply(seq(nrow(params_grid)), function(i) negLogLik(params_grid[i, ], model_expr, choice, handling, reward))
 
