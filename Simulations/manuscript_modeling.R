@@ -6,9 +6,7 @@
 # the idea being that you can enter a model and data, and the function will return the lowest LL and associated parameters
 # maybe also R-squares and things in the current optimization function
 
-
-
-  
+# simpler form of optimization that allows inputting any model expression into a single function call
 optimizeModel <- function(subjData, params, model, simplify = F) {
   # this function finds the combination of parameter values that minimizes the neg log likelihood of a logistic regression
   # used to rely on NLOPTR, but it's too cumbersome for the low-dimensional estimates I'm performing.
@@ -62,7 +60,8 @@ optimizeModel <- function(subjData, params, model, simplify = F) {
   
   # Summarize the outputs
   out$LL0 <- -(log(0.5) * length(choice))
-  out$Rsquared <- 1 - (out$LL / out$LL0) # pseudo r-squred, quantifying the proportion of deviance reduction vs chance
+  out$Rsquared <- 1 - (out$LL / out$LL0) # pseudo r-squared, quantifying the proportion of deviance reduction vs chance
+  out$loglikSpace <- LLs # in case you want to examine the concavity of the likelihood space
   out$probAccept <- 1 / (1 + exp(-eval(model)))
   out$Params <- chosen_params
   #out$predicted <- reward > out$subjOC
@@ -71,7 +70,7 @@ optimizeModel <- function(subjData, params, model, simplify = F) {
   
   # if doing this with dplyr::do(), return a simplified data.frame instead with the important parameters
   if (simplify) {
-    out <- round(data.frame(out[-6]), digits = 2)
+    out <- round(data.frame(out[-c(6, 7)]), digits = 2)
     colnames(out) <- c("percentQuit",
                        "percentAccept",
                        "LL",
@@ -83,6 +82,13 @@ optimizeModel <- function(subjData, params, model, simplify = F) {
   return(out)
 }
 
+
+## fit the OC model in the original way
+summaryOC <- list()
+summaryOC$all <- dataBtw %>%
+  group_by(Cost, SubjID) %>%
+  do(optimizeOCModel(., simplify = T)) %>%
+  ungroup()
 
 
 # model to be fit
@@ -103,18 +109,18 @@ tempOC <- dataBtw %>%
   ungroup()
 
 
-# plot
-ggplot(tempOC, aes(Cost, Gamma, fill = Cost)) +
-  geom_hline(yintercept = 0.7, alpha = 0.9, color = "gray40", size = 1, linetype = "dashed") +
-  geom_jitter(pch = 21, size = 3, show.legend = F) +
-  ylim(0, 1.5) +
-  labs(x = "") +
-  scale_fill_manual(values = colsWth) +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        axis.line = element_line(colour = "black"),
-        text = element_text(size = 16))
+# # plot
+# ggplot(tempOC, aes(Cost, Gamma, fill = Cost)) +
+#   geom_hline(yintercept = 0.7, alpha = 0.9, color = "gray40", size = 1, linetype = "dashed") +
+#   geom_jitter(pch = 21, size = 3, show.legend = F) +
+#   ylim(0, 1.5) +
+#   labs(x = "") +
+#   scale_fill_manual(values = colsWth) +
+#   theme(panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         panel.background = element_blank(),
+#         axis.line = element_line(colour = "black"),
+#         text = element_text(size = 16))
 
 # summaryOC$all %>%
 #   select(SubjID, Cost, Gamma, Half) %>%
