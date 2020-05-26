@@ -83,37 +83,80 @@ optimizeModel <- function(subjData, params, model, simplify = F) {
 }
 
 
-## fit the OC model in the original way
-summaryOC <- list()
-summaryOC$all <- dataBtw %>%
-  group_by(Cost, SubjID) %>%
-  do(optimizeOCModel(., simplify = T)) %>%
-  ungroup()
+## which models to run?
+baseOC_nloptr <- T
+baseOC <- T
+baseLogistic <- T # to test whether the brute search converges to a conventional logistic through glm()
+ 
+
+## ORIGINAL OC NLOPTR
+if (baseOC_nloptr) {
+  print("Running base OC model on NLOPTR...")
+  
+  summaryOC <- list()
+  summaryOC$all <- dataBtw %>%
+    group_by(Cost, SubjID) %>%
+    do(optimizeOCModel(., simplify = T)) %>%
+    ungroup()
+}
 
 
-# model to be fit
-# make sure that you specify the inverse temperature
-# extra parameters as dfs for now, that's why the `[[1]]`
-model_expr <- expr(temperature[[1]] * (reward - (Gamma[[1]] * handling)))
+## ORIGINAL OC
+# great correspondence with NLOPTR, just much slower since it surveys the whole parameter space
+if (baseOC) {
+  print("Running base OC model through grid search...")
+  
+  # model to be fit
+  # make sure that you specify the inverse temperature
+  # extra parameters as dfs for now, that's why the `[[1]]`
+  model_expr <- expr(tempr[[1]] * (reward - (gamma[[1]] * handling)))
+  
+  # create a list with possible starting values for model parameters
+  # parameter names must match model ones
+  spaceSize <- 30
+  params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
+                 gamma = seq(0.25, 1.5, length.out = spaceSize))
+  
+  # fit to each subject
+  baseOC <- dataBtw %>%
+    group_by(SubjID, Cost) %>%
+    do(optimizeModel(., params, model_expr, simplify = T)) %>%
+    ungroup()
+}
 
-# create a list with possible starting values for model parameters
-# parameter names must match model ones
-spaceSize <- 100
-params <- list(temperature = seq(-1, 1, length.out = spaceSize), 
-               Gamma = seq(0.25, 1.5, length.out = spaceSize))
 
-# fit to each subject
-tempOC <- dataBtw %>%
-  group_by(SubjID, Cost) %>%
-  do(optimizeModel(., params, model_expr, simplify = T)) %>%
-  ungroup()
+## BASIC LOGISTIC
+# the results mostly match what glm() outputs
+if (baseLogistic) {
+  print("Running a simple logistic (Handling + Reward) through brute search...")
+  # model to be fit
+  model_expr <- expr(intercept[[1]] + (betaRwd[[1]] * reward) + (betaHand[[1]] * handling))
+  
+  # create a list with possible starting values for model parameters
+  spaceSize <- 20
+  params <- list(intercept = seq(-1, 1, length.out = spaceSize), 
+                 betaRwd = seq(-5, 5, length.out = spaceSize),
+                 betaHand = seq(-5, 5, length.out = spaceSize))
+  
+  # fit to each subject
+  baseLogistic <- dataBtw %>%
+    group_by(SubjID, Cost) %>%
+    do(optimizeModel(., params, model_expr, simplify = T)) %>%
+    ungroup()
+}
+
+
+
+##  ADD OTHERS
+
+
 
 
 # # plot
-# ggplot(tempOC, aes(Cost, Gamma, fill = Cost)) +
-#   geom_hline(yintercept = 0.7, alpha = 0.9, color = "gray40", size = 1, linetype = "dashed") +
+# ggplot(t, aes(Cost, Handling, fill = Cost)) +
+#   geom_hline(yintercept = 0, alpha = 0.9, color = "gray40", size = 1, linetype = "dashed") +
 #   geom_jitter(pch = 21, size = 3, show.legend = F) +
-#   ylim(0, 1.5) +
+#   #ylim(0, 1.5) +
 #   labs(x = "") +
 #   scale_fill_manual(values = colsWth) +
 #   theme(panel.grid.major = element_blank(),
