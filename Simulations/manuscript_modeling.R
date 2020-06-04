@@ -24,7 +24,9 @@ optimizeModel <- function(subjData, params, model, simplify = F) {
   cost <- subjData$Cost
   trial <- subjData$TrialN
   rawChoice <- subjData$rawChoice
-  
+  expTime <- round(subjData$ExpTime)
+  remainingTime <- round(max(subjData$ExpTime) - subjData$ExpTime)
+    
   # combine parameters into every possible combination
   params <- expand.grid(params)
   
@@ -86,15 +88,15 @@ optimizeModel <- function(subjData, params, model, simplify = F) {
 ## which models to run?
 baseOC_nloptr <- T
 baseOC <- T
-baseLogistic <- T # to test whether the brute search converges to a conventional logistic through glm()
- 
+baseLogistic <- F # to test whether the brute search converges to a conventional logistic through glm()
+fwOC <- T
 
 ## ORIGINAL OC NLOPTR
 if (baseOC_nloptr) {
   print("Running base OC model on NLOPTR...")
   
   summaryOC <- list()
-  summaryOC$all <- dataBtw %>%
+  summaryOC$all <- dataWth %>%
     group_by(Cost, SubjID) %>%
     do(optimizeOCModel(., simplify = T)) %>%
     ungroup()
@@ -118,12 +120,34 @@ if (baseOC) {
                  gamma = seq(0.25, 1.5, length.out = spaceSize))
   
   # fit to each subject
-  baseOC <- dataBtw %>%
+  baseOC <- dataWth %>%
     group_by(SubjID, Cost) %>%
     do(optimizeModel(., params, model_expr, simplify = T)) %>%
     ungroup()
 }
 
+## Fawcett OC (2012)
+# nope.. the definition doesn't work for multi-choice foraging
+if (fwOC) {
+  print("Running Fawcett et al (2012) OC model through grid search...")
+  
+  # model to be fit
+  # make sure that you specify the inverse temperature
+  # extra parameters as dfs for now, that's why the `[[1]]`
+  model_expr <- expr(tempr[[1]] * (reward - (gamma[[1]] * ((420 - expTime) - handling))))
+  
+  # create a list with possible starting values for model parameters
+  # parameter names must match model ones
+  spaceSize <- 30
+  params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
+                 gamma = seq(0, 2, length.out = spaceSize))
+  
+  # fit to each subject
+  fawcettOC <- dataBtw %>%
+    group_by(SubjID, Cost) %>%
+    do(optimizeModel(., params, model_expr, simplify = T)) %>%
+    ungroup()
+}
 
 ## BASIC LOGISTIC
 # the results mostly match what glm() outputs
@@ -139,7 +163,7 @@ if (baseLogistic) {
                  betaHand = seq(-5, 5, length.out = spaceSize))
   
   # fit to each subject
-  baseLogistic <- dataBtw %>%
+  baseLogistic <- dataWth %>%
     group_by(SubjID, Cost) %>%
     do(optimizeModel(., params, model_expr, simplify = T)) %>%
     ungroup()

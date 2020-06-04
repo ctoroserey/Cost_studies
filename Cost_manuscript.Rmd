@@ -541,7 +541,8 @@ dataBtw <- tibble(SubjID = files) %>%
                           Cost == "phea" ~ "Easy"),
          SubjID = as.integer(substring(SubjID, 0, 3))) %>%
   unnest() %>%
-  rename(TrialN = X1) %>%
+  rename(TrialN = X1,
+         ExpTime = Experiment.Time) %>%
   mutate(rawChoice = Choice, 
          RT = ifelse(RT > 14.1, 14, RT),
          Choice = ifelse(Choice == 2, 1, Choice), # forced travels (2) become acceptances (1)
@@ -2691,6 +2692,15 @@ include_graphics("./Images/FIG10.png")
 
 
 ### WTH: 16.3.4. (OC MODELING: SKIP)
+
+**Possibilities** 
+
+ - Single OC per person
+ - Subjective time perception, which gives rise to preference in cog effort. However, this doesn't account for the eventual convergence of choices across costs. Problem is that the converrgence is a global reduction. Like defaulting to the costliest demand.
+ - Fatigue can maybe be ruled out. This would amplify effort costs and boost wait, but we are seeing a global decline in acceptances.
+ - Wikenheiser
+ - Maybe fatigue could operate at two levels: 1) it becomes bothersome to keep track of values per cost, and the convergence will default to the most fatiguingcost, since there is no readon to accept more of what you dislike. Easier to lower everything else.
+ 
 
 *To estimate the subjective opportunity cost (hypothesis 4.3.2.), we will use a logistic function to model each participant's probability of completing a trial based on the difference between the delayed reward's magnitude and the estimated opportunity cost (OC) for each cost type. OC will be computed as the product of a free parameter (gamma) and the handling time. Both gamma and the temperature parameter of the logistic function will be estimated at the subject level, independently for each subject and cost type.*
 
