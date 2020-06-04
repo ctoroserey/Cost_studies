@@ -553,7 +553,10 @@ dataBtw <- tibble(SubjID = files) %>%
           (Handling == 14 & Offer < 20) ~ 0,
           TRUE ~ 1
           )
-         ) 
+         ) %>%
+  group_by(SubjID, Block) %>%
+  mutate(blockTime = ExpTime - min(ExpTime)) %>%
+  ungroup()
 
 # load the cognitive task performance logs
 setwd("./extras")
@@ -604,7 +607,10 @@ dataWth <- data_frame(SubjID = files) %>%
                            Cost == "WAIT_1" ~ "Wait-P"),
          Cost = as.factor(Cost)) %>%
   group_by(SubjID) %>%
-  mutate(BlockOrder = ifelse(Btype[1] == 0, "Cognitive1st", "Physical1st"))
+  mutate(BlockOrder = ifelse(Btype[1] == 0, "Cognitive1st", "Physical1st")) %>%
+  group_by(SubjID, Block) %>%
+  mutate(blockTime = ExpTime - min(ExpTime)) %>%
+  ungroup()
 
 # load the cognitive task performance logs
 files <- dir(pattern = 'coglog')

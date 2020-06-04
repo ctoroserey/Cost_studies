@@ -26,6 +26,7 @@ optimizeModel <- function(subjData, params, model, simplify = F) {
   rawChoice <- subjData$rawChoice
   expTime <- round(subjData$ExpTime)
   remainingTime <- round(max(subjData$ExpTime) - subjData$ExpTime)
+  blockTime <- subjData$blockTime
     
   # combine parameters into every possible combination
   params <- expand.grid(params)
@@ -134,7 +135,7 @@ if (fwOC) {
   # model to be fit
   # make sure that you specify the inverse temperature
   # extra parameters as dfs for now, that's why the `[[1]]`
-  model_expr <- expr(tempr[[1]] * (reward - (gamma[[1]] * ((420 - expTime) - handling))))
+  model_expr <- expr(tempr[[1]] * (reward - (gamma[[1]] * (blockTime - handling))))
   
   # create a list with possible starting values for model parameters
   # parameter names must match model ones
