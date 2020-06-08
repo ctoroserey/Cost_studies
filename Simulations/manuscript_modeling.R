@@ -25,7 +25,6 @@ optimizeModel <- function(subjData, params, model, simplify = F) {
   trial <- subjData$TrialN
   rawChoice <- subjData$rawChoice
   expTime <- round(subjData$ExpTime)
-  remainingTime <- round(max(subjData$ExpTime) - subjData$ExpTime)
   blockTime <- subjData$blockTime
     
   # combine parameters into every possible combination
@@ -135,7 +134,7 @@ if (fwOC) {
   # model to be fit
   # make sure that you specify the inverse temperature
   # extra parameters as dfs for now, that's why the `[[1]]`
-  model_expr <- expr(tempr[[1]] * (reward - (gamma[[1]] * (blockTime - handling))))
+  model_expr <- expr(tempr[[1]] * (reward - (gamma[[1]] * (rev(expTime) - handling))))
   
   # create a list with possible starting values for model parameters
   # parameter names must match model ones
@@ -144,11 +143,13 @@ if (fwOC) {
                  gamma = seq(0, 2, length.out = spaceSize))
   
   # fit to each subject
-  fawcettOC <- dataBtw %>%
-    group_by(SubjID, Cost) %>%
+  fawcettOC <- dataWth %>%
+    group_by(SubjID) %>%
     do(optimizeModel(., params, model_expr, simplify = T)) %>%
     ungroup()
 }
+
+fawcettOC
 
 ## BASIC LOGISTIC
 # the results mostly match what glm() outputs
