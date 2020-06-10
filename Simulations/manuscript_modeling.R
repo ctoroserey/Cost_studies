@@ -87,16 +87,20 @@ optimizeModel <- function(subjData, params, model, simplify = F) {
 
 ## which models to run?
 baseOC_nloptr <- T
-baseOC <- T
+bOC <- T
 baseLogistic <- F # to test whether the brute search converges to a conventional logistic through glm()
 fwOC <- T
+
+# which experimental data?
+data <- dataBtw
+
 
 ## ORIGINAL OC NLOPTR
 if (baseOC_nloptr) {
   print("Running base OC model on NLOPTR...")
   
   summaryOC <- list()
-  summaryOC$all <- dataWth %>%
+  summaryOC$all <- data %>%
     group_by(Cost, SubjID) %>%
     do(optimizeOCModel(., simplify = T)) %>%
     ungroup()
@@ -105,7 +109,7 @@ if (baseOC_nloptr) {
 
 ## ORIGINAL OC
 # great correspondence with NLOPTR, just much slower since it surveys the whole parameter space
-if (baseOC) {
+if (bOC) {
   print("Running base OC model through grid search...")
   
   # model to be fit
@@ -120,11 +124,12 @@ if (baseOC) {
                  gamma = seq(0.25, 1.5, length.out = spaceSize))
   
   # fit to each subject
-  baseOC <- dataWth %>%
-    group_by(SubjID, Cost) %>%
+  baseOC <- data %>%
+    group_by(SubjID) %>%
     do(optimizeModel(., params, model_expr, simplify = T)) %>%
     ungroup()
 }
+
 
 ## Fawcett OC (2012)
 # nope.. the definition doesn't work for multi-choice foraging
@@ -143,13 +148,12 @@ if (fwOC) {
                  gamma = seq(0, 2, length.out = spaceSize))
   
   # fit to each subject
-  fawcettOC <- dataWth %>%
+  fawcettOC <- data %>%
     group_by(SubjID) %>%
     do(optimizeModel(., params, model_expr, simplify = T)) %>%
     ungroup()
 }
 
-fawcettOC
 
 ## BASIC LOGISTIC
 # the results mostly match what glm() outputs
@@ -165,7 +169,7 @@ if (baseLogistic) {
                  betaHand = seq(-5, 5, length.out = spaceSize))
   
   # fit to each subject
-  baseLogistic <- dataWth %>%
+  baseLogistic <- data %>%
     group_by(SubjID, Cost) %>%
     do(optimizeModel(., params, model_expr, simplify = T)) %>%
     ungroup()
@@ -175,61 +179,71 @@ if (baseLogistic) {
 
 ##  ADD OTHERS
 
+# Dundon, Garrett, et al (2020)
+# for a single subject, estimating the global gamma as usual is better than an evolving 
+# one using eq 3 on their paper for cost2.
+# the estimate using their equation overharvests
+# transfer this into a functon to apply to others
+# but also try on cost3 subjects
+# if anything, it can be used as a mold to try out evolving models
 
+# concluding: MVT-style rate tracking doesn't seem to apply here
+# subjects have a clear idea of the rate. What's curious is that for 058 gamma predicts perfect choice
+# though the number of trials correctly predicted is indeed higher than the Dundon ver
+# this also seems to apply with within-subject peeps.
+# fix the break time though. That shouldn't be there.
 
+id <- 107
+sub <- filter(dataBtw, SubjID == id)
 
-# # plot
-# ggplot(t, aes(Cost, Handling, fill = Cost)) +
-#   geom_hline(yintercept = 0, alpha = 0.9, color = "gray40", size = 1, linetype = "dashed") +
-#   geom_jitter(pch = 21, size = 3, show.legend = F) +
-#   #ylim(0, 1.5) +
-#   labs(x = "") +
-#   scale_fill_manual(values = colsWth) +
-#   theme(panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         panel.background = element_blank(),
-#         axis.line = element_line(colour = "black"),
-#         text = element_text(size = 16))
+# get the base rate of the environment from the final group average
+meanRate <- dataBtw %>% 
+  filter(Choice == 1) %>% 
+  group_by(SubjID, Cost, Block) %>%
+  summarise(mEarn = sum(Offer) / max(blockTime)) %>%
+  ungroup() %>%
+  summarise(mean(mEarn))
 
-# summaryOC$all %>%
-#   select(SubjID, Cost, Gamma, Half) %>%
-#   spread(Half, Gamma) %>%
-#   ggplot(aes(Half_1, Half_2, fill = Cost)) +
-#     geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
-#     geom_point(pch = 21, color = "black", size = 3) +
-#     ylim(0, 2) +
-#     xlim(0, 2) +
-#     theme_minimal()
+# remove the break time (variable across subjects) and start counting from 0
+# wrong, fix. breakTime should be removed from the second half only
+# breakTime <- min(sub$ExpTime[sub$Block == 4]) - max(sub$ExpTime[sub$Block == 3])
+sub$ExpTime <- sub$ExpTime - min(sub$ExpTime)
 
+# calculate gammas as they evolve per trial
+g <- rep(0, nrow(sub))
+s <- sub$ExpTime
+r <- sub$Offer
+c <- sub$Choice
 
+for (trial in seq(nrow(sub))) {
+  if (trial == 1) {
+    g[trial] <- meanRate$`mean(mEarn)`
+  } else {
+    g[trial] <- ((g[trial - 1] * s[trial - 1]) + (r[trial - 1] * c[trial - 1])) / s[trial]
+  }
+}
 
+# get the single gamma (base) and coarsely compare the choice fits
+estgamma <- filter(baseOC, SubjID == id)$gamma 
+sub$rate <- g
+sub <- sub %>%
+  mutate(value = Offer - (rate * Handling),
+         newChoice = ifelse(Offer > (rate * Handling), 1, 0),
+         estgammaChoice = ifelse(Offer > (estgamma * Handling), 1, 0),
+         comp1 = Choice == newChoice,
+         comp2 = Choice == estgammaChoice)
 
+plot(g, type = "b")
+#plot(sub$value, type = "b")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+sub %>%
+  group_by(Handling, Offer) %>%
+  summarise(pChoice = mean(Choice),
+            pnewChoice = mean(newChoice),
+            pgammaChoice = mean(estgammaChoice)) 
+estgamma
+sum(sub$comp1)
+sum(sub$comp2)
 
 
 
