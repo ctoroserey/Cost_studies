@@ -208,13 +208,13 @@ meanRate <- dataBtw %>%
 meanRate$`mean(mEarn)` <- 0
 
 # which subject to run?
-id <- 190
+id <- 58
 sub <- filter(dataBtw, SubjID == id)
 
 
 # remove the break time (variable across subjects) and start counting from 0
 breakTime <- min(sub$ExpTime[sub$Block == 4]) - max(sub$ExpTime[sub$Block == 3])
-#sub$ExpTime[which(sub$Block > 3)] <- sub$ExpTime[which(sub$Block > 3)] - breakTime
+sub$ExpTime[which(sub$Block > 3)] <- sub$ExpTime[which(sub$Block > 3)] - breakTime
 sub$ExpTime <- sub$ExpTime - min(sub$ExpTime)
 
 # calculate gammas as they evolve per trial
@@ -222,7 +222,7 @@ g <- rep(0, nrow(sub))
 s <- sub$ExpTime
 r <- sub$Offer
 c <- sub$Choice
-a <- 0.6 # adjust how far back into the past to look? 0.6 matches single OC model
+a <- 0.95 # adjust how far back into the past to look? 0.6 matches single OC model
 
 for (trial in seq(nrow(sub))) {
   if (trial == 1) {
@@ -232,7 +232,7 @@ for (trial in seq(nrow(sub))) {
     #g[trial] <- ((g[trial - 1] * s[trial - 1]) + (r[trial - 1] * c[trial - 1])) / s[trial]
     
     # adapted
-    g[trial] <- ((g[trial - 1] * s[trial - 1] * a) + (r[trial - 1] * c[trial - 1])) / (s[trial] * a)
+    g[trial] <- ((g[trial - 1] * s[trial - 1]^a) + (r[trial - 1] * c[trial - 1])) / (s[trial]^a)
   }
 }
 
