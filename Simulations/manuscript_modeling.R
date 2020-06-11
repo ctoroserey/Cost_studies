@@ -193,20 +193,28 @@ if (baseLogistic) {
 # this also seems to apply with within-subject peeps.
 # fix the break time though. That shouldn't be there.
 
-id <- 58
-sub <- filter(dataBtw, SubjID == id)
+# one possibility for this is that by tracking an evolving rate, sequential quits would reduce the OC, prompting lower reward acceptances
+# instead, our participants don't seem to be influenced by that, having a good and stable sense of the environmental rate
+
 
 # get the base rate of the environment from the final group average
+# starting from 0 converges to a very similar result
 meanRate <- dataBtw %>% 
   filter(Choice == 1) %>% 
   group_by(SubjID, Cost, Block) %>%
   summarise(mEarn = sum(Offer) / max(blockTime)) %>%
   ungroup() %>%
   summarise(mean(mEarn))
+meanRate$`mean(mEarn)` <- 0
+
+# which subject to run?
+id <- 190
+sub <- filter(dataBtw, SubjID == id)
+
 
 # remove the break time (variable across subjects) and start counting from 0
 breakTime <- min(sub$ExpTime[sub$Block == 4]) - max(sub$ExpTime[sub$Block == 3])
-sub$ExpTime[which(sub$Block > 3)] <- sub$ExpTime[which(sub$Block > 3)] - breakTime
+#sub$ExpTime[which(sub$Block > 3)] <- sub$ExpTime[which(sub$Block > 3)] - breakTime
 sub$ExpTime <- sub$ExpTime - min(sub$ExpTime)
 
 # calculate gammas as they evolve per trial
@@ -214,37 +222,48 @@ g <- rep(0, nrow(sub))
 s <- sub$ExpTime
 r <- sub$Offer
 c <- sub$Choice
+a <- 0.6 # adjust how far back into the past to look? 0.6 matches single OC model
 
 for (trial in seq(nrow(sub))) {
   if (trial == 1) {
     g[trial] <- meanRate$`mean(mEarn)`
   } else {
-    g[trial] <- ((g[trial - 1] * s[trial - 1]) + (r[trial - 1] * c[trial - 1])) / s[trial]
+    # base dundon
+    #g[trial] <- ((g[trial - 1] * s[trial - 1]) + (r[trial - 1] * c[trial - 1])) / s[trial]
+    
+    # adapted
+    g[trial] <- ((g[trial - 1] * s[trial - 1] * a) + (r[trial - 1] * c[trial - 1])) / (s[trial] * a)
   }
 }
 
 # get the single gamma (base) and coarsely compare the choice fits
-estgamma <- filter(baseOC, SubjID == id)$gamma 
+estimatedGamma <- filter(baseOC, SubjID == id)$gamma 
 sub$rate <- g
 result <- sub %>%
   mutate(value = Offer - (rate * Handling),
-         newChoice = ifelse(Offer > (rate * Handling), 1, 0),
-         estgammaChoice = ifelse(Offer > (estgamma * Handling), 1, 0),
-         comp1 = Choice == newChoice,
-         comp2 = Choice == estgammaChoice)
+         rateChoice = ifelse(Offer > (rate * Handling), 1, 0),
+         gammaChoice = ifelse(Offer > (estimatedGamma * Handling), 1, 0),
+         rateAcc = Choice == rateChoice,
+         gammaAcc = Choice == gammaChoice)
 
-plot(g, type = "b")
-#plot(sub$value, type = "b")
+
+
+ggplot(data = result, aes(TrialN, rate)) +
+  geom_line(aes(color = Handling)) +
+  geom_point(pch = 21, color = "black", aes(fill = Handling, color = Handling)) +
+  geom_point(aes(TrialN, rateChoice, size = Offer), color = "black", pch = 21)
+
+result
 
 result %>%
   group_by(Handling, Offer) %>%
-  summarise(pChoice = mean(Choice),
-            pnewChoice = mean(newChoice),
-            pgammaChoice = mean(estgammaChoice))
-result
-estgamma
-sum(result$comp1)
-sum(result$comp2)
+  summarise(pAccept = mean(Choice),
+            prateChoice = mean(rateChoice),
+            pgammaChoice = mean(gammaChoice))
+
+estimatedGamma
+sum(result$rateAcc)
+sum(result$gammaAcc)
 
 
 
