@@ -86,10 +86,10 @@ optimizeModel <- function(subjData, params, model, simplify = F) {
 
 
 ## which models to run?
-baseOC_nloptr <- T
-bOC <- T
+baseOC_nloptr <- F
+bOC <- F
 baseLogistic <- F # to test whether the brute search converges to a conventional logistic through glm()
-fwOC <- T
+fwOC <- F
 
 # which experimental data?
 data <- dataBtw
@@ -193,7 +193,7 @@ if (baseLogistic) {
 # this also seems to apply with within-subject peeps.
 # fix the break time though. That shouldn't be there.
 
-id <- 107
+id <- 58
 sub <- filter(dataBtw, SubjID == id)
 
 # get the base rate of the environment from the final group average
@@ -205,8 +205,8 @@ meanRate <- dataBtw %>%
   summarise(mean(mEarn))
 
 # remove the break time (variable across subjects) and start counting from 0
-# wrong, fix. breakTime should be removed from the second half only
-# breakTime <- min(sub$ExpTime[sub$Block == 4]) - max(sub$ExpTime[sub$Block == 3])
+breakTime <- min(sub$ExpTime[sub$Block == 4]) - max(sub$ExpTime[sub$Block == 3])
+sub$ExpTime[which(sub$Block > 3)] <- sub$ExpTime[which(sub$Block > 3)] - breakTime
 sub$ExpTime <- sub$ExpTime - min(sub$ExpTime)
 
 # calculate gammas as they evolve per trial
@@ -226,7 +226,7 @@ for (trial in seq(nrow(sub))) {
 # get the single gamma (base) and coarsely compare the choice fits
 estgamma <- filter(baseOC, SubjID == id)$gamma 
 sub$rate <- g
-sub <- sub %>%
+result <- sub %>%
   mutate(value = Offer - (rate * Handling),
          newChoice = ifelse(Offer > (rate * Handling), 1, 0),
          estgammaChoice = ifelse(Offer > (estgamma * Handling), 1, 0),
@@ -236,14 +236,15 @@ sub <- sub %>%
 plot(g, type = "b")
 #plot(sub$value, type = "b")
 
-sub %>%
+result %>%
   group_by(Handling, Offer) %>%
   summarise(pChoice = mean(Choice),
             pnewChoice = mean(newChoice),
-            pgammaChoice = mean(estgammaChoice)) 
+            pgammaChoice = mean(estgammaChoice))
+result
 estgamma
-sum(sub$comp1)
-sum(sub$comp2)
+sum(result$comp1)
+sum(result$comp2)
 
 
 
