@@ -89,7 +89,7 @@ dynamic_gamma <- function(sub, estimatedGamma = 0, alpha = 0.95, meanRate = 0) {
   # this function will treat prey foraging in an MVT fashion, using the equation from Dundon et al 2019?
   # sub: a single subject's dataset
   # estimatedGamma: their single gamma, estimated with the original model
-  # alpha: for the current model, the discounting of the effect of recent time in the updating of gamma
+  # alpha: for the current model, the discounting of the effect of recent time in the updating of gamma (1 = basic Dundon)
   # meanRate: where to initialize gamma (either 0 or the actual group mean of 0.59 work)
   
   # remove the break time (variable across subjects) and start counting from 0
@@ -111,7 +111,7 @@ dynamic_gamma <- function(sub, estimatedGamma = 0, alpha = 0.95, meanRate = 0) {
       #g[trial] <- ((g[trial - 1] * s[trial - 1]) + (r[trial - 1] * c[trial - 1])) / s[trial]
       
       # adapted
-      g[trial] <- ((g[trial - 1] * s[trial - 1]^a) + (r[trial - 1] * c[trial - 1])) / (s[trial]^a)
+      g[trial] <- ((g[trial - 1] * s[trial - 1]^alpha) + (r[trial - 1] * c[trial - 1])) / (s[trial]^alpha)
     }
   }
   
