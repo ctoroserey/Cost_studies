@@ -205,10 +205,10 @@ meanRate <- dataBtw %>%
   summarise(mEarn = sum(Offer) / max(blockTime)) %>%
   ungroup() %>%
   summarise(mean(mEarn))
-meanRate$`mean(mEarn)` <- 0
+#meanRate$`mean(mEarn)` <- 0
 
 # which subject to run?
-id <- 58
+id <- 058
 sub <- filter(dataBtw, SubjID == id)
 
 
@@ -248,10 +248,38 @@ result <- sub %>%
 
 
 
-ggplot(data = result, aes(TrialN, rate)) +
-  geom_line(aes(color = Handling)) +
-  geom_point(pch = 21, color = "black", aes(fill = Handling, color = Handling)) +
-  geom_point(aes(TrialN, rateChoice, size = Offer), color = "black", pch = 21)
+ratePlot <- result %>%
+  mutate(trialRate = ifelse(Offer / Handling > 2, 1.5, Offer / Handling),
+         offerAccept = case_when(
+           (Offer == 4 & rateChoice == 1) ~ -0.05,
+           (Offer == 8 & rateChoice == 1) ~ -.075,
+           (Offer == 20 & rateChoice == 1) ~ -0.1,
+           TRUE ~ -6
+         ),
+         ratebasedChoice = ifelse(rateChoice == 1, -0.125, -7),
+         actualChoice = ifelse(Choice == 1, -0.15, -8),
+         optimalChoice = ifelse(optimal == 1, -0.175, -9)) %>%
+  ggplot(aes(TrialN, rate)) +
+    geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
+    geom_point(aes(TrialN, trialRate), size = 0.5) +
+    geom_hline(yintercept = estimatedGamma) +
+    geom_line(aes(color = Handling), size = 0.5) +
+    geom_point(aes(color = Handling), size = 1.2) +
+    geom_point(aes(TrialN, offerAccept, fill = factor(Offer, levels = c(4, 8, 20))), color = "black", pch = 21) +
+    geom_point(aes(TrialN, ratebasedChoice), pch = 21, color = "black", fill = "grey20") +
+    geom_point(aes(TrialN, actualChoice), pch = 21, color = "black", fill = "grey50") +
+    geom_point(aes(TrialN, optimalChoice), pch = 21, color = "black", fill = "grey80") +
+    scale_fill_discrete(name = "Offer") +
+    scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
+    ylim(-0.2, NA) +
+    labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(),
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 16))
+
+suppressWarnings(print(ratePlot))
 
 result
 
