@@ -168,11 +168,21 @@ dynamic_gamma <- function(sub, estimatedGamma = 0, alpha = 0.95, meanRate = 0) {
   # what proportion of choices matched participant behavior?
   accuracy <- round(c(rate = mean(summary$rateAcc), single = mean(summary$gammaAcc)), digits = 2)
   
-  # combine outputs and return (add nLL?)
+  # get the negative log likelihood of the observations based on the model
+  # this is very coarse. Since the model is normative, I did the likelihoods based on either probability 1 or 0 for choices
+  # this is not like in the single parameter model, where the sigmoidal allows for more continuous probabilities
+  negLL <- summary %>% 
+    mutate(p = ifelse(rateChoice == 1, 0.999, 0.001), 
+           tempChoice = ifelse(Choice == 1, log(p), log(1 - p))) %>%
+    summarise(negLL = -sum(tempChoice))
+  
+  # combine outputs and return 
   results <- list(summary = summary, 
                   overallChoices = choicePatterns, 
                   accuracy = accuracy, 
+                  negLL = negLL$negLL,
                   plot = ratePlot)
+  
   
   return(results)
 }
@@ -181,7 +191,7 @@ dynamic_gamma <- function(sub, estimatedGamma = 0, alpha = 0.95, meanRate = 0) {
 
 ## which models to run?
 baseOC_nloptr <- F
-bOC <- F
+bOC <- T
 baseLogistic <- F # to test whether the brute search converges to a conventional logistic through glm()
 fwOC <- F
 
@@ -298,98 +308,28 @@ meanRate <- dataBtw %>%
   group_by(SubjID, Cost, Block) %>%
   summarise(mEarn = sum(Offer) / max(blockTime)) %>%
   ungroup() %>%
-  summarise(mean(mEarn))
-#meanRate$`mean(mEarn)` <- 0
+  summarise(m = mean(mEarn))
 
 # which subject to run?
-id <- 058
-sub <- filter(dataBtw, SubjID == id)
+subjs <- dataBtw %>% plyr::dlply("SubjID", identity)
 
 # fit
-r <- dynamic_gamma(sub, 0.98)
+#r <- dynamic_gamma(subjs[[1]], 0.98)
+allResults <- lapply(as.character(subjList_btw), function(sub) {dynamic_gamma(subjs[[sub]], 
+                                                                              filter(baseOC, SubjID == sub)$gamma, 
+                                                                              meanRate = meanRate$m)})
 
-# # remove the break time (variable across subjects) and start counting from 0
-# breakTime <- min(sub$ExpTime[sub$Block == 4]) - max(sub$ExpTime[sub$Block == 3])
-# sub$ExpTime[which(sub$Block > 3)] <- sub$ExpTime[which(sub$Block > 3)] - breakTime
-# sub$ExpTime <- sub$ExpTime - min(sub$ExpTime)
-# 
-# # calculate gammas as they evolve per trial
-# g <- rep(0, nrow(sub))
-# s <- sub$ExpTime
-# r <- sub$Offer
-# c <- sub$Choice
-# a <- 0.95 # adjust how far back into the past to look? 0.6 matches single OC model
-# 
-# for (trial in seq(nrow(sub))) {
-#   if (trial == 1) {
-#     g[trial] <- meanRate$`mean(mEarn)`
-#   } else {
-#     # base dundon
-#     #g[trial] <- ((g[trial - 1] * s[trial - 1]) + (r[trial - 1] * c[trial - 1])) / s[trial]
-#     
-#     # adapted
-#     g[trial] <- ((g[trial - 1] * s[trial - 1]^a) + (r[trial - 1] * c[trial - 1])) / (s[trial]^a)
-#   }
-# }
-# 
-# # get the single gamma (base) and coarsely compare the choice fits
-# estimatedGamma <- filter(baseOC, SubjID == id)$gamma 
-# sub$rate <- g
-# result <- sub %>%
-#   mutate(value = Offer - (rate * Handling),
-#          rateChoice = ifelse(Offer > (rate * Handling), 1, 0),
-#          gammaChoice = ifelse(Offer > (estimatedGamma * Handling), 1, 0),
-#          rateAcc = Choice == rateChoice,
-#          gammaAcc = Choice == gammaChoice)
-# 
-# 
-# 
-# ratePlot <- result %>%
-#   mutate(trialRate = ifelse(Offer / Handling > 2, 1.5, Offer / Handling),
-#          offerAccept = case_when(
-#            (Offer == 4 & rateChoice == 1) ~ -0.05,
-#            (Offer == 8 & rateChoice == 1) ~ -.075,
-#            (Offer == 20 & rateChoice == 1) ~ -0.1,
-#            TRUE ~ -6
-#          ),
-#          ratebasedChoice = ifelse(rateChoice == 1, -0.125, -7),
-#          actualChoice = ifelse(Choice == 1, -0.15, -8),
-#          optimalChoice = ifelse(optimal == 1, -0.175, -9)) %>%
-#   ggplot(aes(TrialN, rate)) +
-#     geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
-#     geom_point(aes(TrialN, trialRate), size = 0.5) +
-#     geom_hline(yintercept = estimatedGamma) +
-#     geom_line(aes(color = Handling), size = 0.5) +
-#     geom_point(aes(color = Handling), size = 1.2) +
-#     geom_point(aes(TrialN, offerAccept, fill = factor(Offer, levels = c(4, 8, 20))), color = "black", pch = 21) +
-#     geom_point(aes(TrialN, ratebasedChoice), pch = 21, color = "black", fill = "grey20") +
-#     geom_point(aes(TrialN, actualChoice), pch = 21, color = "black", fill = "grey50") +
-#     geom_point(aes(TrialN, optimalChoice), pch = 21, color = "black", fill = "grey80") +
-#     scale_fill_discrete(name = "Offer") +
-#     scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
-#     ylim(-0.2, NA) +
-#     labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
-#     theme(panel.grid.major = element_blank(),
-#           panel.grid.minor = element_blank(),
-#           panel.background = element_blank(),
-#           axis.line = element_line(colour = "black"),
-#           text = element_text(size = 16))
-# 
-# suppressWarnings(print(ratePlot))
-# 
-# result
-# 
-# result %>%
-#   group_by(Handling, Offer) %>%
-#   summarise(pAccept = mean(Choice),
-#             prateChoice = mean(rateChoice),
-#             pgammaChoice = mean(gammaChoice))
-# 
-# estimatedGamma
-# sum(result$rateAcc)
-# sum(result$gammaAcc)
-# 
-# 
-# 
-# 
-# 
+# compare the accuracy and negLL between fits 
+# for a fixed alpha of 0.95, it looks like a single gamma works best
+# see 275 for a poor MVT fit from a cognitive participant
+# accuracy
+fits <- sapply(allResults, "[[", "accuracy")
+plot(fits["rate",], fits["single",], xlim = c(0.5, 1), ylim = c(0.5, 1))
+abline(a = 0, b = 1)
+
+# negLL (note that this type of model comparison might not be well suited)
+plot(sapply(allResults, "[[", "negLL"), baseOC$LL, xlim = c(10, 400), ylim = c(10, 400))
+abline(a = 0, b = 1)
+
+
+
