@@ -86,13 +86,13 @@ optimizeModel <- function(subjData, params, model, simplify = F) {
 
 # a dynamic estimation of gamma, with resulting plots for MVT-style tracking versus single-parammeter fits
 dynamic_gamma <- function(sub, estimatedGamma = 0, alpha = 0.95, meanRate = 0) {
-  # this function will treat prey foraging in an MVT fashion, using the equation from Dundon et al 2019?
+  # this function will treat prey foraging in an MVT fashion, using the equation from Dundon et al 2020
   # sub: a single subject's dataset
   # estimatedGamma: their single gamma, estimated with the original model
   # alpha: for the current model, the discounting of the effect of recent time in the updating of gamma (1 = basic Dundon)
   # meanRate: where to initialize gamma (either 0 or the actual group mean of 0.59 work)
   
-  # remove the break time (variable across subjects) and start counting from 0
+  # remove the break time (variable across subjects) and start counting time from 0 (otherwise it can add physical effort calibration)
   breakTime <- min(sub$ExpTime[sub$Block == 4]) - max(sub$ExpTime[sub$Block == 3])
   sub$ExpTime[which(sub$Block > 3)] <- sub$ExpTime[which(sub$Block > 3)] - breakTime
   sub$ExpTime <- sub$ExpTime - min(sub$ExpTime)
@@ -317,19 +317,33 @@ subjs <- dataBtw %>% plyr::dlply("SubjID", identity)
 #r <- dynamic_gamma(subjs[[1]], 0.98)
 allResults <- lapply(as.character(subjList_btw), function(sub) {dynamic_gamma(subjs[[sub]], 
                                                                               filter(baseOC, SubjID == sub)$gamma, 
-                                                                              meanRate = meanRate$m)})
+                                                                              meanRate = meanRate$m, 
+                                                                              alpha = 1.01)})
+
+allResults[[10]]$plot
 
 # compare the accuracy and negLL between fits 
 # for a fixed alpha of 0.95, it looks like a single gamma works best
 # see 275 for a poor MVT fit from a cognitive participant
 # accuracy
 fits <- sapply(allResults, "[[", "accuracy")
-plot(fits["rate",], fits["single",], xlim = c(0.5, 1), ylim = c(0.5, 1))
+plot(fits["rate",], fits["single",])
 abline(a = 0, b = 1)
 
 # negLL (note that this type of model comparison might not be well suited)
-plot(sapply(allResults, "[[", "negLL"), baseOC$LL, xlim = c(10, 400), ylim = c(10, 400))
+plot(sapply(allResults, "[[", "negLL"), baseOC$LL)
 abline(a = 0, b = 1)
+
+# let's fit this alpha parameter
+as <- seq(0.5, 1.5, length.out = 20)
+temp <- lapply(as, function(alpha) {dynamic_gamma(subjs[["58"]], 
+                                                  filter(baseOC, SubjID == "58")$gamma, 
+                                                  meanRate = meanRate$m, 
+                                                  alpha = alpha)})
+
+
+
+
 
 
 
