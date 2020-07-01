@@ -122,12 +122,13 @@ dynamic_gamma <- function(sub, estimatedGamma = 0, alpha = 0.95, meanRate = 0) {
            rateChoice = ifelse(Offer > (rate * Handling), 1, 0),
            gammaChoice = ifelse(Offer > (estimatedGamma * Handling), 1, 0),
            rateAcc = Choice == rateChoice,
-           gammaAcc = Choice == gammaChoice)
+           gammaAcc = Choice == gammaChoice,
+           cumulativeRate = lag(cumsum(Offer * Choice)) / (ExpTime ^ alpha))
   
   
   # plot the evolving gammas
   ratePlot <- summary %>%
-    mutate(trialRate = ifelse(Offer / Handling > 2, 1.5, Offer / Handling),
+    mutate(trialRate = Offer / Handling,
            offerAccept = case_when(
              (Offer == 4 & rateChoice == 1) ~ -0.05,
              (Offer == 8 & rateChoice == 1) ~ -.075,
@@ -138,24 +139,25 @@ dynamic_gamma <- function(sub, estimatedGamma = 0, alpha = 0.95, meanRate = 0) {
            actualChoice = ifelse(Choice == 1, -0.15, -8),
            optimalChoice = ifelse(optimal == 1, -0.175, -9)) %>%
     ggplot(aes(TrialN, rate)) +
-    geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
-    geom_point(aes(TrialN, trialRate), size = 0.5) +
-    geom_hline(yintercept = estimatedGamma) +
-    geom_line(aes(color = Handling), size = 0.5) +
-    geom_point(aes(color = Handling), size = 1.2) +
-    geom_point(aes(TrialN, offerAccept, fill = factor(Offer, levels = c(4, 8, 20))), color = "black", pch = 21) +
-    geom_point(aes(TrialN, ratebasedChoice), pch = 21, color = "black", fill = "grey20") +
-    geom_point(aes(TrialN, actualChoice), pch = 21, color = "black", fill = "grey50") +
-    geom_point(aes(TrialN, optimalChoice), pch = 21, color = "black", fill = "grey80") +
-    scale_fill_discrete(name = "Offer") +
-    scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
-    ylim(-0.2, NA) +
-    labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
-    theme(panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          panel.background = element_blank(),
-          axis.line = element_line(colour = "black"),
-          text = element_text(size = 16))
+      geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
+      geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
+      geom_hline(yintercept = estimatedGamma) + # single gamma estimated for an individual
+      geom_hline(yintercept = 0.71, linetype = "dashed") + # mean optimal rate across blocks
+      geom_line(aes(color = Handling), size = 0.5) +
+      geom_point(aes(color = Handling), size = 1.2) +
+      # geom_point(aes(TrialN, offerAccept, fill = factor(Offer, levels = c(4, 8, 20))), color = "black", pch = 21) +
+      # geom_point(aes(TrialN, ratebasedChoice), pch = 21, color = "black", fill = "grey20") +
+      # geom_point(aes(TrialN, actualChoice), pch = 21, color = "black", fill = "grey50") +
+      # geom_point(aes(TrialN, optimalChoice), pch = 21, color = "black", fill = "grey80") +
+      scale_fill_discrete(name = "Offer") +
+      scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
+      ylim(0, NA) +
+      labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
+      theme(panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.background = element_blank(),
+            axis.line = element_line(colour = "black"),
+            text = element_text(size = 16))
   
   
   # compare the choices estimated with a single gamma and the rate-based gamma
@@ -191,7 +193,7 @@ dynamic_gamma <- function(sub, estimatedGamma = 0, alpha = 0.95, meanRate = 0) {
 
 ## which models to run?
 baseOC_nloptr <- F
-bOC <- T
+bOC <- F
 baseLogistic <- F # to test whether the brute search converges to a conventional logistic through glm()
 fwOC <- F
 
@@ -280,9 +282,6 @@ if (baseLogistic) {
 }
 
 
-
-##  ADD OTHERS
-
 # Dundon, Garrett, et al (2020)
 # for a single subject, estimating the global gamma as usual is better than an evolving 
 # one using eq 3 on their paper for cost2.
@@ -317,22 +316,22 @@ subjs <- dataBtw %>% plyr::dlply("SubjID", identity)
 #r <- dynamic_gamma(subjs[[1]], 0.98)
 allResults <- lapply(as.character(subjList_btw), function(sub) {dynamic_gamma(subjs[[sub]], 
                                                                               filter(baseOC, SubjID == sub)$gamma, 
-                                                                              meanRate = meanRate$m, 
-                                                                              alpha = 1.01)})
+                                                                              meanRate = 0, 
+                                                                              alpha = 1.1)})
 
-allResults[[10]]$plot
+allResults[[10]]$plot + ylim(0, 4)
 
 # compare the accuracy and negLL between fits 
 # for a fixed alpha of 0.95, it looks like a single gamma works best
 # see 275 for a poor MVT fit from a cognitive participant
-# accuracy
-fits <- sapply(allResults, "[[", "accuracy")
-plot(fits["rate",], fits["single",])
-abline(a = 0, b = 1)
-
-# negLL (note that this type of model comparison might not be well suited)
-plot(sapply(allResults, "[[", "negLL"), baseOC$LL)
-abline(a = 0, b = 1)
+# # accuracy
+# fits <- sapply(allResults, "[[", "accuracy")
+# plot(fits["rate",], fits["single",])
+# abline(a = 0, b = 1)
+# 
+# # negLL (note that this type of model comparison might not be well suited)
+# plot(sapply(allResults, "[[", "negLL"), baseOC$LL)
+# abline(a = 0, b = 1)
 
 # let's fit this alpha parameter
 as <- seq(0.5, 1.5, length.out = 20)
