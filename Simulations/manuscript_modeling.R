@@ -119,11 +119,15 @@ dynamic_gamma <- function(sub, estimatedGamma = 0, alpha = 0.95, meanRate = 0) {
   sub$rate <- g
   summary <- sub %>%
     mutate(value = Offer - (rate * Handling),
+           cumulativeRate = lag(cumsum(Offer * Choice)) / (ExpTime ^ alpha),
+           cumulativeRate_nc = lag(cumsum(Offer)) / (ExpTime ^ alpha),
+           cumulativeRate_nc = ifelse(is.na(cumulativeRate_nc), 0, cumulativeRate_nc),
            rateChoice = ifelse(Offer > (rate * Handling), 1, 0),
+           rateChoice_nc = ifelse(Offer > (cumulativeRate_nc * Handling), 1, 0),
            gammaChoice = ifelse(Offer > (estimatedGamma * Handling), 1, 0),
            rateAcc = Choice == rateChoice,
-           gammaAcc = Choice == gammaChoice,
-           cumulativeRate = lag(cumsum(Offer * Choice)) / (ExpTime ^ alpha))
+           rateAcc_nc = Choice == rateChoice_nc,
+           gammaAcc = Choice == gammaChoice)
   
   
   # plot the evolving gammas
@@ -138,20 +142,23 @@ dynamic_gamma <- function(sub, estimatedGamma = 0, alpha = 0.95, meanRate = 0) {
            ratebasedChoice = ifelse(rateChoice == 1, -0.125, -7),
            actualChoice = ifelse(Choice == 1, -0.15, -8),
            optimalChoice = ifelse(optimal == 1, -0.175, -9)) %>%
-    ggplot(aes(TrialN, rate)) +
+    ggplot(aes(TrialN, cumulativeRate)) +
       geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
       geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
-      geom_hline(yintercept = estimatedGamma) + # single gamma estimated for an individual
+      geom_hline(yintercept = baseOC[id, "gamma"]$gamma) + # single gamma estimated for an individual
       geom_hline(yintercept = 0.71, linetype = "dashed") + # mean optimal rate across blocks
       geom_line(aes(color = Handling), size = 0.5) +
       geom_point(aes(color = Handling), size = 1.2) +
+      geom_line(aes(TrialN, cumulativeRate_nc)) +
+      annotate("text", x = 220, y = baseOC[id, "gamma"]$gamma + 0.25, label = "Fitted \n Gamma", size = 5) +
+      annotate("text", x = 220, y = 0.55, label = "Optimal", size = 5, color = "grey30") +
       # geom_point(aes(TrialN, offerAccept, fill = factor(Offer, levels = c(4, 8, 20))), color = "black", pch = 21) +
       # geom_point(aes(TrialN, ratebasedChoice), pch = 21, color = "black", fill = "grey20") +
       # geom_point(aes(TrialN, actualChoice), pch = 21, color = "black", fill = "grey50") +
       # geom_point(aes(TrialN, optimalChoice), pch = 21, color = "black", fill = "grey80") +
       scale_fill_discrete(name = "Offer") +
       scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
-      ylim(0, NA) +
+      ylim(0, 4) +
       labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
       theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
@@ -168,7 +175,7 @@ dynamic_gamma <- function(sub, estimatedGamma = 0, alpha = 0.95, meanRate = 0) {
               pgammaChoice = mean(gammaChoice))
   
   # what proportion of choices matched participant behavior?
-  accuracy <- round(c(rate = mean(summary$rateAcc), single = mean(summary$gammaAcc)), digits = 2)
+  accuracy <- round(c(rate = mean(summary$rateAcc_nc), single = mean(summary$gammaAcc)), digits = 2)
   
   # get the negative log likelihood of the observations based on the model
   # this is very coarse. Since the model is normative, I did the likelihoods based on either probability 1 or 0 for choices
@@ -196,6 +203,7 @@ baseOC_nloptr <- F
 bOC <- F
 baseLogistic <- F # to test whether the brute search converges to a conventional logistic through glm()
 fwOC <- F
+dOC <- T
 
 # which experimental data?
 data <- dataBtw
@@ -282,6 +290,58 @@ if (baseLogistic) {
 }
 
 
+## Tracking the ongoing rate (observed, not based on chosen, so no need to lag)
+# fix the experimental time to start from 0 and avoid the break
+if (dOC) {
+  print("Running ongoing OC (based on observed offers) using a grid search...")
+  
+  # model to be fit
+  # make sure that you specify the inverse temperature
+  # extra parameters as dfs for now, that's why the `[[1]]`
+  model_expr <- expr(tempr[[1]] * (reward - ((cumsum(reward) / (expTime ^ alpha[[1]])) * handling)))
+  
+  # create a list with possible starting values for model parameters
+  # parameter names must match model ones
+  spaceSize <- 30
+  params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
+                 alpha = seq(0.25, 1.5, length.out = spaceSize))
+  
+  # fit to each subject
+  dynamicOC <- data %>%
+    group_by(SubjID) %>%
+    do(optimizeModel(., params, model_expr, simplify = T)) %>%
+    ungroup()
+}
+
+plot(dynamicOC$LL, baseOC$LL, xlim = c(0, 90), ylim = c(0, 90))
+abline(a = 0, b = 1)
+
+## Tracking the ongoing rate (chosen)
+if (dOC) {
+  print("Running ongoing OC (based on choice history) using a grid search...")
+
+  # model to be fit
+  # make sure that you specify the inverse temperature
+  # extra parameters as dfs for now, that's why the `[[1]]`
+  model_expr <- expr(tempr[[1]] * (reward - ((dplyr::lag(cumsum(reward * choice), default = 0) / (expTime ^ alpha[[1]])) * handling)))
+
+  # create a list with possible starting values for model parameters
+  # parameter names must match model ones
+  spaceSize <- 30
+  params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
+                 alpha = seq(0.25, 1.5, length.out = spaceSize))
+  
+  # fit to each subject
+  dynamicOC_choice <- data %>%
+    group_by(SubjID) %>%
+    do(optimizeModel(., params, model_expr, simplify = T)) %>%
+    ungroup()
+}
+
+plot(dynamicOC_choice$LL, dynamicOC$LL, xlim = c(0, 90), ylim = c(0, 90))
+abline(a = 0, b = 1)
+
+
 # Dundon, Garrett, et al (2020)
 # for a single subject, estimating the global gamma as usual is better than an evolving 
 # one using eq 3 on their paper for cost2.
@@ -319,7 +379,7 @@ allResults <- lapply(as.character(subjList_btw), function(sub) {dynamic_gamma(su
                                                                               meanRate = 0, 
                                                                               alpha = 1.1)})
 
-allResults[[10]]$plot + ylim(0, 4)
+allResults[[1]]
 
 # compare the accuracy and negLL between fits 
 # for a fixed alpha of 0.95, it looks like a single gamma works best
