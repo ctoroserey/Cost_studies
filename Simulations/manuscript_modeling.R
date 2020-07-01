@@ -7,7 +7,7 @@
 # maybe also R-squares and things in the current optimization function
 
 # simpler form of optimization that allows inputting any model expression into a single function call
-optimizeModel <- function(subjData, params, model, simplify = F) {
+optimize_model <- function(subjData, params, model, simplify = F) {
   # this function finds the combination of parameter values that minimizes the neg log likelihood of a logistic regression
   # used to rely on NLOPTR, but it's too cumbersome for the low-dimensional estimates I'm performing.
   #
@@ -15,6 +15,10 @@ optimizeModel <- function(subjData, params, model, simplify = F) {
   # params: a list of vectors. Each vector is the possible values a given parameter can take. Names in list must match model expression
   # model: using `expr()`, define the model (use <param>[[1]] for free parameters to be estimated. R limitation.). Ex: expr(temp[[1]] * (reward - (gamma[[1]] * handling)))
   
+  # remove the break time (variable across subjects) and start counting time from 0 (otherwise it can add physical effort calibration)
+  breakTime <- min(subjData$ExpTime[subjData$Block == 4]) - max(subjData$ExpTime[subjData$Block == 3])
+  subjData$ExpTime[which(subjData$Block > 3)] <- subjData$ExpTime[which(subjData$Block > 3)] - breakTime
+  subjData$ExpTime <- subjData$ExpTime - min(subjData$ExpTime)
   
   # extract basic choice information
   handling <- subjData$Handling
@@ -24,7 +28,7 @@ optimizeModel <- function(subjData, params, model, simplify = F) {
   cost <- subjData$Cost
   trial <- subjData$TrialN
   rawChoice <- subjData$rawChoice
-  expTime <- round(subjData$ExpTime)
+  expTime <- round(subjData$ExpTime) + 0.1 # to avoid dividing 0 by 0
   blockTime <- subjData$blockTime
     
   # combine parameters into every possible combination
@@ -240,7 +244,7 @@ if (bOC) {
   # fit to each subject
   baseOC <- data %>%
     group_by(SubjID) %>%
-    do(optimizeModel(., params, model_expr, simplify = T)) %>%
+    do(optimize_model(., params, model_expr, simplify = T)) %>%
     ungroup()
 }
 
@@ -264,7 +268,7 @@ if (fwOC) {
   # fit to each subject
   fawcettOC <- data %>%
     group_by(SubjID) %>%
-    do(optimizeModel(., params, model_expr, simplify = T)) %>%
+    do(optimize_model(., params, model_expr, simplify = T)) %>%
     ungroup()
 }
 
@@ -285,7 +289,7 @@ if (baseLogistic) {
   # fit to each subject
   baseLogistic <- data %>%
     group_by(SubjID, Cost) %>%
-    do(optimizeModel(., params, model_expr, simplify = T)) %>%
+    do(optimize_model(., params, model_expr, simplify = T)) %>%
     ungroup()
 }
 
@@ -309,11 +313,11 @@ if (dOC) {
   # fit to each subject
   dynamicOC <- data %>%
     group_by(SubjID) %>%
-    do(optimizeModel(., params, model_expr, simplify = T)) %>%
+    do(optimize_model(., params, model_expr, simplify = T)) %>%
     ungroup()
 }
 
-plot(dynamicOC$LL, baseOC$LL, xlim = c(0, 90), ylim = c(0, 90))
+plot(dynamicOC_choice$Rsq, baseOC$Rsq)
 abline(a = 0, b = 1)
 
 ## Tracking the ongoing rate (chosen)
@@ -327,18 +331,18 @@ if (dOC) {
 
   # create a list with possible starting values for model parameters
   # parameter names must match model ones
-  spaceSize <- 30
+  spaceSize <- 50
   params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
-                 alpha = seq(0.25, 1.5, length.out = spaceSize))
+                 alpha = seq(0.25, 2, length.out = spaceSize))
   
   # fit to each subject
   dynamicOC_choice <- data %>%
     group_by(SubjID) %>%
-    do(optimizeModel(., params, model_expr, simplify = T)) %>%
+    do(optimize_model(., params, model_expr, simplify = T)) %>%
     ungroup()
 }
 
-plot(dynamicOC_choice$LL, dynamicOC$LL, xlim = c(0, 90), ylim = c(0, 90))
+plot(dynamicOC_choice$LL, baseOC$LL, xlim = c(0, 90), ylim = c(0, 90))
 abline(a = 0, b = 1)
 
 
