@@ -15,11 +15,6 @@ optimize_model <- function(subjData, params, model, simplify = F) {
   # params: a list of vectors. Each vector is the possible values a given parameter can take. Names in list must match model expression
   # model: using `expr()`, define the model (use <param>[[1]] for free parameters to be estimated. R limitation.). Ex: expr(temp[[1]] * (reward - (gamma[[1]] * handling)))
   
-  # remove the break time (variable across subjects) and start counting time from 0 (otherwise it can add physical effort calibration)
-  breakTime <- min(subjData$ExpTime[subjData$Block == 4]) - max(subjData$ExpTime[subjData$Block == 3])
-  subjData$ExpTime[which(subjData$Block > 3)] <- subjData$ExpTime[which(subjData$Block > 3)] - breakTime
-  subjData$ExpTime <- subjData$ExpTime - min(subjData$ExpTime)
-  
   # extract basic choice information
   handling <- subjData$Handling
   reward <- subjData$Offer
@@ -88,129 +83,46 @@ optimize_model <- function(subjData, params, model, simplify = F) {
   return(out)
 }
 
-# a dynamic estimation of gamma, with resulting plots for MVT-style tracking versus single-parammeter fits
-dynamic_gamma <- function(sub, estimatedGamma = 0, alpha = 0.95, meanRate = 0) {
-  # this function will treat prey foraging in an MVT fashion, using the equation from Dundon et al 2020
-  # sub: a single subject's dataset
-  # estimatedGamma: their single gamma, estimated with the original model
-  # alpha: for the current model, the discounting of the effect of recent time in the updating of gamma (1 = basic Dundon)
-  # meanRate: where to initialize gamma (either 0 or the actual group mean of 0.59 work)
-  
+# remove break time and start counting from 0
+standardize_time <- function(subjData) {
   # remove the break time (variable across subjects) and start counting time from 0 (otherwise it can add physical effort calibration)
-  breakTime <- min(sub$ExpTime[sub$Block == 4]) - max(sub$ExpTime[sub$Block == 3])
-  sub$ExpTime[which(sub$Block > 3)] <- sub$ExpTime[which(sub$Block > 3)] - breakTime
-  sub$ExpTime <- sub$ExpTime - min(sub$ExpTime)
+  breakTime <- min(subjData$ExpTime[subjData$Block == 4]) - max(subjData$ExpTime[subjData$Block == 3])
+  subjData$ExpTime[which(subjData$Block > 3)] <- subjData$ExpTime[which(subjData$Block > 3)] - breakTime
+  subjData$ExpTime <- subjData$ExpTime - min(subjData$ExpTime)
   
-  # calculate gammas as they evolve per trial
-  g <- rep(0, nrow(sub))
-  s <- sub$ExpTime
-  r <- sub$Offer
-  c <- sub$Choice
-  
-  for (trial in seq(nrow(sub))) {
-    if (trial == 1) {
-      g[trial] <- meanRate
-    } else {
-      # base dundon
-      #g[trial] <- ((g[trial - 1] * s[trial - 1]) + (r[trial - 1] * c[trial - 1])) / s[trial]
-      
-      # adapted
-      g[trial] <- ((g[trial - 1] * s[trial - 1]^alpha) + (r[trial - 1] * c[trial - 1])) / (s[trial]^alpha)
-    }
-  }
-  
-  # get the single gamma (base) and coarsely compare the choice fits
-  sub$rate <- g
-  summary <- sub %>%
-    mutate(value = Offer - (rate * Handling),
-           cumulativeRate = lag(cumsum(Offer * Choice)) / (ExpTime ^ alpha),
-           cumulativeRate_nc = lag(cumsum(Offer)) / (ExpTime ^ alpha),
-           cumulativeRate_nc = ifelse(is.na(cumulativeRate_nc), 0, cumulativeRate_nc),
-           rateChoice = ifelse(Offer > (rate * Handling), 1, 0),
-           rateChoice_nc = ifelse(Offer > (cumulativeRate_nc * Handling), 1, 0),
-           gammaChoice = ifelse(Offer > (estimatedGamma * Handling), 1, 0),
-           rateAcc = Choice == rateChoice,
-           rateAcc_nc = Choice == rateChoice_nc,
-           gammaAcc = Choice == gammaChoice)
-  
-  
-  # plot the evolving gammas
-  ratePlot <- summary %>%
-    mutate(trialRate = Offer / Handling,
-           offerAccept = case_when(
-             (Offer == 4 & rateChoice == 1) ~ -0.05,
-             (Offer == 8 & rateChoice == 1) ~ -.075,
-             (Offer == 20 & rateChoice == 1) ~ -0.1,
-             TRUE ~ -6
-           ),
-           ratebasedChoice = ifelse(rateChoice == 1, -0.125, -7),
-           actualChoice = ifelse(Choice == 1, -0.15, -8),
-           optimalChoice = ifelse(optimal == 1, -0.175, -9)) %>%
-    ggplot(aes(TrialN, cumulativeRate)) +
-      geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
-      geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
-      geom_hline(yintercept = baseOC[id, "gamma"]$gamma) + # single gamma estimated for an individual
-      geom_hline(yintercept = 0.71, linetype = "dashed") + # mean optimal rate across blocks
-      geom_line(aes(color = Handling), size = 0.5) +
-      geom_point(aes(color = Handling), size = 1.2) +
-      geom_line(aes(TrialN, cumulativeRate_nc)) +
-      annotate("text", x = 220, y = baseOC[id, "gamma"]$gamma + 0.25, label = "Fitted \n Gamma", size = 5) +
-      annotate("text", x = 220, y = 0.55, label = "Optimal", size = 5, color = "grey30") +
-      # geom_point(aes(TrialN, offerAccept, fill = factor(Offer, levels = c(4, 8, 20))), color = "black", pch = 21) +
-      # geom_point(aes(TrialN, ratebasedChoice), pch = 21, color = "black", fill = "grey20") +
-      # geom_point(aes(TrialN, actualChoice), pch = 21, color = "black", fill = "grey50") +
-      # geom_point(aes(TrialN, optimalChoice), pch = 21, color = "black", fill = "grey80") +
-      scale_fill_discrete(name = "Offer") +
-      scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
-      ylim(0, 4) +
-      labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
-      theme(panel.grid.major = element_blank(),
-            panel.grid.minor = element_blank(),
-            panel.background = element_blank(),
-            axis.line = element_line(colour = "black"),
-            text = element_text(size = 16))
-  
-  
-  # compare the choices estimated with a single gamma and the rate-based gamma
-  choicePatterns <- summary %>%
-    group_by(Handling, Offer) %>%
-    summarise(pAccept = mean(Choice),
-              prateChoice = mean(rateChoice),
-              pgammaChoice = mean(gammaChoice))
-  
-  # what proportion of choices matched participant behavior?
-  accuracy <- round(c(rate = mean(summary$rateAcc_nc), single = mean(summary$gammaAcc)), digits = 2)
-  
-  # get the negative log likelihood of the observations based on the model
-  # this is very coarse. Since the model is normative, I did the likelihoods based on either probability 1 or 0 for choices
-  # this is not like in the single parameter model, where the sigmoidal allows for more continuous probabilities
-  negLL <- summary %>% 
-    mutate(p = ifelse(rateChoice == 1, 0.999, 0.001), 
-           tempChoice = ifelse(Choice == 1, log(p), log(1 - p))) %>%
-    summarise(negLL = -sum(tempChoice))
-  
-  # combine outputs and return 
-  results <- list(summary = summary, 
-                  overallChoices = choicePatterns, 
-                  accuracy = accuracy, 
-                  negLL = negLL$negLL,
-                  plot = ratePlot)
-  
-  
-  return(results)
+  return(subjData)
 }
 
-
+# visually compare the values for a given parameter result across costs
+param_compare_plot <- function(summary, param = "gamma", color = colsBtw, meanRate = 0.74) {
+  plot <- ggplot(summary, aes_string("Cost", param, fill = "Cost")) +
+    geom_hline(yintercept = meanRate, alpha = 0.9, size = 1, linetype = "dashed") + # mean of highest earning rates across blocks
+    geom_boxplot(show.legend = F) +
+    geom_jitter(width = 0.1, alpha = 0.5, show.legend = F, pch = 21, size = 3) +
+    labs(x = "") +
+    scale_fill_manual(values = color) +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(),
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 16))
+  
+  return(plot)
+}
 
 ## which models to run?
 baseOC_nloptr <- F
-bOC <- F
+bOC <- T
 baseLogistic <- F # to test whether the brute search converges to a conventional logistic through glm()
 fwOC <- F
 dOC <- T
 
-# which experimental data?
-data <- dataBtw
+# which experimental dataset?
+data <- dataBtw %>% 
+  group_by(SubjID) %>% 
+  do(standardize_time(.)) %>% 
+  ungroup()
+
 
 
 ## ORIGINAL OC NLOPTR
@@ -243,7 +155,7 @@ if (bOC) {
   
   # fit to each subject
   baseOC <- data %>%
-    group_by(SubjID) %>%
+    group_by(Cost, SubjID) %>%
     do(optimize_model(., params, model_expr, simplify = T)) %>%
     ungroup()
 }
@@ -267,7 +179,7 @@ if (fwOC) {
   
   # fit to each subject
   fawcettOC <- data %>%
-    group_by(SubjID) %>%
+    group_by(Cost, SubjID) %>%
     do(optimize_model(., params, model_expr, simplify = T)) %>%
     ungroup()
 }
@@ -288,65 +200,13 @@ if (baseLogistic) {
   
   # fit to each subject
   baseLogistic <- data %>%
-    group_by(SubjID, Cost) %>%
+    group_by(Cost, SubjID) %>%
     do(optimize_model(., params, model_expr, simplify = T)) %>%
     ungroup()
 }
 
 
-## Tracking the ongoing rate (observed, not based on chosen, so no need to lag)
-# fix the experimental time to start from 0 and avoid the break
-if (dOC) {
-  print("Running ongoing OC (based on observed offers) using a grid search...")
-  
-  # model to be fit
-  # make sure that you specify the inverse temperature
-  # extra parameters as dfs for now, that's why the `[[1]]`
-  model_expr <- expr(tempr[[1]] * (reward - ((cumsum(reward) / (expTime ^ alpha[[1]])) * handling)))
-  
-  # create a list with possible starting values for model parameters
-  # parameter names must match model ones
-  spaceSize <- 30
-  params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
-                 alpha = seq(0.25, 1.5, length.out = spaceSize))
-  
-  # fit to each subject
-  dynamicOC <- data %>%
-    group_by(SubjID) %>%
-    do(optimize_model(., params, model_expr, simplify = T)) %>%
-    ungroup()
-}
-
-plot(dynamicOC_choice$Rsq, baseOC$Rsq)
-abline(a = 0, b = 1)
-
-## Tracking the ongoing rate (chosen)
-if (dOC) {
-  print("Running ongoing OC (based on choice history) using a grid search...")
-
-  # model to be fit
-  # make sure that you specify the inverse temperature
-  # extra parameters as dfs for now, that's why the `[[1]]`
-  model_expr <- expr(tempr[[1]] * (reward - ((dplyr::lag(cumsum(reward * choice), default = 0) / (expTime ^ alpha[[1]])) * handling)))
-
-  # create a list with possible starting values for model parameters
-  # parameter names must match model ones
-  spaceSize <- 50
-  params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
-                 alpha = seq(0.25, 2, length.out = spaceSize))
-  
-  # fit to each subject
-  dynamicOC_choice <- data %>%
-    group_by(SubjID) %>%
-    do(optimize_model(., params, model_expr, simplify = T)) %>%
-    ungroup()
-}
-
-plot(dynamicOC_choice$LL, baseOC$LL, xlim = c(0, 90), ylim = c(0, 90))
-abline(a = 0, b = 1)
-
-
-# Dundon, Garrett, et al (2020)
+## Dundon, Garrett, et al (2020)
 # for a single subject, estimating the global gamma as usual is better than an evolving 
 # one using eq 3 on their paper for cost2.
 # the estimate using their equation overharvests
@@ -360,51 +220,61 @@ abline(a = 0, b = 1)
 # this also seems to apply with within-subject peeps.
 # fix the break time though. That shouldn't be there.
 
-# one possibility for this is that by tracking an evolving rate, sequential quits would reduce the OC, prompting lower reward acceptances
-# instead, our participants don't seem to be influenced by that, having a good and stable sense of the environmental rate
+## Tracking the ongoing rate based on choices
+# to track dynamicOC without choice, remove the lag and choice from the model
+if (dOC) {
+  print("Running ongoing OC (based on choice history) using a grid search...")
 
+  # model to be fit
+  # make sure that you specify the inverse temperature
+  # extra parameters as dfs for now, that's why the `[[1]]`
+  model_expr <- expr(tempr[[1]] * (reward - ((dplyr::lag(cumsum(reward * choice), default = 0) / (expTime ^ alpha[[1]])) * handling)))
 
-# get the base rate of the environment from the final group average
-# starting from 0 converges to a very similar result
-meanRate <- dataBtw %>% 
-  filter(Choice == 1) %>% 
-  group_by(SubjID, Cost, Block) %>%
-  summarise(mEarn = sum(Offer) / max(blockTime)) %>%
-  ungroup() %>%
-  summarise(m = mean(mEarn))
+  # create a list with possible starting values for model parameters
+  # parameter names must match model ones
+  spaceSize <- 30
+  params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
+                 alpha = seq(0.25, 2, length.out = spaceSize))
+  
+  # fit to each subject
+  dynamicOC <- data %>%
+    group_by(Cost, SubjID) %>%
+    do(optimize_model(., params, model_expr, simplify = T)) %>%
+    ungroup()
+}
 
-# which subject to run?
-subjs <- dataBtw %>% plyr::dlply("SubjID", identity)
+param_compare_plot(dynamicOC_choice, param = "alpha", meanRate = NaN)
 
-# fit
-#r <- dynamic_gamma(subjs[[1]], 0.98)
-allResults <- lapply(as.character(subjList_btw), function(sub) {dynamic_gamma(subjs[[sub]], 
-                                                                              filter(baseOC, SubjID == sub)$gamma, 
-                                                                              meanRate = 0, 
-                                                                              alpha = 1.1)})
+# plot the ongoing results
+id <- "105"
 
-allResults[[1]]
-
-# compare the accuracy and negLL between fits 
-# for a fixed alpha of 0.95, it looks like a single gamma works best
-# see 275 for a poor MVT fit from a cognitive participant
-# # accuracy
-# fits <- sapply(allResults, "[[", "accuracy")
-# plot(fits["rate",], fits["single",])
-# abline(a = 0, b = 1)
-# 
-# # negLL (note that this type of model comparison might not be well suited)
-# plot(sapply(allResults, "[[", "negLL"), baseOC$LL)
-# abline(a = 0, b = 1)
-
-# let's fit this alpha parameter
-as <- seq(0.5, 1.5, length.out = 20)
-temp <- lapply(as, function(alpha) {dynamic_gamma(subjs[["58"]], 
-                                                  filter(baseOC, SubjID == "58")$gamma, 
-                                                  meanRate = meanRate$m, 
-                                                  alpha = alpha)})
-
-
+# plot dynamicOC with choice 
+# to plot dynamicOC without choice, remove the lag and choice from cumulativeRate
+data %>%
+  filter(SubjID == id) %>%
+  left_join(dynamicOC_choice, by = "SubjID") %>%
+  mutate(cumulativeRate = dplyr::lag(cumsum(Offer * Choice), default = 0) / (ExpTime ^ alpha),
+         cumulativeRate = ifelse(is.nan(cumulativeRate), 0, cumulativeRate),
+         trialRate = Offer / Handling,
+         trialRate = ifelse(trialRate > 3, 3, trialRate)) %>%
+  ggplot(aes(TrialN, cumulativeRate)) +
+  geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
+  geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
+  geom_hline(yintercept = filter(baseOC, SubjID == id)$gamma) + # single gamma estimated for an individual
+  geom_hline(yintercept = 0.74, linetype = "dashed", color = "grey30") + # mean optimal rate across blocks
+  geom_line(aes(color = Handling), size = 0.5) +
+  geom_point(aes(color = Handling), size = 1.2) +
+  annotate("text", x = 220, y = filter(baseOC, SubjID == id)$gamma + 0.25, label = "Fitted \n Gamma", size = 5) +
+  annotate("text", x = 220, y = 0.55, label = "Optimal", size = 5, color = "grey30") +
+  scale_fill_discrete(name = "Offer") +
+  scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
+  #ylim(0, 3.1) +
+  labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        text = element_text(size = 16))
 
 
 

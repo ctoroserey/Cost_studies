@@ -523,7 +523,7 @@ report_p <- function(pval) {
 }
 ```
 
-```{r Load data for between-subject experiment, echo = FALSE}
+```{r Load data for between-subject experiment, echo = FALSE, warning = F}
 ### data loading and cleaning up
 # forced travels are switched to acceptances, as they reflect a preference for that trial
 # rawChoice will be used to compute the # of mistakes
@@ -583,7 +583,7 @@ nSubjs_btw <- length(subjList_btw)
 
 ```
 
-```{r Load data for within-subject experiment, echo = FALSE}
+```{r Load data for within-subject experiment, echo = FALSE, warning = F}
 # First looks at the new data
 # The RT is upper-bounded because a glitch in the code made one 10s last 14s
 setwd('./Cost3/data/')
