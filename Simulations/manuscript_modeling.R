@@ -243,7 +243,7 @@ if (dOC) {
     ungroup()
 }
 
-param_compare_plot(dynamicOC_choice, param = "alpha", meanRate = NaN)
+param_compare_plot(dynamicOC, param = "alpha", meanRate = NaN)
 
 # plot the ongoing results
 id <- "105"
@@ -252,11 +252,13 @@ id <- "105"
 # to plot dynamicOC without choice, remove the lag and choice from cumulativeRate
 data %>%
   filter(SubjID == id) %>%
-  left_join(dynamicOC_choice, by = "SubjID") %>%
-  mutate(cumulativeRate = dplyr::lag(cumsum(Offer * Choice), default = 0) / (ExpTime ^ alpha),
-         cumulativeRate = ifelse(is.nan(cumulativeRate), 0, cumulativeRate),
-         trialRate = Offer / Handling,
-         trialRate = ifelse(trialRate > 3, 3, trialRate)) %>%
+  left_join(dynamicOC, by = "SubjID") %>%
+  mutate(#cumulativeRate = (dplyr::lag(cumsum(Offer * Choice), default = 0) / ExpTime) ^ eta,
+    #cumulativeRate = ifelse(is.nan(cumulativeRate), 0, cumulativeRate),
+    cumulativeRate = gamma * (Handling / eta),
+    trialRate = Offer, #trialRate = ifelse(trialRate > 3, 3, trialRate)
+    fitChoice = ifelse(trialRate > cumulativeRate, 0.5, -5),
+    newChoice = ifelse(Choice == 0, -5, Choice)) %>% 
   ggplot(aes(TrialN, cumulativeRate)) +
   geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
   geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
@@ -264,11 +266,13 @@ data %>%
   geom_hline(yintercept = 0.74, linetype = "dashed", color = "grey30") + # mean optimal rate across blocks
   geom_line(aes(color = Handling), size = 0.5) +
   geom_point(aes(color = Handling), size = 1.2) +
+  geom_point(aes(TrialN, fitChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+  geom_point(aes(TrialN, newChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
   annotate("text", x = 220, y = filter(baseOC, SubjID == id)$gamma + 0.25, label = "Fitted \n Gamma", size = 5) +
   annotate("text", x = 220, y = 0.55, label = "Optimal", size = 5, color = "grey30") +
   scale_fill_discrete(name = "Offer") +
   scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
-  #ylim(0, 3.1) +
+  ylim(0, NA) +
   labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -279,63 +283,68 @@ data %>%
 
 
 # ## just to test stuff
-# if (dOC) {
-#   print("Running ongoing OC (based on choice history) using a grid search...")
-#   
-#   # model to be fit
-#   # make sure that you specify the inverse temperature
-#   # extra parameters as dfs for now, that's why the `[[1]]`
-#   model_expr <- expr(tempr[[1]] * (reward - ((dplyr::lag(cumsum(reward * choice), default = 0) / (expTime ^ eta[[1]])) * (handling / k[[1]]))))
-#   
-#   # create a list with possible starting values for model parameters
-#   # parameter names must match model ones
-#   spaceSize <- 30
-#   params <- list(tempr = seq(-1, 1, length.out = spaceSize),
-#                  eta = seq(-5, 5, length.out = spaceSize),
-#                  k = seq(1, 20, length.out = spaceSize))
-#   
-#   # fit to each subject
-#   dynamicOC <- data %>%
-#     group_by(Cost, SubjID) %>%
-#     do(optimize_model(., params, model_expr, simplify = T)) %>%
-#     ungroup()
-# }
-# 
-# plot(baseOC$LL, dynamicOC$LL)
-# abline(0, 1)
-# 
-# param_compare_plot(dynamicOC, param = "k", meanRate = NaN)
-# 
-# # plot the ongoing results
-# id <- "190"
-# 
-# # plot dynamicOC with choice 
-# # to plot dynamicOC without choice, remove the lag and choice from cumulativeRate
-# data %>%
-#   filter(SubjID == id) %>%
-#   left_join(dynamicOC, by = "SubjID") %>%
-#   mutate(cumulativeRate = dplyr::lag(cumsum(Offer * Choice), default = 0) / (ExpTime ^ eta),
-#          cumulativeRate = ifelse(is.nan(cumulativeRate), 0, cumulativeRate),
-#          trialRate = Offer / Handling / k,
-#          trialRate = ifelse(trialRate > 3, 3, trialRate)) %>%
-#   ggplot(aes(TrialN, cumulativeRate)) +
-#   geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
-#   geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
-#   geom_hline(yintercept = filter(baseOC, SubjID == id)$gamma) + # single gamma estimated for an individual
-#   geom_hline(yintercept = 0.74, linetype = "dashed", color = "grey30") + # mean optimal rate across blocks
-#   geom_line(aes(color = Handling), size = 0.5) +
-#   geom_point(aes(color = Handling), size = 1.2) +
-#   annotate("text", x = 220, y = filter(baseOC, SubjID == id)$gamma + 0.25, label = "Fitted \n Gamma", size = 5) +
-#   annotate("text", x = 220, y = 0.55, label = "Optimal", size = 5, color = "grey30") +
-#   scale_fill_discrete(name = "Offer") +
-#   scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
-#   #ylim(0, 3.1) +
-#   labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
-#   theme(panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         panel.background = element_blank(),
-#         axis.line = element_line(colour = "black"),
-#         text = element_text(size = 16))
+# temp <- data %>% group_by(SubjID, Cost, Handling, Offer) %>% summarise(mAccept = mean(Choice))
+
+model_expr <- expr(tempr[[1]] * (reward - ((dplyr::lag(cumsum(reward * choice), default = 0) / (expTime ^ eta[[1]])) * (handling / k[[1]]))))
+model_expr <- expr(tempr[[1]] * (reward - ((dplyr::lag(cumsum(reward * choice), default = 0) / expTime) ^ eta[[1]]) * handling)) # == single rate somehow
+model_expr <- expr(tempr[[1]] * (reward - gamma[[1]] * (handling ^ eta[[1]])))
+
+# create a list with possible starting values for model parameters
+# parameter names must match model ones
+spaceSize <- 30
+params <- list(tempr = seq(-1, 1, length.out = spaceSize),
+               gamma = seq(0.25, 1.2, length.out = spaceSize),
+               eta = seq(-2, 5, length.out = spaceSize))
+
+# fit to each subject
+dynamicOC <- data %>%
+  filter(Cost != "Easy") %>%
+  group_by(Cost, SubjID) %>%
+  do(optimize_model(., params, model_expr, simplify = T)) %>%
+  ungroup()
+
+
+plot(filter(baseOC, Cost != "Easy")$LL, dynamicOC$LL)
+abline(0, 1)
+
+param_compare_plot(dynamicOC, param = "gamma", meanRate = NaN)
+
+# plot the ongoing results
+id <- "190"
+
+# plot dynamicOC with choice 
+# to plot dynamicOC without choice, remove the lag and choice from cumulativeRate
+data %>%
+  filter(SubjID == id) %>%
+  left_join(dynamicOC, by = "SubjID") %>%
+  mutate(#cumulativeRate = (dplyr::lag(cumsum(Offer * Choice), default = 0) / ExpTime) ^ eta,
+    #cumulativeRate = ifelse(is.nan(cumulativeRate), 0, cumulativeRate),
+    cumulativeRate = gamma * (Handling / eta),
+    trialRate = Offer, #trialRate = ifelse(trialRate > 3, 3, tria  lRate)
+    fitChoice = ifelse(trialRate > cumulativeRate, 0.5, -5),
+    newChoice = ifelse(Choice == 0, -5, Choice)) %>% 
+  ggplot(aes(TrialN, cumulativeRate)) +
+  geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
+  geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
+  geom_hline(yintercept = filter(baseOC, SubjID == id)$gamma) + # single gamma estimated for an individual
+  geom_hline(yintercept = 0.74, linetype = "dashed", color = "grey30") + # mean optimal rate across blocks
+  geom_line(aes(color = Handling), size = 0.5) +
+  geom_point(aes(color = Handling), size = 1.2) +
+  geom_point(aes(TrialN, fitChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+  geom_point(aes(TrialN, newChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+  annotate("text", x = 220, y = filter(baseOC, SubjID == id)$gamma + 0.25, label = "Fitted \n Gamma", size = 5) +
+  annotate("text", x = 220, y = 0.55, label = "Optimal", size = 5, color = "grey30") +
+  scale_fill_discrete(name = "Offer") +
+  scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
+  ylim(0, NA) +
+  labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        text = element_text(size = 16))
+
+summary(aov(gamma ~ Cost, data = dynamicOC))
 
 
 
