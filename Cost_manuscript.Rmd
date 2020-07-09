@@ -546,6 +546,7 @@ dataBtw <- tibble(SubjID = files) %>%
   mutate(rawChoice = Choice, 
          RT = ifelse(RT > 14.1, 14, RT),
          Choice = ifelse(Choice == 2, 1, Choice), # forced travels (2) become acceptances (1)
+         Completed = ifelse(rawChoice == 2, 0, rawChoice),
          Half = ifelse(Block < 4, "Half_1", "Half_2"),
          Cost = factor(Cost, levels = c("Physical", "Cognitive", "Wait", "Easy")),
          optimal = case_when(
@@ -601,6 +602,7 @@ dataWth <- data_frame(SubjID = files) %>%
   rename(TrialN = X1) %>%
   mutate(rawChoice = Choice,
          Choice = ifelse(Choice == 2, 1, Choice),
+         Completed = ifelse(rawChoice == 2, 0, rawChoice),
          Cost = case_when(Cost == "WAIT_0" ~ "Wait-C",
                            Cost == "COGNITIVE_0" ~ "Cognitive",
                            Cost == "GRIP_1" ~ "Physical",
