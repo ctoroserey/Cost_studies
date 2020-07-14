@@ -402,6 +402,8 @@ if (twOC) {
     group_by(Cost, SubjID) %>%
     do(optimize_model_dyn(., params, simplify = T)) %>%
     ungroup()
+  
+  trialwiseOC <- trialwiseOC[-c(18, 19), ] # some people are re-run for some reason
 }
 
 param_compare_plot(trialwiseOC, "tempr")
