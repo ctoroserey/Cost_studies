@@ -7,6 +7,7 @@
 # maybe also R-squares and things in the current optimization function
 
 # simpler form of optimization that allows inputting any model expression into a single function call
+# only good for static models
 optimize_model <- function(subjData, params, model, simplify = F) {
   # this function finds the combination of parameter values that minimizes the neg log likelihood of a logistic regression
   # used to rely on NLOPTR, but it's too cumbersome for the low-dimensional estimates I'm performing.
@@ -83,11 +84,111 @@ optimize_model <- function(subjData, params, model, simplify = F) {
   return(out)
 }
 
+# for a trial-wise acceptance version. Add model expression eventually
+optimize_model_dyn <- function(subjData, params, simplify = F) {
+  # get every combination of parameters
+  params <- expand.grid(params)
+  
+  # relevant behavior elements
+  o <- subjData$Offer
+  h <- subjData$Handling
+  c <- subjData$Choice
+  a <- o * c # accepted offers
+  time <- subjData$ExpTime
+  tau <- time - dplyr::lag(time, default = 0) # how long has it been since the last update?
+  
+  # Prep list of results to be returned
+  out <- list()
+  out$percentQuit <- mean(c == 0) * 100
+  out$percentAccept <- mean(c == 1) * 100 
+  
+  # iterate through possible parameters and get the LL
+  LLs <- sapply(seq(nrow(params)), function(i) {
+    # isolate the parameters for this iteration
+    # and then store them as variables
+    tempr <- params[i, 1]
+    alpha <- params[i, 2]
+    
+    # update rule (inspired by Constantino and Daw, 2015)
+    gamma <- rep(0, nrow(subjData))
+    
+    # calculate gammas
+    for (i in seq(nrow(sub))) {
+      if (i == 1) {
+        gamma[i] <- 0.25
+      } else {
+        
+        # delta <- (o[i] / h[i]) - gamma[i]
+        # gamma[i + 1] <- gamma[i] + (1 - (1 - alpha) ^ h[1]) * delta
+        gamma[i] <- (((1 - alpha) ^ tau[i]) * (a[i - 1] / tau[i])) + (1 - (1 - alpha) ^ tau[i]) * gamma[i - 1] # maybe expr(model)
+      }
+    }
+    
+    # estimate the probability of acceptance per the model
+    p = 1 / (1 + exp(tempr * (o - (gamma * h))))
+    p[p == 1] <- 0.999
+    p[p == 0] <- 0.001
+    
+    # get the likelihood of the observations based on the model
+    tempChoice <- rep(NA, length(c))
+    tempChoice[c == 1] <- log(p[c == 1])
+    tempChoice[c == 0] <- log(1 - p[c == 0]) # log of probability of choice 1 when choice 0 occurred
+    negLL <- -sum(tempChoice)
+  } 
+  )
+  
+  # chosen parameters  
+  out$LL <- min(LLs)
+  chosen_params <- params[which(LLs == out$LL), ]
+  lapply(seq_along(chosen_params), function(variable) {assign(colnames(chosen_params)[variable], chosen_params[variable], envir = .GlobalEnv)})
+  
+  # Summarize the outputs
+  out$LL0 <- -(log(0.5) * length(c))
+  out$Rsquared <- 1 - (out$LL / out$LL0) # pseudo r-squared, quantifying the proportion of deviance reduction vs chance
+  out$loglikSpace <- LLs # in case you want to examine the concavity of the likelihood space
+  
+  # get the optimized gamma to export the probability of acceptance
+  # update rule (inspired by Constantino and Daw, 2015)
+  gamma <- rep(0, nrow(subjData))
+  
+  # calculate gammas
+  for (i in seq(nrow(sub))) {
+    if (i == 1) {
+      gamma[i] <- 0.25
+    } else {
+      
+      # delta <- (o[i] / h[i]) - gamma[i]
+      # gamma[i + 1] <- gamma[i] + (1 - (1 - alpha) ^ h[1]) * delta
+      gamma[i] <- (((1 - alpha[[1]]) ^ tau[i]) * (a[i - 1] / tau[i])) + (1 - (1 - alpha[[1]]) ^ tau[i]) * gamma[i - 1] # maybe expr(model)
+    }
+  }
+  
+  out$probAccept <- 1 / (1 + exp(tempr[[1]] * (o - (gamma * h))))
+  out$Params <- chosen_params
+  #out$predicted <- reward > out$subjOC
+  #out$predicted[out$predicted == TRUE] <- 1
+  #out$percentPredicted <- mean(out$predicted == choice) 
+  
+  # if doing this with dplyr::do(), return a simplified data.frame instead with the important parameters
+  if (simplify) {
+    out <- round(data.frame(out[-c(6, 7)]), digits = 2)
+    colnames(out) <- c("percentQuit",
+                       "percentAccept",
+                       "LL",
+                       "LL0",
+                       "Rsq",
+                       colnames(chosen_params))
+  }
+  
+  return(out)
+  
+}
+
 # remove break time and start counting from 0
 standardize_time <- function(subjData) {
   # remove the break time (variable across subjects) and start counting time from 0 (otherwise it can add physical effort calibration)
   breakTime <- min(subjData$ExpTime[subjData$Block == 4]) - max(subjData$ExpTime[subjData$Block == 3])
-  subjData$ExpTime[which(subjData$Block > 3)] <- subjData$ExpTime[which(subjData$Block > 3)] - breakTime
+  subjData$ExpTime[which(subjData$Block > 3)] <- subjData$ExpTime[which(subjData$Block > 3)] - breakTime + 16
   subjData$ExpTime <- subjData$ExpTime - min(subjData$ExpTime)
   
   return(subjData)
@@ -116,9 +217,10 @@ bOC <- T
 baseLogistic <- F # to test whether the brute search converges to a conventional logistic through glm()
 fwOC <- F
 dOC <- T
+twOC <- T
 
 # which experimental dataset?
-data <- dataBtw %>% 
+data <- dataWth %>% 
   group_by(SubjID) %>% 
   do(standardize_time(.)) %>% 
   ungroup()
@@ -282,70 +384,25 @@ data %>%
 
 
 
-# ## just to test stuff
-# temp <- data %>% group_by(SubjID, Cost, Handling, Offer) %>% summarise(mAccept = mean(Choice))
-
-model_expr <- expr(tempr[[1]] * (reward - ((dplyr::lag(cumsum(reward * choice), default = 0) / (expTime ^ eta[[1]])) * (handling / k[[1]]))))
-model_expr <- expr(tempr[[1]] * (reward - ((dplyr::lag(cumsum(reward * choice), default = 0) / expTime) ^ eta[[1]]) * handling)) # == single rate somehow
-model_expr <- expr(tempr[[1]] * (reward - gamma[[1]] * (handling ^ eta[[1]])))
-
-# create a list with possible starting values for model parameters
-# parameter names must match model ones
-spaceSize <- 30
-params <- list(tempr = seq(-1, 1, length.out = spaceSize),
-               gamma = seq(0.25, 1.2, length.out = spaceSize),
-               eta = seq(-2, 5, length.out = spaceSize))
-
-# fit to each subject
-dynamicOC <- data %>%
-  filter(Cost != "Easy") %>%
-  group_by(Cost, SubjID) %>%
-  do(optimize_model(., params, model_expr, simplify = T)) %>%
-  ungroup()
+## trial-wise updating of gamma
+if (twOC) {
+  print("Running trial-wise OC model through grid search...")
+  
+  # create a list with possible starting values for model parameters
+  # parameter names must match model ones
+  spaceSize <- 30
+  params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
+                 alpha = seq(0, 1, length.out = spaceSize))
+  
+  # fit to each subject
+  trialwiseOC <- data %>%
+    group_by(SubjID) %>%
+    do(optimize_model_dyn(., params, simplify = T)) %>%
+    ungroup()
+}
 
 
-plot(filter(baseOC, Cost != "Easy")$LL, dynamicOC$LL)
-abline(0, 1)
-
-param_compare_plot(dynamicOC, param = "gamma", meanRate = NaN)
-
-# plot the ongoing results
-id <- "190"
-
-# plot dynamicOC with choice 
-# to plot dynamicOC without choice, remove the lag and choice from cumulativeRate
-data %>%
-  filter(SubjID == id) %>%
-  left_join(dynamicOC, by = "SubjID") %>%
-  mutate(#cumulativeRate = (dplyr::lag(cumsum(Offer * Choice), default = 0) / ExpTime) ^ eta,
-    #cumulativeRate = ifelse(is.nan(cumulativeRate), 0, cumulativeRate),
-    cumulativeRate = gamma * (Handling / eta),
-    trialRate = Offer, #trialRate = ifelse(trialRate > 3, 3, tria  lRate)
-    fitChoice = ifelse(trialRate > cumulativeRate, 0.5, -5),
-    newChoice = ifelse(Choice == 0, -5, Choice)) %>% 
-  ggplot(aes(TrialN, cumulativeRate)) +
-  geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
-  geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
-  geom_hline(yintercept = filter(baseOC, SubjID == id)$gamma) + # single gamma estimated for an individual
-  geom_hline(yintercept = 0.74, linetype = "dashed", color = "grey30") + # mean optimal rate across blocks
-  geom_line(aes(color = Handling), size = 0.5) +
-  geom_point(aes(color = Handling), size = 1.2) +
-  geom_point(aes(TrialN, fitChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
-  geom_point(aes(TrialN, newChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
-  annotate("text", x = 220, y = filter(baseOC, SubjID == id)$gamma + 0.25, label = "Fitted \n Gamma", size = 5) +
-  annotate("text", x = 220, y = 0.55, label = "Optimal", size = 5, color = "grey30") +
-  scale_fill_discrete(name = "Offer") +
-  scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
-  ylim(0, NA) +
-  labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        axis.line = element_line(colour = "black"),
-        text = element_text(size = 16))
-
-summary(aov(gamma ~ Cost, data = dynamicOC))
-
+#plot
 
 
 

@@ -556,7 +556,8 @@ dataBtw <- tibble(SubjID = files) %>%
           )
          ) %>%
   group_by(SubjID, Block) %>%
-  mutate(blockTime = ExpTime - min(ExpTime)) %>%
+  mutate(blockTime = ExpTime - min(ExpTime),
+         blockElapsed = blockTime - dplyr::lag(blockTime, default = 0)) %>% # how much time elapsed between trials, counting per block
   ungroup()
 
 # load the cognitive task performance logs
