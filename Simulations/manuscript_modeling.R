@@ -332,8 +332,7 @@ data <- dataBtw %>%
 if (baseOC_nloptr) {
   print("Running base OC model on NLOPTR...")
   
-  summaryOC <- list()
-  summaryOC$all <- data %>%
+  summaryOC <- data %>%
     group_by(Cost, SubjID) %>%
     do(optimizeOCModel(., simplify = T)) %>%
     ungroup()
@@ -498,6 +497,7 @@ if (twOC) {
   
   # between subject exp
   trialwiseOC_btw <- dataBtw %>%
+    filter(Cost != "Easy") %>%
     group_by(Cost, SubjID) %>%
     do(optimize_model_dyn(., params, simplify = T)) %>%
     ungroup() %>%
