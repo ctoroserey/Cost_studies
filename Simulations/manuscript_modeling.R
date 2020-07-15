@@ -154,7 +154,7 @@ optimize_model_dyn <- function(subjData, params, simplify = F, gammaStart = 0.6)
   # calculate gammas
   for (j in seq(nrow(subjData))) {
     if (j == 1) {
-      gamma[j] <- 0.25
+      gamma[j] <- gammaStart
     } else {
       gamma[j] <- (((1 - alpha[[1]]) ^ tau[j]) * (a[j - 1] / tau[j])) + (1 - (1 - alpha[[1]]) ^ tau[j]) * gamma[j - 1] # maybe expr(model)
     }
@@ -211,7 +211,7 @@ param_compare_plot <- function(summary, param = "gamma", color = colsBtw, meanRa
 
 
 # plot the results from the dynamic model for a single individual
-plot_dyn <- function(id = "58", exp = "btw") {
+plot_dyn <- function(id = "58", exp = "btw", gammaOne = 0.6) {
   
   if (exp == "btw") {
     # choose subject + params
@@ -221,7 +221,7 @@ plot_dyn <- function(id = "58", exp = "btw") {
                    alpha = seq(0, 1, length.out = spaceSize))
     
     # run model
-    temp <- optimize_model_dyn(sub, params, simplify = F)
+    temp <- optimize_model_dyn(sub, params, simplify = F, gammaStart = gammaOne)
     
     # get baseline gamma from a simple fit
     # model to be fit
@@ -279,7 +279,7 @@ plot_dyn <- function(id = "58", exp = "btw") {
                    alpha = seq(0, 1, length.out = spaceSize))
     
     # run model
-    temp <- optimize_model_dyn(sub, params, simplify = F)
+    temp <- optimize_model_dyn(sub, params, simplify = F, gammaStart = gammaOne)
     
     # plot
     ratePlot <- sub %>%
@@ -501,14 +501,15 @@ if (twOC) {
     group_by(Cost, SubjID) %>%
     do(optimize_model_dyn(., params, simplify = T)) %>%
     ungroup() %>%
-    distinct(SubjID)
+    distinct(SubjID, .keep_all = T)
   
   
   # between subject exp
   trialwiseOC_wth <- dataWth %>% 
     group_by(SubjID) %>%
     do(optimize_model_dyn(., params, simplify = T)) %>%
-    ungroup()
+    ungroup() %>%
+    distinct(SubjID, .keep_all = T)
 }
 
 param_compare_plot(trialwiseOC_btw, "alpha")
