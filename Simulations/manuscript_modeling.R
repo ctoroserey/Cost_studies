@@ -85,7 +85,7 @@ optimize_model <- function(subjData, params, model, simplify = F) {
 }
 
 # for a trial-wise acceptance version. Add model expression eventually
-optimize_model_dyn <- function(subjData, params, simplify = F) {
+optimize_model_dyn <- function(subjData, params, simplify = F, gammaStart = 0.6) {
   # get every combination of parameters
   params <- expand.grid(params)
   
@@ -115,7 +115,7 @@ optimize_model_dyn <- function(subjData, params, simplify = F) {
     # calculate gammas
     for (i in seq(nrow(subjData) - 1)) {
       if (i == 1) {
-        gamma[i] <- 0.25
+        gamma[i] <- gammaStart
       } else {
         
         # delta <- (o[i] / h[i]) - gamma[i]
@@ -239,7 +239,7 @@ plot_dyn <- function(id = "58", exp = "btw") {
     baseOC <- optimize_model(sub, params, model_expr, simplify = T)
     
     # plot
-    sub %>%
+    ratePlot <- sub %>%
       mutate(trialRate = Offer / Handling,
              g = temp$rate,
              fitChoice = ifelse(trialRate > g, -0.25, -5),
@@ -270,6 +270,7 @@ plot_dyn <- function(id = "58", exp = "btw") {
             panel.background = element_blank(),
             axis.line = element_line(colour = "black"),
             text = element_text(size = 16))
+    
   } else if (exp == "wth") {
     # choose subject + params
     sub <- filter(dataWth, SubjID == id)
@@ -281,7 +282,7 @@ plot_dyn <- function(id = "58", exp = "btw") {
     temp <- optimize_model_dyn(sub, params, simplify = F)
     
     # plot
-    sub %>%
+    ratePlot <- sub %>%
       mutate(trialRate = Offer / Handling,
              g = temp$rate,
              fitChoice = ifelse(trialRate > g, -0.25, -5),
@@ -310,6 +311,8 @@ plot_dyn <- function(id = "58", exp = "btw") {
             axis.line = element_line(colour = "black"),
             text = element_text(size = 16))
   }
+  
+  suppressWarnings(print(ratePlot))
 }
 
 ## which models to run?
