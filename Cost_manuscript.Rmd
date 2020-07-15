@@ -555,6 +555,8 @@ dataBtw <- tibble(SubjID = files) %>%
           TRUE ~ 1
           )
          ) %>%
+  group_by(SubjID) %>% 
+  do(standardize_time(.)) %>% 
   group_by(SubjID, Block) %>%
   mutate(blockTime = ExpTime - min(ExpTime),
          blockElapsed = blockTime - dplyr::lag(blockTime, default = 0)) %>% # how much time elapsed between trials, counting per block
@@ -611,6 +613,8 @@ dataWth <- data_frame(SubjID = files) %>%
          Cost = as.factor(Cost)) %>%
   group_by(SubjID) %>%
   mutate(BlockOrder = ifelse(Btype[1] == 0, "Cognitive1st", "Physical1st")) %>%
+  group_by(SubjID) %>% 
+  do(standardize_time(.)) %>% 
   group_by(SubjID, Block) %>%
   mutate(blockTime = ExpTime - min(ExpTime)) %>%
   ungroup()
