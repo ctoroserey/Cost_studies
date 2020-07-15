@@ -113,7 +113,7 @@ optimize_model_dyn <- function(subjData, params, simplify = F) {
     gamma <- rep(0, nrow(subjData))
     
     # calculate gammas
-    for (i in seq(nrow(subjData))) {
+    for (i in seq(nrow(subjData) - 1)) {
       if (i == 1) {
         gamma[i] <- 0.25
       } else {
@@ -152,14 +152,11 @@ optimize_model_dyn <- function(subjData, params, simplify = F) {
   gamma <- rep(0, nrow(subjData))
   
   # calculate gammas
-  for (i in seq(nrow(subjData))) {
-    if (i == 1) {
-      gamma[i] <- 0.25
+  for (j in seq(nrow(subjData))) {
+    if (j == 1) {
+      gamma[j] <- 0.25
     } else {
-      
-      # delta <- (o[i] / h[i]) - gamma[i]
-      # gamma[i + 1] <- gamma[i] + (1 - (1 - alpha) ^ h[1]) * delta
-      gamma[i] <- (((1 - alpha[[1]]) ^ tau[i]) * (a[i - 1] / tau[i])) + (1 - (1 - alpha[[1]]) ^ tau[i]) * gamma[i - 1] # maybe expr(model)
+      gamma[j] <- (((1 - alpha[[1]]) ^ tau[j]) * (a[j - 1] / tau[j])) + (1 - (1 - alpha[[1]]) ^ tau[j]) * gamma[j - 1] # maybe expr(model)
     }
   }
   
