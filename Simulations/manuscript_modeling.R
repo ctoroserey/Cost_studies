@@ -299,7 +299,7 @@ param_compare_plot <- function(summary, param = "gamma", color = colsBtw, meanRa
 }
 
 # plot the results from the dynamic model for a single individual
-plot_dyn <- function(id = "58", exp = "btw", gammaOne = 0.6) {
+plot_dyn <- function(id = "58", exp = "btw", gammaOne = 0) {
   
   if (exp == "btw") {
     # choose subject + params
@@ -351,7 +351,7 @@ plot_dyn <- function(id = "58", exp = "btw", gammaOne = 0.6) {
       annotate("text", x = 200, y = -0.5, label = "Observed choices", size = 3) +
       scale_fill_discrete(name = "Offer") +
       scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
-      ylim(-1, NA) +
+      ylim(-0.6, NA) +
       labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
       theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
@@ -391,7 +391,7 @@ plot_dyn <- function(id = "58", exp = "btw", gammaOne = 0.6) {
       annotate("text", x = 200, y = -0.5, label = "Observed choices", size = 3) +
       scale_fill_discrete(name = "Offer") +
       scale_color_manual(values = colsWth) +
-      ylim(-1, NA) +
+      ylim(-0.6, NA) +
       labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
       theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
@@ -402,7 +402,7 @@ plot_dyn <- function(id = "58", exp = "btw", gammaOne = 0.6) {
   
   suppressWarnings(print(ratePlot))
 }
-plot_dyn_us <- function(id = "58", exp = "btw", gammaOne = 0.6) {
+plot_dyn_us <- function(id = "58", exp = "btw", gammaOne = 0) {
   
   if (exp == "btw") {
     # choose subject + params
@@ -455,7 +455,7 @@ plot_dyn_us <- function(id = "58", exp = "btw", gammaOne = 0.6) {
       annotate("text", x = 200, y = -0.5, label = "Observed choices", size = 3) +
       scale_fill_discrete(name = "Offer") +
       scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
-      ylim(-1, NA) +
+      ylim(-0.6, NA) +
       labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
       theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
@@ -466,7 +466,7 @@ plot_dyn_us <- function(id = "58", exp = "btw", gammaOne = 0.6) {
   } else if (exp == "wth") {
     # choose subject + params
     sub <- filter(dataWth, SubjID == id)
-    spaceSize <- 100
+    spaceSize <- 30
     params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
                    alpha = seq(0, 1, length.out = spaceSize),
                    k = seq(-1, 1, length.out = spaceSize))
@@ -496,7 +496,7 @@ plot_dyn_us <- function(id = "58", exp = "btw", gammaOne = 0.6) {
       annotate("text", x = 200, y = -0.5, label = "Observed choices", size = 3) +
       scale_fill_discrete(name = "Offer") +
       scale_color_manual(values = colsWth) +
-      ylim(-1, NA) +
+      ylim(-0.6, NA) +
       labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
       theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
@@ -683,8 +683,8 @@ if (dOC) {
 if (twOC) {
   print("Running trial-wise OC model through grid search...")
   
+  ## vanilla C&W (slightly adapted for prey selection)
   # create a list with possible starting values for model parameters
-  # parameter names must match model ones
   spaceSize <- 30
   params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
                  alpha = seq(0, 1, length.out = spaceSize))
@@ -704,9 +704,33 @@ if (twOC) {
     do(optimize_model_dyn(., params, simplify = T)) %>%
     ungroup() %>%
     distinct(SubjID, .keep_all = T)
+  
+  
+  ## modified with non linear time
+  # create a list with possible starting values for model parameters
+  params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
+                 alpha = seq(0, 1, length.out = spaceSize),
+                 k = seq(-2, 2, length.out = spaceSize))
+  
+  # between subject exp
+  trialwiseOC_btw_us <- dataBtw %>%
+    filter(Cost != "Easy") %>%
+    group_by(Cost, SubjID) %>%
+    do(optimize_model_dyn_us(., params, simplify = T)) %>%
+    ungroup() %>%
+    distinct(SubjID, .keep_all = T)
+  
+  
+  # between subject exp
+  trialwiseOC_wth_us <- dataWth %>% 
+    group_by(SubjID) %>%
+    do(optimize_model_dyn_us(., params, simplify = T)) %>%
+    ungroup() %>%
+    distinct(SubjID, .keep_all = T)
+  
 }
 
-param_compare_plot(trialwiseOC_btw, "alpha")
+param_compare_plot(trialwiseOC_btw_us, "k")
 
 #plot
 
