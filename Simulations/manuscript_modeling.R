@@ -345,10 +345,10 @@ plot_dyn <- function(id = "58", exp = "btw", gammaOne = 0) {
       geom_point(aes(TrialN, fitChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
       geom_point(aes(TrialN, newChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
       #geom_point(aes(TrialN, pChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
-      annotate("text", x = 220, y = baseOC$gamma + 0.25, label = "Fitted \n Gamma", size = 5) +
-      annotate("text", x = 220, y = 0.55, label = "Optimal", size = 5, color = "grey30") +
-      annotate("text", x = 200, y = -0.25, label = "Predicted choices", size = 3) +
-      annotate("text", x = 200, y = -0.5, label = "Observed choices", size = 3) +
+      annotate("text", x = max(sub$TrialN) + 8, y = baseOC$gamma + 0.25, label = "Fitted \n Gamma", size = 5) +
+      annotate("text", x = max(sub$TrialN) + 8, y = 0.55, label = "Optimal", size = 5, color = "grey30") +
+      annotate("text", x = max(sub$TrialN), y = -0.3, label = "Predicted choices", size = 3) +
+      annotate("text", x = max(sub$TrialN), y = -0.55, label = "Observed choices", size = 3) +
       scale_fill_discrete(name = "Offer") +
       scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
       ylim(-0.6, NA) +
@@ -386,9 +386,9 @@ plot_dyn <- function(id = "58", exp = "btw", gammaOne = 0) {
       geom_point(aes(color = Cost), size = 1.2) +
       geom_point(aes(TrialN, fitChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
       geom_point(aes(TrialN, newChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
-      annotate("text", x = 220, y = 0.63, label = "Optimal", size = 5, color = "grey30") +
-      annotate("text", x = 200, y = -0.25, label = "Predicted choices", size = 3) +
-      annotate("text", x = 200, y = -0.5, label = "Observed choices", size = 3) +
+      annotate("text", x = max(sub$TrialN) + 8, y = 0.63, label = "Optimal", size = 5, color = "grey30") +
+      annotate("text", x = max(sub$TrialN), y = -0.3, label = "Predicted choices", size = 3) +
+      annotate("text", x = max(sub$TrialN), y = -0.55, label = "Observed choices", size = 3) +
       scale_fill_discrete(name = "Offer") +
       scale_color_manual(values = colsWth) +
       ylim(-0.6, NA) +
@@ -449,10 +449,10 @@ plot_dyn_us <- function(id = "58", exp = "btw", gammaOne = 0) {
       geom_point(aes(TrialN, fitChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
       geom_point(aes(TrialN, newChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
       #geom_point(aes(TrialN, pChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
-      annotate("text", x = 220, y = baseOC$gamma + 0.25, label = "Fitted \n Gamma", size = 5) +
-      annotate("text", x = 220, y = 0.55, label = "Optimal", size = 5, color = "grey30") +
-      annotate("text", x = 200, y = -0.25, label = "Predicted choices", size = 3) +
-      annotate("text", x = 200, y = -0.5, label = "Observed choices", size = 3) +
+      annotate("text", x = max(sub$TrialN) + 8, y = baseOC$gamma + 0.25, label = "Fitted \n Gamma", size = 5) +
+      annotate("text", x = max(sub$TrialN) + 8, y = 0.55, label = "Optimal", size = 5, color = "grey30") +
+      annotate("text", x = max(sub$TrialN), y = -0.3, label = "Predicted choices", size = 3) +
+      annotate("text", x = max(sub$TrialN), y = -0.55, label = "Observed choices", size = 3) +
       scale_fill_discrete(name = "Offer") +
       scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
       ylim(-0.6, NA) +
@@ -491,9 +491,9 @@ plot_dyn_us <- function(id = "58", exp = "btw", gammaOne = 0) {
       geom_point(aes(color = Cost), size = 1.2) +
       geom_point(aes(TrialN, fitChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
       geom_point(aes(TrialN, newChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
-      annotate("text", x = 220, y = 0.63, label = "Optimal", size = 5, color = "grey30") +
-      annotate("text", x = 200, y = -0.25, label = "Predicted choices", size = 3) +
-      annotate("text", x = 200, y = -0.5, label = "Observed choices", size = 3) +
+      annotate("text", x = max(sub$TrialN) + 8, y = 0.63, label = "Optimal", size = 5, color = "grey30") +
+      annotate("text", x = max(sub$TrialN), y = -0.3, label = "Predicted choices", size = 3) +
+      annotate("text", x = max(sub$TrialN), y = -0.55, label = "Observed choices", size = 3) +
       scale_fill_discrete(name = "Offer") +
       scale_color_manual(values = colsWth) +
       ylim(-0.6, NA) +
