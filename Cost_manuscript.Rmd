@@ -21,7 +21,7 @@ header-includes:
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.pos = 'H')
 ```
 
-```{r Setups, include = FALSE}
+```{r Setups, include = FALSE, warning = FALSE}
 ## libraries
 library(tidyverse)
 library(ggfortify)
@@ -520,6 +520,16 @@ report_p <- function(pval) {
   adapted_p <- ifelse(pval < 0.001, "< 0.001", paste("=", round(pval, digits = 3)))
   
   return(adapted_p)
+}
+
+# remove break time and start counting from 0
+standardize_time <- function(subjData) {
+  # remove the break time (variable across subjects) and start counting time from 0 (otherwise it can add physical effort calibration)
+  breakTime <- min(subjData$ExpTime[subjData$Block == 4]) - max(subjData$ExpTime[subjData$Block == 3])
+  subjData$ExpTime[which(subjData$Block > 3)] <- subjData$ExpTime[which(subjData$Block > 3)] - breakTime + 16
+  subjData$ExpTime <- subjData$ExpTime - min(subjData$ExpTime)
+  
+  return(subjData)
 }
 ```
 
