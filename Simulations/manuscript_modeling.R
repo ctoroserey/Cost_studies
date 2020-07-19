@@ -705,7 +705,266 @@ if (twOC) {
 }
 
 #plot
-param_compare_plot(trialwiseOC_btw, "alpha", meanRate = 1) + ylim(0, 0.12)
+param_compare_plot(trialwiseOC_btw_us, "k", meanRate = 1) 
+
+
+### test
+# taking the cumulative average of the subjective time perception makes subjective overall time seem slower.
+# a free parameter could be added to index the degree to which participants cared about this (replaces k as a free parameter, since k is adopted from exp 1)
+# weird that the higher the weight on cum_means, the lower the OC ie less selective. Think about it.
+optimize_model_dyn_us2 <- function(subjData, params, simplify = F, gammaStart = 0) {
+  # get every combination of parameters
+  params <- expand.grid(params)
+  
+  # relevant behavior elements
+  o <- subjData$Offer
+  h <- subjData$Handling
+  t <- 20 - h
+  c <- subjData$Choice
+  a <- o * c # accepted offers
+  k <- subjData$mK
+  time <- subjData$ExpTime
+  
+  # Prep list of results to be returned
+  out <- list()
+  out$percentQuit <- mean(c == 0) * 100
+  out$percentAccept <- mean(c == 1) * 100 
+  
+  # iterate through possible parameters and get the LL
+  LLs <- sapply(seq(nrow(params)), function(i) {
+    # isolate the parameters for this iteration
+    # and then store them as variables
+    tempr <- params[i, "tempr"]
+    alpha <- params[i, "alpha"]
+    if ("k" %in% colnames(params)) {
+      k <- params[i, "k"] # if there is a free k parameter, use its fit, otherwise use the values from exp1
+    }
+    tau <- lag((h ^ k * c) + t) # we dont expect cognitive to affect total time, just the handling time
+    
+    # update rule (inspired by Constantino and Daw, 2015)
+    gamma <- rep(0, nrow(subjData))
+    
+    # calculate gammas
+    for (i in seq(nrow(subjData) - 1)) {
+      if (i == 1) {
+        gamma[i] <- gammaStart
+      } else {
+        
+        # delta <- (o[i] / h[i]) - gamma[i]
+        # gamma[i + 1] <- gamma[i] + (1 - (1 - alpha) ^ h[1]) * delta
+        #gamma[i] <- (((1 - alpha) ^ tau[i]) * (a[i - 1] / tau[i])) + (1 - (1 - alpha) ^ tau[i]) * gamma[i - 1]
+        gamma[i] <- ((1 - (1 - alpha) ^ tau[i]) * (a[i - 1] / tau[i])) + ((1 - alpha) ^ tau[i]) * gamma[i - 1] # switched version that means higher alpha = more learning
+      }
+    }
+    
+    # estimate the probability of acceptance per the model
+    p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ k)))))
+    p[p == 1] <- 0.999
+    p[p == 0] <- 0.001
+    
+    # get the likelihood of the observations based on the model
+    tempChoice <- rep(NA, length(c))
+    tempChoice[c == 1] <- log(p[c == 1])
+    tempChoice[c == 0] <- log(1 - p[c == 0]) # log of probability of choice 1 when choice 0 occurred
+    negLL <- -sum(tempChoice)
+  } 
+  )
+  
+  # chosen parameters  
+  out$LL <- min(LLs)
+  chosen_params <- params[which(LLs == out$LL), ]
+  lapply(seq_along(chosen_params), function(variable) {assign(colnames(chosen_params)[variable], chosen_params[variable], envir = .GlobalEnv)})
+  
+  # Summarize the outputs
+  out$LL0 <- -(log(0.5) * length(c))
+  out$Rsquared <- 1 - (out$LL / out$LL0) # pseudo r-squared, quantifying the proportion of deviance reduction vs chance
+  out$loglikSpace <- LLs # in case you want to examine the concavity of the likelihood space
+  
+  # get the optimized gamma to export the probability of acceptance
+  # update rule (inspired by Constantino and Daw, 2015)
+  gamma <- rep(0, nrow(subjData))
+  if ("k" %in% colnames(params)) {
+    k <- k[[1]] 
+  } 
+  tau <- lag((h ^ k * c) + t)
+  
+  # calculate gammas
+  for (j in seq(nrow(subjData))) {
+    if (j == 1) {
+      gamma[j] <- gammaStart
+    } else {
+      #gamma[j] <- (((1 - alpha[[1]]) ^ tau[j]) * (a[j - 1] / tau[j])) + (1 - (1 - alpha[[1]]) ^ tau[j]) * gamma[j - 1]
+      gamma[j] <- ((1 - (1 - alpha[[1]]) ^ tau[j]) * (a[j - 1] / tau[j])) + ((1 - alpha[[1]]) ^ tau[j]) * gamma[j - 1]
+    } 
+  }
+  
+  out$rate <- gamma
+  out$probAccept <- 1 / (1 + exp(-(tempr[[1]] * (o - (gamma * h ^ k)))))
+  out$Params <- chosen_params
+  #out$predicted <- reward > out$subjOC
+  #out$predicted[out$predicted == TRUE] <- 1
+  #out$percentPredicted <- mean(out$predicted == choice) 
+  
+  # if doing this with dplyr::do(), return a simplified data.frame instead with the important parameters
+  if (simplify) {
+    out <- round(data.frame(out[-c(6, 7, 8)]), digits = 2)
+    colnames(out) <- c("percentQuit",
+                       "percentAccept",
+                       "LL",
+                       "LL0",
+                       "Rsq",
+                       colnames(chosen_params))
+  }
+  
+  return(out)
+}
+
+plot_dyn_us2 <- function(id = "58", exp = "btw", gammaOne = 0) {
+  
+  if (exp == "btw") {
+    # choose subject + params
+    sub <- filter(dataBtw, SubjID == id)
+    spaceSize <- 30
+    params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
+                   alpha = seq(0, 1, length.out = spaceSize),
+                   k = seq(-1, 1, length.out = spaceSize))
+    
+    # run model
+    temp <- optimize_model_dyn_us(sub, params, simplify = F, gammaStart = gammaOne)
+    
+    # get baseline gamma from a simple fit
+    # model to be fit
+    # make sure that you specify the inverse temperature
+    # extra parameters as dfs for now, that's why the `[[1]]`
+    model_expr <- expr(tempr[[1]] * (reward - (gamma[[1]] * handling)))
+    
+    # create a list with possible starting values for model parameters
+    # parameter names must match model ones
+    spaceSize <- 30
+    params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
+                   gamma = seq(0.25, 1.5, length.out = spaceSize))
+    
+    # fit to subject
+    baseOC <- optimize_model(sub, params, model_expr, simplify = T)
+    
+    # plot
+    ratePlot <- sub %>%
+      mutate(trialRate = Offer / Handling,
+             g = temp$rate,
+             fitChoice = ifelse(trialRate > g, -0.25, -5),
+             newChoice = ifelse(Choice == 1, -0.5, -5),
+             trialRate = ifelse(trialRate > 3, 3, trialRate),
+             pChoice = temp$probAccept,
+             g = ifelse(g > 3, 3.2, g)) %>%
+      ggplot(aes(TrialN, g)) +
+      geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
+      geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
+      geom_hline(yintercept = baseOC$gamma) + # single gamma estimated for an individual
+      geom_hline(yintercept = 0.74, linetype = "dashed", color = "grey30") + # mean optimal rate across blocks
+      geom_line(aes(color = Handling), size = 0.5) +
+      geom_point(aes(color = Handling), size = 1.2) +
+      geom_point(aes(TrialN, fitChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+      geom_point(aes(TrialN, newChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+      #geom_point(aes(TrialN, pChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+      annotate("text", x = max(sub$TrialN) + 8, y = baseOC$gamma + 0.25, label = "Fitted \n Gamma", size = 5) +
+      annotate("text", x = max(sub$TrialN) + 8, y = 0.55, label = "Optimal", size = 5, color = "grey30") +
+      annotate("text", x = max(sub$TrialN), y = -0.3, label = "Predicted choices", size = 3) +
+      annotate("text", x = max(sub$TrialN), y = -0.55, label = "Observed choices", size = 3) +
+      scale_fill_discrete(name = "Offer") +
+      scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
+      ylim(-0.6, NA) +
+      labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
+      theme(panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.background = element_blank(),
+            axis.line = element_line(colour = "black"),
+            text = element_text(size = 16))
+    
+  } else if (exp == "wth") {
+    # choose subject + params
+    sub <- filter(dataWth, SubjID == id)
+    spaceSize <- 30
+    params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
+                   alpha = seq(0, 1, length.out = spaceSize))
+    
+    # run model
+    temp <- optimize_model_dyn_us2(sub, params, simplify = F, gammaStart = gammaOne)
+    
+    # plot
+    ratePlot <- sub %>%
+      mutate(trialRate = Offer / Handling,
+             g = temp$rate,
+             fitChoice = ifelse(trialRate > g, -0.25, -5),
+             newChoice = ifelse(Choice == 1, -0.5, -5),
+             trialRate = ifelse(trialRate > 3, 3, trialRate),
+             pChoice = temp$probAccept,
+             g = ifelse(g > 3, 3.2, g)) %>%
+      ggplot(aes(TrialN, g)) +
+      geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
+      geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
+      geom_hline(yintercept = 0.7, linetype = "dashed", color = "grey30") + # mean optimal rate across blocks
+      geom_line(size = 0.5, color = "grey50") +
+      geom_point(aes(color = Cost), size = 1.2) +
+      geom_point(aes(TrialN, fitChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+      geom_point(aes(TrialN, newChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+      annotate("text", x = max(sub$TrialN) + 8, y = 0.63, label = "Optimal", size = 5, color = "grey30") +
+      annotate("text", x = max(sub$TrialN), y = -0.3, label = "Predicted choices", size = 3) +
+      annotate("text", x = max(sub$TrialN), y = -0.55, label = "Observed choices", size = 3) +
+      scale_fill_discrete(name = "Offer") +
+      scale_color_manual(values = colsWth) +
+      ylim(-0.6, NA) +
+      labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
+      theme(panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.background = element_blank(),
+            axis.line = element_line(colour = "black"),
+            text = element_text(size = 16))
+  }
+  
+  suppressWarnings(print(ratePlot))
+}
+
+# ma <- function(x, n = 5){
+#   as.numeric(stats::filter(x, rep(1 / n, n), sides = 2))
+# }
+
+#btw ks
+ks <- trialwiseOC_btw_us %>% 
+  group_by(Cost) %>% 
+  summarise(mK = median(k))
+
+# reset data: dataWth <- dataWth %>% select(-mK)
+# also, consider only updating time when the offer was accepted: so cum_mean(mK * Choice) (doesn't matter, since h ^ k is multiplied by choice anyways)
+dataWth <- dataWth %>% select(-mK)
+if (! "mK" %in% colnames(dataWth)) {
+  dataWth <- dataWth %>%
+    mutate(Cost = ifelse(Cost %in% c("Wait-C", "Wait-P"), "Wait", as.character(Cost))) %>%
+    left_join(ks, by = "Cost") %>%
+    group_by(SubjID) %>%
+    mutate(laggedK = dplyr::lag(mK, default = 0),
+           mK = mK * Choice,
+           mK = ifelse(mK == 0, laggedK, mK),
+           mK = cumsum(mK) / TrialN,
+           mK = mK * 0.2) %>% # maybe this can be the weight given to this average, a free param
+    ungroup()
+}
+
+spaceSize <- 30
+params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
+               alpha = seq(0, 1, length.out = spaceSize))
+
+# trialwiseOC_wth_us2 <- dataWth %>%
+#   group_by(SubjID) %>%
+#   do(optimize_model_dyn_us2(., params, simplify = T)) %>%
+#   ungroup() %>%
+#   distinct(SubjID, .keep_all = T)
+
+trialwiseOC_wth_us2
+id <- "109"
+
+plot_dyn_us2(id, exp = "wth", gammaOne = 0.2)
+plot_dyn_us(id, exp = "wth", gammaOne = 0.2)
+
 
 
 
