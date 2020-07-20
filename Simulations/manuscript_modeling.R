@@ -1082,18 +1082,19 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
   out$rate <- as.numeric() # to store the winning gammas
   out$pAccept <- as.numeric() # probability of acceptance for winning parameters
   out$fit_c <- as.numeric() # to store the winning fitted choices
-  out$LL <- 100000000000
+  out$LLs <- rep(0, nrow(params))
+  out$LL <- Inf
   
   # iterate through possible parameters and get the LL
   #LLs <- sapply(seq(nrow(params)), function(i) {
-  for (i in seq(nrow(params))) {
+  for (param in seq(nrow(params))) {
     # isolate the parameters for this iteration
     # and then store them as variables
-    tempr <- params[i, "tempr"]
-    alpha <- params[i, "alpha"]
+    tempr <- params[param, "tempr"]
+    alpha <- params[param, "alpha"]
     if ("k" %in% colnames(params)) {
       # use a vector so I can use a common indexing for fixed and to-be-fitted values of k
-      k <- rep(params[i, "k"], nrow(subjData)) # if there is a free k parameter, use its fit, otherwise use the values from exp1
+      k <- rep(params[param, "k"], nrow(subjData)) # if there is a free k parameter, use its fit, otherwise use the values from exp1
     } else {
       k <- subjData$mK
     }
@@ -1126,13 +1127,15 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
     tempChoice[obs_c == 0] <- log(1 - p[obs_c == 0]) # log of probability of choice 1 when choice 0 occurred
     negLL <- -sum(tempChoice)
     
+    out$LLs[param] <- negLL
+    
     # if these parameters improve the fit, store the rate and choices
     if (negLL < out$LL) {
       #write(negLL, stdout())
       out$LL <- negLL
       out$rate <- gamma
       out$fit_c <- c
-      out$params <- params[i, ]
+      out$params <- params[param, ]
       out$pAccept <- p
     }
   } 
@@ -1143,7 +1146,7 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
   
   # if doing this with dplyr::do(), return a simplified data.frame instead with the important parameters
   if (simplify) {
-    out <- round(data.frame(out[-c(4, 5, 6)]), digits = 2)
+    out <- round(data.frame(out[-c(4, 5, 6, 7)]), digits = 2)
     colnames(out) <- c("percentQuit",
                        "percentAccept",
                        colnames(params),
@@ -1154,7 +1157,6 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
   
   return(out)
 }
-
 
 plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0) {
   
