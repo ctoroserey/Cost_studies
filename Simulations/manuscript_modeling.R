@@ -1289,12 +1289,12 @@ plot_alphas <- function(alphas, k = 1, exp = "btw", gammaStart = 0) {
       for (j in seq(nrow(sub))) {
         if (j == 1) {
           gamma[j] <- gammaStart
-          c[j] <- ifelse(o[j] / h[j] > gamma[j], 1, 0)
+          c[j] <- ifelse(o[j] / (h[j] ^ k) > gamma[j], 1, 0)
         } else {
           tau <- (h[j - 1] ^ k * c[j - 1]) + t[j - 1]
           a <- o[j - 1] * c[j - 1]
           gamma[j] <- ((1 - (1 - alpha) ^ tau) * (a / tau)) + ((1 - alpha) ^ tau) * gamma[j - 1]
-          c[j] <- ifelse(o[j] / h[j] > gamma[j], 1, 0)
+          c[j] <- ifelse(o[j] / (h[j] ^ k) > gamma[j], 1, 0)
         } 
       }
       
@@ -1374,12 +1374,12 @@ plot_alphas <- function(alphas, k = 1, exp = "btw", gammaStart = 0) {
       for (j in seq(nrow(sub))) {
         if (j == 1) {
           gamma[j] <- gammaStart
-          c[j] <- ifelse(o[j] / h[j] > gamma[j], 1, 0)
+          c[j] <- ifelse(o[j] / h[j] ^ k> gamma[j], 1, 0)
         } else {
           tau <- (h[j - 1] ^ k * c[j - 1]) + t[j - 1]
           a <- o[j - 1] * c[j - 1]
           gamma[j] <- ((1 - (1 - alpha) ^ tau) * (a / tau)) + ((1 - alpha) ^ tau) * gamma[j - 1]
-          c[j] <- ifelse(o[j] / h[j] > gamma[j], 1, 0)
+          c[j] <- ifelse(o[j] / h[j] ^ k > gamma[j], 1, 0)
         } 
       }
       
