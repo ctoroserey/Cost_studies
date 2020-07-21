@@ -957,7 +957,6 @@ optimize_model_dyn_us2 <- function(subjData, params, simplify = F, gammaStart = 
   
   return(out)
 }
-
 plot_dyn_us2 <- function(id = "58", exp = "btw", gammaOne = 0) {
   
   if (exp == "btw") {
@@ -1157,7 +1156,6 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
   
   return(out)
 }
-
 plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0) {
   
   if (exp == "btw") {
@@ -1196,28 +1194,28 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0) {
              pChoice = temp$probAccept,
              g = ifelse(g > 3, 3.2, g)) %>%
       ggplot(aes(TrialN, g)) +
-      geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
-      geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
-      geom_hline(yintercept = baseOC$gamma) + # single gamma estimated for an individual
-      geom_hline(yintercept = 0.74, linetype = "dashed", color = "grey30") + # mean optimal rate across blocks
-      geom_line(aes(color = Handling), size = 0.5) +
-      geom_point(aes(color = Handling), size = 1.2) +
-      geom_point(aes(TrialN, fitChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
-      geom_point(aes(TrialN, newChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
-      #geom_point(aes(TrialN, pChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
-      annotate("text", x = max(sub$TrialN) + 8, y = baseOC$gamma + 0.25, label = "Fitted \n Gamma", size = 5) +
-      annotate("text", x = max(sub$TrialN) + 8, y = 0.55, label = "Optimal", size = 5, color = "grey30") +
-      annotate("text", x = max(sub$TrialN), y = -0.3, label = "Predicted choices", size = 3) +
-      annotate("text", x = max(sub$TrialN), y = -0.55, label = "Observed choices", size = 3) +
-      scale_fill_discrete(name = "Offer") +
-      scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
-      ylim(-0.6, NA) +
-      labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
-      theme(panel.grid.major = element_blank(),
-            panel.grid.minor = element_blank(),
-            panel.background = element_blank(),
-            axis.line = element_line(colour = "black"),
-            text = element_text(size = 16))
+        geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
+        geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
+        geom_hline(yintercept = baseOC$gamma) + # single gamma estimated for an individual
+        geom_hline(yintercept = 0.74, linetype = "dashed", color = "grey30") + # mean optimal rate across blocks
+        geom_line(aes(color = Handling), size = 0.5) +
+        geom_point(aes(color = Handling), size = 1.2) +
+        geom_point(aes(TrialN, fitChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+        geom_point(aes(TrialN, newChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+        #geom_point(aes(TrialN, pChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+        annotate("text", x = max(sub$TrialN) + 8, y = baseOC$gamma + 0.25, label = "Fitted \n Gamma", size = 5) +
+        annotate("text", x = max(sub$TrialN) + 8, y = 0.55, label = "Optimal", size = 5, color = "grey30") +
+        annotate("text", x = max(sub$TrialN), y = -0.3, label = "Predicted choices", size = 3) +
+        annotate("text", x = max(sub$TrialN), y = -0.55, label = "Observed choices", size = 3) +
+        scale_fill_discrete(name = "Offer") +
+        scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
+        ylim(-0.6, NA) +
+        labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
+        theme(panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_blank(),
+              axis.line = element_line(colour = "black"),
+              text = element_text(size = 16))
     
   } else if (exp == "wth") {
     # choose subject + params
@@ -1239,33 +1237,30 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0) {
              pChoice = temp$probAccept,
              g = ifelse(g > 3, 3.2, g)) %>%
       ggplot(aes(TrialN, g)) +
-      geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
-      geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
-      geom_hline(yintercept = 0.7, linetype = "dashed", color = "grey30") + # mean optimal rate across blocks
-      geom_line(size = 0.5, color = "grey50") +
-      geom_point(aes(color = Cost), size = 1.2) +
-      geom_point(aes(TrialN, fitChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
-      geom_point(aes(TrialN, newChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
-      annotate("text", x = max(sub$TrialN) + 8, y = 0.63, label = "Optimal", size = 5, color = "grey30") +
-      annotate("text", x = max(sub$TrialN), y = -0.3, label = "Predicted choices", size = 3) +
-      annotate("text", x = max(sub$TrialN), y = -0.55, label = "Observed choices", size = 3) +
-      scale_fill_discrete(name = "Offer") +
-      scale_color_manual(values = colsWth) +
-      ylim(-0.6, NA) +
-      labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
-      theme(panel.grid.major = element_blank(),
-            panel.grid.minor = element_blank(),
-            panel.background = element_blank(),
-            axis.line = element_line(colour = "black"),
-            text = element_text(size = 16))
+        geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
+        geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
+        geom_hline(yintercept = 0.7, linetype = "dashed", color = "grey30") + # mean optimal rate across blocks
+        geom_line(size = 0.5, color = "grey50") +
+        geom_point(aes(color = Cost), size = 1.2) +
+        geom_point(aes(TrialN, fitChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+        geom_point(aes(TrialN, newChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+        annotate("text", x = max(sub$TrialN) + 8, y = 0.63, label = "Optimal", size = 5, color = "grey30") +
+        annotate("text", x = max(sub$TrialN), y = -0.3, label = "Predicted choices", size = 3) +
+        annotate("text", x = max(sub$TrialN), y = -0.55, label = "Observed choices", size = 3) +
+        scale_fill_discrete(name = "Offer") +
+        scale_color_manual(values = colsWth) +
+        ylim(-0.6, NA) +
+        labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
+        theme(panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_blank(),
+              axis.line = element_line(colour = "black"),
+              text = element_text(size = 16))
   }
   
   suppressWarnings(print(ratePlot))
 }
 
-
-#base choices off evolving gamma, not past observed participant choices
-#this might be an issue
 plot_alphas <- function(alpha, k = 1, exp = "btw", gammaStart = 0) {
   # parameter setting
   
@@ -1406,7 +1401,6 @@ plot_alphas <- function(alpha, k = 1, exp = "btw", gammaStart = 0) {
   fitChoice <- ifelse(o / h > gamma, 1, 0)
   return(sum(fitChoice == sub$Choice) / nrow(sub))
 }
-
 plot_alphas2 <- function(alpha, k = 1, exp = "btw", gammaStart = 0) {
   if (exp == "btw") {
     # choose sample subject + params
@@ -1546,11 +1540,20 @@ plot_alphas2 <- function(alpha, k = 1, exp = "btw", gammaStart = 0) {
   return(sum(c == sub$Choice) / nrow(sub))
 }
 
-# ma <- function(x, n = 5){
-#   as.numeric(stats::filter(x, rep(1 / n, n), sides = 2))
-# }
 
-#btw ks
+# fit btw exp
+params <- list(tempr = seq(0, 2, length.out = spaceSize), 
+               alpha = seq(0, 1, length.out = spaceSize),
+               k = seq(0, 2, length.out = spaceSize))
+
+trialwiseOC_btw_us_new <- dataBtw %>%
+  filter(Cost != "Easy") %>%
+  group_by(Cost, SubjID) %>%
+  do(optimize_model_dyn_us3(., params, simplify = T)) %>%
+  ungroup() %>%
+  distinct(SubjID, .keep_all = T)
+
+#btw ks to apply to wth
 ks <- trialwiseOC_btw_us %>% 
   group_by(Cost) %>% 
   summarise(mK = median(k))
@@ -1565,21 +1568,22 @@ if (! "mK" %in% colnames(dataWth)) {
     group_by(SubjID) %>%
     mutate(laggedK = dplyr::lag(mK, default = 0),
            mK = mK * Choice,
-           mK = ifelse(mK == 0, laggedK, mK),
+           mK = ifelse(mK == 0, laggedK, mK), # shady interpolation, otherwise 0s bring averages down
            mK = cumsum(mK) / TrialN,
-           mK = mK * 0.2) %>% # maybe this can be the weight given to this average, a free param
+           mK = mK * 1) %>% # maybe this can be the weight given to this average, a free param
     ungroup()
 }
 
+# fit wth
 spaceSize <- 30
 params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
                alpha = seq(0, 1, length.out = spaceSize))
 
-# trialwiseOC_wth_us2 <- dataWth %>%
-#   group_by(SubjID) %>%
-#   do(optimize_model_dyn_us2(., params, simplify = T)) %>%
-#   ungroup() %>%
-#   distinct(SubjID, .keep_all = T)
+trialwiseOC_wth_us_new <- dataWth %>%
+  group_by(SubjID) %>%
+  do(optimize_model_dyn_us3(., params, simplify = T)) %>%
+  ungroup() %>%
+  distinct(SubjID, .keep_all = T)
 
 trialwiseOC_wth_us2
 id <- "109"
