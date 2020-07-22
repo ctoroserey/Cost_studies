@@ -1235,7 +1235,7 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0) {
     
     # plot
     ratePlot <- sub %>%
-      mutate(trialRate = Offer / Handling,
+      mutate(trialRate = Offer / Handling ^ mK,
              g = temp$rate,
              fitChoice = ifelse(trialRate > g, -0.25, -5),
              newChoice = ifelse(Choice == 1, -0.5, -5),
@@ -1245,12 +1245,12 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0) {
       ggplot(aes(TrialN, g)) +
         geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
         geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
-        geom_hline(yintercept = 0.7, linetype = "dashed", color = "grey30") + # mean optimal rate across blocks
+        #geom_hline(yintercept = 0.7, linetype = "dashed", color = "grey30") + # mean optimal rate across blocks
         geom_line(size = 0.5, color = "grey50") +
         geom_point(aes(color = Cost), size = 1.2) +
         geom_point(aes(TrialN, fitChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
         geom_point(aes(TrialN, newChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
-        annotate("text", x = max(sub$TrialN) + 8, y = 0.63, label = "Optimal", size = 5, color = "grey30") +
+        #annotate("text", x = max(sub$TrialN) + 8, y = 0.63, label = "Optimal", size = 5, color = "grey30") +
         annotate("text", x = max(sub$TrialN), y = -0.3, label = "Predicted choices", size = 3) +
         annotate("text", x = max(sub$TrialN), y = -0.55, label = "Observed choices", size = 3) +
         scale_fill_discrete(name = "Offer") +
@@ -1452,7 +1452,7 @@ trialwiseOC_btw_us_new <- dataBtw %>%
   distinct(SubjID, .keep_all = T)
 
 #btw ks to apply to wth
-ks <- trialwiseOC_btw_us %>% 
+ks <- trialwiseOC_btw_us_new %>% 
   group_by(Cost) %>% 
   summarise(mK = median(k))
 
