@@ -1169,7 +1169,7 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0) {
     sub <- filter(dataBtw, SubjID == id)
     spaceSize <- 30
     params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-                   alpha = seq(0, 1, length.out = spaceSize),
+                   alpha = seq(0.001, 1, length.out = spaceSize),
                    k = seq(-1, 1, length.out = spaceSize))
     
     # run model
@@ -1228,7 +1228,7 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0) {
     sub <- filter(dataWth, SubjID == id)
     spaceSize <- 30
     params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
-                   alpha = seq(0, 1, length.out = spaceSize))
+                   alpha = seq(0.001, 1, length.out = spaceSize))
     
     # run model
     temp <- optimize_model_dyn_us3(sub, params, simplify = F, gammaStart = gammaOne)
@@ -1441,7 +1441,7 @@ plot_alphas <- function(alphas, k = 1, exp = "btw", gammaStart = 0) {
 
 # fit btw exp
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-               alpha = seq(0, 1, length.out = spaceSize),
+               alpha = seq(0.001, 1, length.out = spaceSize),
                k = seq(-1, 2, length.out = spaceSize))
 
 trialwiseOC_btw_us_new <- dataBtw %>%
@@ -1475,7 +1475,7 @@ if (! "mK" %in% colnames(dataWth)) {
 # fit wth
 spaceSize <- 30
 params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
-               alpha = seq(0, 1, length.out = spaceSize))
+               alpha = seq(0.001, 1, length.out = spaceSize))
 
 trialwiseOC_wth_us_new <- dataWth %>%
   group_by(SubjID) %>%
@@ -1483,11 +1483,11 @@ trialwiseOC_wth_us_new <- dataWth %>%
   ungroup() %>%
   distinct(SubjID, .keep_all = T)
 
-trialwiseOC_wth_us2
-id <- "109"
 
-plot_dyn_us2(id, exp = "wth", gammaOne = 0.2)
-plot_dyn_us(id, exp = "wth", gammaOne = 0.2)
+id <- "109"
+plot_dyn_us(id, exp = "wth", gammaOne = 0.2) # using observed choices to calculate rate
+plot_dyn_us2(id, exp = "wth", gammaOne = 0.2) # using ongoing model choices to calculate rate
+plot_dyn_us3(id, exp = "wth", gammaOne = 0.2) # like 2, but with non-linearity of time adopted from exp 1
 
 
 
