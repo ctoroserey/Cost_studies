@@ -64,8 +64,8 @@ optimize_model <- function(subjData, params, model, simplify = F) {
   out$LL0 <- -(log(0.5) * length(choice))
   out$Rsquared <- 1 - (out$LL / out$LL0) # pseudo r-squared, quantifying the proportion of deviance reduction vs chance
   out$loglikSpace <- LLs # in case you want to examine the concavity of the likelihood space
-  out$probAccept <- 1 / (1 + exp(-eval(model)))
-  out$Params <- chosen_params
+  out$pAccept <- 1 / (1 + exp(-eval(model)))
+  out$params <- chosen_params
   #out$predicted <- reward > out$subjOC
   #out$predicted[out$predicted == TRUE] <- 1
   #out$percentPredicted <- mean(out$predicted == choice) 
@@ -1433,7 +1433,7 @@ plot_alphas <- function(alphas, k = 1, exp = "btw", gammaStart = 0) {
   
   acc <- temp %>% 
     group_by(alpha) %>%
-    summarise(accuracy = sum(c == Choice) / max(TrialN))
+    summarise(accuracy = mean(c == Choice))
   
   return(acc)
 }
@@ -1490,6 +1490,180 @@ plot_dyn_us2(id, exp = "wth", gammaOne = 0.2) # using ongoing model choices to c
 plot_dyn_us3(id, exp = "wth", gammaOne = 0.2) # like 2, but with non-linearity of time adopted from exp 1
 
 
+# attempt to recover the observed results from 16.2.2, reproducing the prop-completed plot
+### Between subjects
+# so far both single gamma and alpha + k perform well, though the latter is preferred due to explanatory power and generalization to exp 2
+recover_results_btw <- function(fitsList, binary = F) {
+  fits <- do.call(c, sapply(fitsList, "[", "pAccept"))
+  if (binary) {
+    # to get stochastic-less choices
+    fits <- ifelse(fits > 0.5, 1, 0)
+  }
+  data <- dataBtw %>%
+    filter(Cost != "Easy") %>%
+    mutate(fitChoice = fits) #rbinom(length(fits), 1, fits))
+  
+  
+  data %>%
+    group_by(SubjID, Cost, Handling, Offer, optimal) %>%
+    summarise(pAccept = mean(fitChoice)) %>%
+    group_by(Cost, Handling, Offer, optimal) %>%
+    summarise(meanComplete = mean(pAccept),
+              SE = sd(pAccept) / sqrt(length(pAccept))) %>%
+    ggplot(aes(interaction(Offer, Handling), meanComplete, color = Cost)) + 
+    geom_point(size = 3) + 
+    geom_errorbar(aes(ymin = meanComplete - SE, ymax = meanComplete + SE), width = 0.2, size = 1) +
+    geom_line(aes(group = interaction(Handling, Cost)), size = 1) +
+    geom_point(aes(y = round(optimal)), shape = 21, fill = "grey75", color = "grey30", size = 3, show.legend = F) +
+    labs(x = "Offer.Handling", y = "Proportion Accepted") +
+    scale_color_manual(values = colsBtw) +
+    theme(legend.key = element_blank(),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 12))
+  
+}
 
 
+### Result recovery
+### Between subjects
+# attempt to recover the observed results from 16.2.2, reproducing the prop-completed plot
+# so far both single gamma and alpha + k perform well, though the latter is preferred due to explanatory power and generalization to exp 2
+recover_results_btw <- function(fitsList, binary = F) {
+  # extract fits
+  fits <- do.call(c, sapply(fitsList, "[", "pAccept"))
+  if (binary) {
+    # to get stochastic-less choices
+    fits <- ifelse(fits > 0.5, 1, 0)
+  }
+  data <- dataBtw %>%
+    filter(Cost != "Easy") %>%
+    mutate(fitChoice = fits) #rbinom(length(fits), 1, fits))
+  
+  # plot
+  data %>%
+    group_by(SubjID, Cost, Handling, Offer, optimal) %>%
+    summarise(pAccept = mean(fitChoice)) %>%
+    group_by(Cost, Handling, Offer, optimal) %>%
+    summarise(meanComplete = mean(pAccept),
+              SE = sd(pAccept) / sqrt(length(pAccept))) %>%
+    ggplot(aes(interaction(Offer, Handling), meanComplete, color = Cost)) + 
+    geom_point(size = 3) + 
+    geom_errorbar(aes(ymin = meanComplete - SE, ymax = meanComplete + SE), width = 0.2, size = 1) +
+    geom_line(aes(group = interaction(Handling, Cost)), size = 1) +
+    geom_point(aes(y = round(optimal)), shape = 21, fill = "grey75", color = "grey30", size = 3, show.legend = F) +
+    labs(x = "Offer.Handling", y = "Proportion Accepted") +
+    scale_color_manual(values = colsBtw) +
+    theme(legend.key = element_blank(),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 12))
+  
+}
+
+
+## recover results using basic model
+model_expr <- expr(tempr[[1]] * (reward - (gamma[[1]] * handling)))
+
+# create a list with possible starting values for model parameters
+# parameter names must match model ones
+spaceSize <- 30
+params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
+               gamma = seq(0.25, 1.5, length.out = spaceSize))
+
+# fit to each subject
+temp_bOC_fits <- dataBtw %>%
+  filter(Cost != "Easy") %>%
+  plyr::dlply("SubjID", identity) %>%
+  lapply(., optimize_model, params, model_expr, simplify = F)
+
+
+## alpha only
+# create a list with possible starting values for model parameters
+spaceSize <- 30
+params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
+               alpha = seq(0.0001, 1, length.out = spaceSize),
+               k = 1)
+
+# between subject exp
+temp_dOC_fits <- dataBtw %>%
+  filter(Cost != "Easy") %>%
+  plyr::dlply("SubjID", identity) %>%
+  lapply(., optimize_model_dyn_us3, params, simplify = F)
+
+# fit btw exp final model (alpha + nonlinear k)
+params <- list(tempr = seq(0, 2, length.out = spaceSize),
+               alpha = seq(0.001, 1, length.out = spaceSize),
+               k = seq(-1, 2, length.out = spaceSize))
+
+temp_tw_fits_btw <- dataBtw %>%
+  filter(Cost != "Easy") %>%
+  plyr::dlply("SubjID", identity) %>%
+  lapply(., optimize_model_dyn_us3, params, simplify = F)
+
+
+recover_results_btw(temp_dOC_fits, binary = T)
+
+### Within subjects (reproduce 16.3.3)
+# partial replication! without temperature I get the first block fine
+# with temperature I get the last one perfect (i.e. based on probabilities). First block still matches kind of.
+recover_results_wth <- function(fitsList, binary = F) {
+  # extract fits
+  fits <- do.call(c, sapply(fitsList, "[", "pAccept"))
+  if (binary) {
+    # to get stochastic-less choices
+    fits <- ifelse(fits > 0.5, 1, 0)
+  }
+  data <- dataWth %>%
+    mutate(fitChoice = fits) #rbinom(length(fits), 1, fits))
+  
+  # plot
+  data %>%
+    group_by(SubjID) %>%
+    mutate(Block = case_when(
+      Block %in% c(1, 2) ~ 1,
+      Block %in% c(3, 4) ~ 2,
+      Block %in% c(5, 6) ~ 3
+    )) %>%
+    filter(Block != 2) %>%
+    mutate(Block = ifelse(Block == 1, "First Two Blocks", "Last Two Blocks")) %>%
+    group_by(Cost, Block, Offer) %>%
+    summarise(propAccept = mean(fitChoice),
+              SE = sd(fitChoice) / sqrt(nSubjs_wth)) %>%
+    ungroup() %>%
+    mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>% 
+    ggplot(aes(Offer, propAccept, color = Cost)) +
+    geom_point(size = 3, show.legend = T) +
+    geom_line(size = 1, show.legend = F) +
+    scale_color_manual(values = colsWth) +
+    scale_fill_manual(values = colsWth) +
+    geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = T) +
+    scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
+    scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
+    labs(x = "Reward", y = "Proportion Accepted") +
+    facet_wrap(vars(Block)) +
+    theme(legend.key = element_blank(),
+          legend.position = c(0.9, 0.25),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 16))
+}
+
+
+# fit wth
+spaceSize <- 30
+params <- list(tempr = seq(-1, 1, length.out = spaceSize),
+               alpha = seq(0.001, 1, length.out = spaceSize))
+
+temp_tw_fits_wth <- dataWth %>%
+  plyr::dlply("SubjID", identity) %>%
+  lapply(., optimize_model_dyn_us3, params, simplify = F)
+
+recover_results_wth(temp_tw_fits_wth, binary = F)
 

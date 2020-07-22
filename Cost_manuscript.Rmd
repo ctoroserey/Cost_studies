@@ -1087,7 +1087,7 @@ propFails <- dataBtw %>%
 
 # and plot
 hrPlot_btw <- dataBtw %>%
-        filter(Choice < 2) %>%
+        filter(Choice < 2, Cost != "Easy") %>%
         group_by(SubjID, Cost, Handling, Offer, optimal) %>%
         summarise(pAccept = mean(Choice)) %>%
         group_by(Cost, Handling, Offer, optimal) %>%
@@ -1108,7 +1108,7 @@ hrPlot_btw <- dataBtw %>%
               text = element_text(size = 12))
 
 # snippet on rmANOVA
-# These intuitions were formally tested using a repeated measures ANOVA, whose results are presented in the table below. Overall, the analysis partially confirmed our predictions. While all main effects were significant, there was an unexpected significant condition-by-reward interaction, which could be due to the performance of the "easy" group relative to their peers. Importantly, we found that the interaction between all three main parameters was not significant, thus suggesting that the effects of handling and reward on choices were not different across groups.
+# These intuitions were formally tested using a repeated measures ANOVA, whose results are presented in the table below. Overall, the analysis partially confirmed our predictions. While all main effects were significant, there was an unexpected significant condition-by-reward interaction, which could be due to the performance of the "easy" group relative to their peers. Importantly, we found that the interaction between all three main parameters was not significant, thus suggesting that the effects of handling and reward on choices were not different across groups.
 
 ```
 
