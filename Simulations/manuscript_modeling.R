@@ -1611,7 +1611,13 @@ recover_results_btw(temp_dOC_fits, binary = T)
 ### Within subjects (reproduce 16.3.3)
 # partial replication! without temperature I get the first block fine
 # with temperature I get the last one perfect (i.e. based on probabilities). First block still matches kind of.
-recover_results_wth <- function(fitsList, binary = F) {
+# the reported pre-post results, including mixed effects, use half 1 and half 2 raw, but the results are pretty much conserved either way.
+# here the middle blocks are eliminated to denote prevent the uneven assignment of the middle blocks to bias stuff either way
+recover_results_wth <- function(fitsList, binary = F, matrix = T) {
+  # use model fits to reproduce observed behavioral plots
+  # the reported pre-post results, including mixed effects, use half 1 and half 2 raw, but the results are pretty much conserved either way.
+  # here the middle blocks are eliminated to denote prevent the uneven assignment of the middle blocks to bias stuff either way
+  
   # extract fits
   fits <- do.call(c, sapply(fitsList, "[", "pAccept"))
   if (binary) {
@@ -1621,8 +1627,8 @@ recover_results_wth <- function(fitsList, binary = F) {
   data <- dataWth %>%
     mutate(fitChoice = fits) #rbinom(length(fits), 1, fits))
   
-  # plot
-  data %>%
+  # plot prop accepted
+  plot <- data %>%
     group_by(SubjID) %>%
     mutate(Block = case_when(
       Block %in% c(1, 2) ~ 1,
@@ -1653,8 +1659,101 @@ recover_results_wth <- function(fitsList, binary = F) {
           panel.background = element_blank(), 
           axis.line = element_line(colour = "black"),
           text = element_text(size = 16))
+  
+  print(plot)
+  
+  # plot the pre-post coefficient matrix, but only for the binary version (based on GLM def)
+  if (binary & matrix) {
+    mixLogis_pre <- list()
+    mixData <- data %>%
+      mutate(Choice = fitChoice,
+             Cost = factor(Cost, levels = list("Cognitive", "Physical", "Wait-C", "Wait-P")),
+             Block = case_when(
+               Block %in% c(1, 2) ~ 1,
+               Block %in% c(3, 4) ~ 2,
+               Block %in% c(5, 6) ~ 3
+             )) %>%
+      filter(Block != 2,
+             Half == "Half_1") %>%
+      group_by(SubjID, Cost, Offer) %>%
+      summarize(totalChoices = length(Choice),
+                totalAccepted = sum(Choice),
+                totalQuits = sum(Choice == 0),
+                propAccepted = mean(Choice))
+    
+    mixLogis_pre$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+    mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-C"))
+    mixLogis_pre$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+    mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-P"))
+    mixLogis_pre$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+    mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
+    mixLogis_pre$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+    
+    
+    # mixed logistic for the second half
+    mixLogis_post <- list()
+    mixData <- data %>%
+      mutate(Choice = fitChoice,
+             Cost = factor(Cost, levels = list("Cognitive", "Physical", "Wait-C", "Wait-P")),
+             Block = case_when(
+               Block %in% c(1, 2) ~ 1,
+               Block %in% c(3, 4) ~ 2,
+               Block %in% c(5, 6) ~ 3
+             )) %>%
+      filter(Block != 2,
+             Half == "Half_2") %>%
+      group_by(SubjID, Cost, Offer) %>%
+      summarize(totalChoices = length(Choice),
+                totalAccepted = sum(Choice),
+                totalQuits = sum(Choice == 0),
+                propAccepted = mean(Choice))
+    
+    mixLogis_post$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+    mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-C"))
+    mixLogis_post$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+    mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-P"))
+    mixLogis_post$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+    mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
+    mixLogis_post$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+    
+    ## now produce a summary matrix
+    # get the beta and pvalue matrices
+    betasPre <- betaMatrix(mixLogis_pre)
+    betasPost <- betaMatrix(mixLogis_post)
+    
+    # and combine them
+    betaMat <- matrix(NA, nrow = nrow(betasPre$Betas), ncol = nrow(betasPre$Betas))
+    betaMat[lower.tri(betaMat)] <- betasPre$Betas[lower.tri(betasPre$Betas)]
+    betaMat[upper.tri(betaMat)] <- betasPost$Betas[upper.tri(betasPost$Betas)]
+    dimnames(betaMat) <- list(names(mixLogis_pre), names(mixLogis_pre))
+    
+    pvalMat <- matrix(NA, nrow = nrow(betasPre$Pvals), ncol = nrow(betasPre$Pvals))
+    pvalMat[lower.tri(pvalMat)] <- betasPre$Pvals[lower.tri(betasPre$Pvals)]
+    pvalMat[upper.tri(pvalMat)] <- betasPost$Pvals[upper.tri(betasPost$Pvals)]
+    dimnames(pvalMat) <- list(names(mixLogis_pre), names(mixLogis_pre))
+    
+    # remove uninteresting comparisons
+    diag(betaMat) <- 0
+    betaMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
+    pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
+    
+    # aand plot
+    col2 <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0", "#FFFFFF", "#FDDBC7", "#F4A582", "#D6604D", "#B2182B", "#67001F"))
+    corrplot(betaMat,
+             is.corr = F,
+             p.mat = pvalMat,
+             outline = T,
+             #insig = "p-value",
+             sig.level = 0.05,
+             na.label = "square",
+             na.label.col = "grey",
+             method = "color",
+             tl.col = "black",
+             tl.cex = 0.8,
+             col = col2(200))
+  }
+  
 }
-
 
 # fit wth
 spaceSize <- 30
