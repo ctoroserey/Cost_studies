@@ -667,7 +667,7 @@ bOC <- T
 baseLogistic <- F # to test whether the brute search converges to a conventional logistic through glm()
 fwOC <- F
 dOC <- F
-twOC <- T
+twOC <- F
 
 # which experimental dataset?
 data <- dataBtw %>% 
@@ -844,7 +844,7 @@ if (twOC) {
 }
 
 #plot
-param_compare_plot(trialwiseOC_btw_us, "tempr", meanRate = 1) 
+#param_compare_plot(trialwiseOC_btw_us, "tempr", meanRate = 1) 
 
 
 ### test
@@ -862,7 +862,7 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
   o <- subjData$Offer
   h <- subjData$Handling
   t <- 20 - h
-  obs_c <- subjData$Completed
+  obs_c <- subjData$Choice
   
   # Prep list of results to be returned, and keep track per iteration
   out <- list()
@@ -902,17 +902,35 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
     # P(A): P(A)_t = \dfrac{1}{1 + exp^{-(\beta[r_t - \gamma_th_t^{k_t}])}}
     for (i in seq(nrow(subjData))) {
       if (i == 1) {
-        gamma[i] <- gammaStart
+        # the environmental rate that participants start with
+        # if we are fitting a single gamma, then add gamma prior with alpha = 0 and k = 1 (check that it reproduces results)
+        # otherwise this functions as a prior bias on the environmental rate
+        if ("gammaPrior" %in% colnames(params)) {
+          gamma[i] <- params[param, "gammaPrior"]
+        } else {
+          gamma[i] <- gammaStart
+        }
+        
+        # choose if the trial rate > env. rate
         c[i] <- ifelse(o[i] / h[i] > gamma[i], 1, 0)
       } else {
+        # non-linear estimate of the elapsed time since the last choice
         tau <- (h[i - 1] ^ k[i - 1] * c[i - 1]) + t[i - 1]
+        
+        # was the previous offer accepted?
         a <- o[i - 1] * c[i - 1]
+        
+        # gamma is updated by how much weight is given to the recently experienced reward rate (i.e. left part of eq)
         gamma[i] <- ((1 - (1 - alpha) ^ tau) * (a / tau)) + ((1 - alpha) ^ tau) * gamma[i - 1]
+        
+        # choose if the prospect's reward rate, non-linearly discounted as above > env. rate
+        # in other words, is the local-focus on handling time being affected, or a global environmental rate? (or something in between?)
         c[i] <- ifelse(o[i] / (h[i] ^ k[i]) > gamma[i], 1, 0)
       } 
     }
     
-    # estimate the probability of acceptance per the model
+    # estimate the probability of acceptance based on the difference between the offer rate vs global rate
+    # this is a rehash of the eq updating c[i] above
     p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ k)))))
     p[p == 1] <- 0.999
     p[p == 0] <- 0.001
@@ -936,7 +954,7 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
       
       # break if the reduction is too small to be significant
       # based on visual assessment of the likelihood space, which looks convex
-      # if (diff <= 0.000001) {
+      # if (abs(diff) <= 0.0001) {
       #   break
       # }
     }
@@ -1369,7 +1387,7 @@ temp_tw_fits_btw <- dataBtw %>%
   lapply(., optimize_model_dyn_us3, params, simplify = F)
 
 
-recover_results_btw(temp_dOC_fits, binary = T)
+recover_results_btw(temp_tw_fits_btw, binary = T)
 
 ### Within subjects (reproduce 16.3.3)
 # partial replication! without temperature I get the first block fine
@@ -1501,7 +1519,7 @@ recover_results_wth <- function(fitsList, binary = F, matrix = T) {
     pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
     
     # aand plot
-    col2 <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0", "#FFFFFF", "#FDDBC7", "#F4A582", "#D6604D", "#B2182B", "#67001F"))
+    col2 <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0", "#FFF FFF", "#FDDBC7", "#F4A582", "#D6604D", "#B2182B", "#67001F"))
     corrplot(betaMat,
              is.corr = F,
              p.mat = pvalMat,
