@@ -1108,9 +1108,9 @@ recover_results_wth <- function(fitsList, binary = F, matrix = T) {
 # meaning that early in the experiment, they keep track of the perceived time per cost, but they slowly settle into previous history towards the end
 # similar result to the cumulative mean, but more flexible early in the experiment
 # theta vector fixed for now. Think of how to make it free
-recalibrate_k <- function(ks) {
+recalibrate_k <- function(ks, thetaRange = c(1, 0)) {
   # rule
-  theta <- seq(1, 0, length.out = length(ks))
+  theta <- seq(thetaRange[1], thetaRange[2], length.out = length(ks))
   
   learnedK <- rep(0, length(ks))
   for (l in seq_along(ks)) {
@@ -1122,6 +1122,9 @@ recalibrate_k <- function(ks) {
   
   return(learnedK)
 }
+
+
+
 
 ## which models to run?
 baseOC_nloptr <- F
@@ -1359,7 +1362,7 @@ if (! "mK" %in% colnames(dataWth)) {
     mutate(laggedK = dplyr::lag(mK, default = 1),
            mK = mK * Choice,
            mK = ifelse(mK == 0, laggedK, mK),
-           mK = recalibrate_k(mK)) %>% 
+           mK = recalibrate_k(mK, thetaRange = c(0.15, 0))) %>% 
     ungroup()
 }
 
@@ -1447,5 +1450,5 @@ if (recovery) {
     plyr::dlply("SubjID", identity) %>%
     lapply(., optimize_model_dyn_us3, params, simplify = F)
   
-  recover_results_wth(temp_tw_fits_wth, binary = F)
+  recover_results_wth(temp_tw_fits_wth, binary = T)
 }
