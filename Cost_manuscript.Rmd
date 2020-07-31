@@ -794,7 +794,7 @@ plot_handoffer <- qplot(data = temp, x = Var1, y = value, geom = "boxplot") +
                          text = element_text(size = 22))
 ```
 
-``` {r BTW: 16.1.2. AR, echo = FALSE, include = FALSE}
+``` {r BTW: 16.1.2. AR + sequential effects, echo = FALSE, include = FALSE}
 # Idea: do AIC to compare models per participant
 # add an AR regressor to track recent quits
 logisRHAR <- dataBtw %>%
@@ -818,6 +818,32 @@ coeffRHAR_se <- apply(logisRHAR, 1, sd, na.rm = T) / sqrt(nSubjs_btw)
 # Rank sum test
 rankRHAR <- wilcox.test(logisRHAR["AR", ])
 
+
+### OFFER HISTORY
+# 
+# # check if the recent history of offers affects the probability of acceptances
+# # the larger the sum of recent rewards, the lower the probability of acceptance (regardless of how far back the sum goes (from 3 to 6))
+# # this makes sense, because larger numbers mean that higher offers recently happened, leaving only lower ones available
+# # this is mainly for 10 H, but the effect survives when adding H + R
+# logisOfferhist <- dataBtw %>%
+#   group_by(SubjID) %>%
+#   mutate(rollingOffer = ifelse(TrialN < 3, Offer, Reduce(`+`, shift(Offer, 0:2)))) %>%
+#   plyr::dlply("SubjID", identity) %>%
+#   lapply(function(data) {suppressWarnings(glm(Choice ~ Handling + Offer + rollingOffer, data = data, family = "binomial"))})
+# 
+# # coefficient summaries
+# logistemp <- sapply(logistemp, coefficients)
+# 
+# # Rank sum test
+# rankRHAR <- wilcox.test(logistemp["rollingOffer", ])
+# 
+# # mixed effects logistic version
+# # significant for 10 and 14s Handling
+# dat <- dataBtw %>%
+#   filter(Handling == 2) %>%
+#   group_by(SubjID) %>%
+#   mutate(rollingOffer = ifelse(TrialN < 3, Offer, Reduce(`+`, shift(Offer, 0:4)))) 
+# summary(glmer(Choice ~ Handling + Offer + rollingOffer + (1 | SubjID), data = dat, family = "binomial"))
 ```
 
 ``` {r BTW: 16.1.3. Earnings, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
