@@ -722,13 +722,13 @@ include_graphics("./Images/FIG2.png")
 
 ### Analyses
 
-  All analyses were performed in R 3.5.2 (CITE). First we tested whether decision makers integrated delay and reward information. **To address the prediction that participants would be more likely to accept higher reward and shorter handling time trials, we fit a logistic regression to each participant’s data to predict trial-wise acceptances, using handling time and reward amount as predictors. The resulting beta coefficients for handling time and reward were pooled across all participants, and we performed a one-sample rank-sum test on each set of coefficients to examine whether they were significantly positive or negative (compared to no effect of 0). We then performed an extension of the logistic regression by adding an autoregressive covariate containing the number of consecutive quits prior to a given trial. This examined the possibility that participant choices were governed by recent quitting history rather than the experimental parameters. Coefficients significantly different from 0 denoted that a participant relied on recent quitting history.** 
+  All analyses were performed in R 3.5.2 (CITE). First we tested whether decision makers integrated delay and reward information. To address the prediction that participants would be more likely to accept higher reward and shorter handling time trials, we fit a mixed-effects logistic regression to predict trial-wise acceptances, using a random intercept to account for biases in participant behavior. We included regressors for handling time and reward, as well as two covariates that probed the influence of recent history on choices. The first was an autoregressive regressor containing the number of consecutive offer misses prior to a given trial (misses could be due to quits or lapses in performance that forced participants to travel). The second regressor tracked the sum of the previous *n* offers. We identified the *n* that minimized Akaike's Information Criterion (AIC) among 6 versions of the model (i.e. tracing from 2 previous trials up to 7, beyond which the model failed to converge), and reported all coefficients from the winning model.
   
   Our foraging task was configured such that over and under accepting were detrimental to total earnings. To confirm this, we fit a general linear model with constant, linear, and quadratic terms to estimate the correspondence between proportion accepted (independent variable) and total earnings (dependent variable). A significant quadratic coefficient thus would signal that the task statistics operated as expected. Next, to determine the optimality of each group’s decisions, performed two-sided one-sample t-tests to see if the proportion of acceptances for each time/reward combination was significantly different from the optimal rate (see Operationalization of Cost). This resulted in 36 independent tests (3 rewards amounts, 3 handling/travel time combinations, and 4 groups), so we corrected for multiple comparisons using False Discovery Rate (FDR).
   
   Next, we compared preferences among cost conditions. We first performed a one-way ANOVA on the proportion of trials accepted using group as a factor. We then compared the proportion completed among all 4 groups using non-parametric permutation contrasts (6 tests). On each of 5000 permutation iterations, the group assignment was randomly shuffled without replacement, and the difference in mean acceptance rates across iterations created a putative null distribution. The unpermuted group mean difference was then evaluated against this permuted distribution. The same approach was used for total earnings. This gave us an initial glimpse on the potential differences in cost among conditions. 
   
-  In order to further look at the effect of handling, offer, and cost type, we computed the probability of accepting a trial with a mixed-effects logistic regression using the lme4 package (CITE). Based on the task structure and our main question, our a priori model of interest included cost condition, handling time, and reward amount as fixed main effects, and participant ID as a random intercept. Cost condition was modeled with three categorical terms, with the fourth condition as the reference condition. We ran three versions of the model with different reference conditions, in order to test all pairwise differences among the four cost conditions. (**exponentiate coefficients to make them more interpretable?**) We then examined whether this a priori model outperformed both simpler and more complex models. We used both Akaike’s Information Criterion (AIC) and Bayesian Information Criterion (BIC) to determine the model that minimized the negative log-likelihood while penalizing the addition of parameters. The regression with each combination of predictors was fitted in the following order: 1) intercept only; 2) condition only; 3) handling time only; 4) offer amount only; 5) handling time and offer amount (added to the preregistered comparison); 6) condition, handling time, and reward main effects (a priori model from above); 7) adding a handling-by-reward interaction; and 8) all possible two-way interactions. We predicted that model 6 (the a priori setup) would have the lowest AIC and BIC. Nested models with similar AIC were statistically compared using an analysis-of-deviance. The significance test was computed as the probability of the reduction in deviance, based on a chi-square distribution with degrees of freedom equal to the difference in the number of parameters between models.
+  In order to further look at the effect of handling, offer, and cost type, we computed the probability of accepting a trial with a mixed-effects logistic regression using the lme4 package (CITE). Based on the task structure and our main question, our a priori model of interest included cost condition, handling time, and reward amount as fixed main effects, and participant ID as a random intercept. Cost condition was modeled with three categorical terms, with the fourth condition as the reference condition. We ran three versions of the model with different reference conditions, in order to test all pairwise differences among the four cost conditions. (**exponentiate coefficients to make them more interpretable?**) We then examined whether this a priori model outperformed both simpler and more complex models. We used both AIC and Bayesian Information Criterion (BIC) to determine the model that minimized the negative log-likelihood while penalizing the addition of parameters. The regression with each combination of predictors was fitted in the following order: 1) intercept only; 2) condition only; 3) handling time only; 4) offer amount only; 5) handling time and offer amount (added to the preregistered comparison); 6) condition, handling time, and reward main effects (a priori model from above); 7) adding a handling-by-reward interaction; and 8) all possible two-way interactions. We predicted that model 6 (the a priori setup) would have the lowest AIC and BIC. Nested models with similar AIC were statistically compared using an analysis-of-deviance. The significance test was computed as the probability of the reduction in deviance, based on a chi-square distribution with degrees of freedom equal to the difference in the number of parameters between models.
   
   Finally, we modeled the subjective opportunity cost in each condition. We started by examining whether participants were confident and consistent in their choices. We visually examined survival curves indicating at what point during the handling time participants quit a trial (censored points included trial completions and forced travels), in addition to quitting time distributions. Next, we addressed the prediction that participants would display consistent choice patterns throughout the session (i.e. that the reward amounts they accepted in a given timing condition would be similar throughout the experiment). We computed each participant’s total proportion of acceptances pre- and post-midpoint for every block, and performed paired permutations (5000 iterations) to compare their mean proportion of acceptances. We then confirmed that the relative costs observed with from the whole experimental session were still present on each half of the experiment. The winning model from the mixed-effects logistic comparison was applied to each half separately. In each case, the reference cost category was rotated in order to assess pairwise differences among all costs. We evaluated the consistency of the relative costs by visually comparing the patterns of significant differences between experimental halves.
   
@@ -795,51 +795,49 @@ plot_handoffer <- qplot(data = temp, x = Var1, y = value, geom = "boxplot") +
                          text = element_text(size = 22))
 ```
 
-``` {r BTW: 16.1.2. AR + sequential effects, echo = FALSE, include = FALSE}
-# Idea: do AIC to compare models per participant
-# add an AR regressor to track recent quits
-logisRHAR <- dataBtw %>%
-              filter(Choice < 2) %>%
-              group_by(SubjID) %>%
-              mutate(AR = seqQuits(Choice)) %>%
-              plyr::dlply("SubjID", identity) %>%
-              lapply(function(data) {suppressWarnings(glm(Choice ~ Handling + Offer + AR, data = data, family = "binomial"))}) 
-  
-# get the AR CIs per participant 
-AR_CIs <- sapply(logisRHAR, function(x) {tryCatch(suppressWarnings(confint(x)[4, ]), error = function(e){c(0, 0)})}) %>%
-  replace_na(0) %>%
-  t() %>%
-  apply(1, function(x) (x[1] <= 0 & x[2] >= 0))
+``` {r BTW: 16.1.2. AR sequential effects, echo = FALSE, include = FALSE}
 
-# coefficient summaries
-logisRHAR <- sapply(logisRHAR, coefficients)
-coeffRHAR_mean <- apply(logisRHAR, 1, mean, na.rm = T)
-coeffRHAR_se <- apply(logisRHAR, 1, sd, na.rm = T) / sqrt(nSubjs_btw)
-
-# Rank sum test
-rankRHAR <- wilcox.test(logisRHAR["AR", ])
-
-
-## UPDATE TO THIS
-# IT BASICALLY SAYS THAT PEOPLE DO TRACK THE RECENT OFFERS A BIT, BEYOND WHAT H+R DO.
-# AND ALSO THAT RECENT FORCED TRAVELS + QUITS DO MARGINALLY INFLUENCE CHOICE
-# THIS SUGGESTS THAT WHILE THE EFFECTS ARE SMALL (P(A) ~ 2%), PARTICIPANTS DO SOME ENVIRONMENTAL TRACKING
 # history
 # Instead of quits, I'm now doing completions. This is because one would expect forced travels to also affect choice.
 # First, iterate over the recent history to identify which sum length reduces the AIC the most
-historySize <- lapply(seq(2, 6), function(tail) {
+# tracing the history beyond 7 trials produces non-convergence
+historySize <- lapply(seq(2, 7), function(tail) {
   dat <- dataBtw %>%
-  group_by(SubjID) %>%
-  mutate(recentTravels = seqQuits(Completed),
-         recentOffers = ifelse(TrialN < (tail + 1), Offer, Reduce(`+`, shift(Offer, 1:tail)))) #%>%
-  #ungroup() %>%
+    #filter(Cost != "Wait") %>%
+    group_by(SubjID) %>%
+    mutate(recentTravels = seqQuits(Completed),
+           recentOffers = ifelse(TrialN < (tail + 1), Offer, Reduce(`+`, shift(Offer, 1:tail)))) 
+  
   glmer(Choice ~ Handling + Offer + recentTravels + recentOffers + (1 | SubjID), data = dat, family = "binomial")
-  #summarise(aic = AIC(glmer(Choice ~ Handling + Offer + recentTravels + recentOffers + (1 | SubjID), data = ., family = "binomial")))
 })
 
 # then get the summary of the tail length that reduced the AIC the most
-index <- which(sapply(historySize, function(iter) {AIC(iter)}) == min(sapply(historySize, function(iter) {AIC(iter)})))
-summary(historySize[[index]])
+historyIndex <- which(sapply(historySize, function(iter) {AIC(iter)}) == min(sapply(historySize, function(iter) {AIC(iter)})))
+
+historyCoeffs <- round(summary(historySize[[historyIndex]])$coefficients, digits = 2)
+
+# # Idea: do AIC to compare models per participant
+# # add an AR regressor to track recent quits
+# logisRHAR <- dataBtw %>%
+#               filter(Choice < 2) %>%
+#               group_by(SubjID) %>%
+#               mutate(AR = seqQuits(Choice)) %>%
+#               plyr::dlply("SubjID", identity) %>%
+#               lapply(function(data) {suppressWarnings(glm(Choice ~ Handling + Offer + AR, data = data, family = "binomial"))}) 
+#   
+# # get the AR CIs per participant 
+# AR_CIs <- sapply(logisRHAR, function(x) {tryCatch(suppressWarnings(confint(x)[4, ]), error = function(e){c(0, 0)})}) %>%
+#   replace_na(0) %>%
+#   t() %>%
+#   apply(1, function(x) (x[1] <= 0 & x[2] >= 0))
+# 
+# # coefficient summaries
+# logisRHAR <- sapply(logisRHAR, coefficients)
+# coeffRHAR_mean <- apply(logisRHAR, 1, mean, na.rm = T)
+# coeffRHAR_se <- apply(logisRHAR, 1, sd, na.rm = T) / sqrt(nSubjs_btw)
+# 
+# # Rank sum test
+# rankRHAR <- wilcox.test(logisRHAR["AR", ])
 ```
 
 ``` {r BTW: 16.1.3. Earnings, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
@@ -935,9 +933,7 @@ optimalProp_cost <- temp %>%
 
   In this experiment, groups faced with different behavioral costs (physical effort, cognitive effort, or delay) chose their preferred strategy to maximize rewards in fully-disclosed foraging environments of variable richness. Environmental richness was dictated by the time it took to obtain a reward (the handling time) and the time between trials (the travel time). We hypothesized that participants would approximate reward-maximizing behavior by preferring higher rewards and shorter delays, but that changing the cost required to obtain rewards would uniformly increase or decrease this choice pattern. Specifically, we predicted that participants confronted with effortful demands would be more likely to accept trials than those faced with passive delay, regardless of handling time and reward amount.
   
-  **new** We performed a mixed effects logistic regression to address the first hypothesis. Since participants in the effort groups were forced to travel when they failed to perform above threshold (see Methods), we distinguish between acceptances (entering the handling period) and completions (successfully obtaining a reward). Larger reward amounts significantly increased acceptance probabilities ($\beta$ = ), whereas longer delays decreased them (), in line with predictions. Two additional regressors showed that 1) having missed out on several consecutive rewards decreased the probability of acceptance (how?) and 2) participants became more selective when recent history was richer (). Model selection using Akaike's Information Criterion (AIC) suggested that participants were influenced by the 5 most recent rewards.
-  
-  **old** We performed a mixed effects logistic regression to address the first hypothesis. Since participants in the effort groups were forced to travel when they failed to perform above threshold (see Methods), we distinguish between acceptances (entering the handling period) and completions (successfully obtaining a reward). Individual-specific logistic regression coefficients for handling time were significantly lower than 0 (mean $\beta$ = `r round(mean(coeffRH_mean[2], na.rm = T), digits = 2)`, SE = `r round(coeffRH_se[2], digits = 2)`; Wilcoxon test: V = `r rankHand$statistic`, *p* `r report_p(rankHand$p.value)`), whereas increasing the reward amount predicted higher acceptance probabilities (mean $\beta$ = `r round(coeffRH_mean[1], digits = 2)`, SE = `r round(coeffRH_se[1], digits = 2)`; Wilcoxon test: V = `r rankOffer$statistic`, p `r report_p(rankOffer$p.value)`). We next examined whether choices could also have been affected by recent choice history (i.e. if too many sequential quits promoted acceptances regardless of reward amount) by adding a regressor to the model that tracked the number of consecutive quits preceding a trial. This auto-regressive coefficient was not significantly different than 0 (mean $\beta$ = `r round(coeffRHAR_mean[3], digits = 2)`, SE = `r round(coeffRHAR_se[3], digits = 2)`; Wilcoxon test: V = `r rankRHAR$statistic`, p `r report_p(rankRHAR$p.value)`), and the 95% confidence interval (CI) of these coefficients contained 0 in `r round((sum(AR_CIs) / nSubjs_btw) * 100)`% of our participants. This indicates that offer patterns did not systematically influence participant behavior.
+  We performed a mixed effects logistic regression to address the first hypothesis. Since participants in the effort groups were forced to travel when they failed to perform above threshold (see Methods), we distinguish between acceptances (entering the handling period) and completions (successfully obtaining a reward). Larger reward amounts significantly increased acceptance probabilities ($\beta$ = `r historyCoeffs["Handling", "Estimate"]`, SE = `r historyCoeffs["Handling", "Std. Error"]`, *p* `r report_p(historyCoeffs["Handling", "Pr(>|z|)"])`), whereas longer delays decreased them ($\beta$ = `r historyCoeffs["Offer", "Estimate"]`, SE = `r historyCoeffs["Offer", "Std. Error"]`, *p* `r report_p(historyCoeffs["Offer", "Pr(>|z|)"])`), in line with predictions. Two additional regressors showed that having missed out on consecutive rewards decreased the probability of acceptance ($\beta$ = `r historyCoeffs["recentTravels", "Estimate"]`, SE = `r historyCoeffs["recentTravels", "Std. Error"]`, *p* `r report_p(historyCoeffs["recentOffers", "Pr(>|z|)"])`), and that participants became more selective when recent offer history was richer ($\beta$ = `r historyCoeffs["recentOffers", "Estimate"]`, SE = `r historyCoeffs["recentOffers", "Std. Error"]`, *p* `r report_p(historyCoeffs["recentOffers", "Pr(>|z|)"])`). The reduction in acceptances from recent misses was driven by the wait group (removing this group from the model yielded a *p* > 0.1), likely because this group accepted the least amount of offers. Comparing likelihood fits among lengths of offer history (e.g. sum over 2 or 3 past trials) suggested that participants were influenced by the `r historyIndex + 1` most recent rewards (AIC = `r AIC(historySize[[historyIndex]])`), which matched the offer presentation rotation (see Methods). These results confirm the expected influence of time and offer magnitude on choice behavior, but also suggest that participants adapted to their recent experience.
   
   **Maybe put this as an addendum to the mixed effects analysis of proportion of acceptances, after mixed models** . The foraging task was configured so that there was an optimal, reward-maximizing strategy (see Operationalization of Cost in Methods). Because of this, participants were told to consider their strategies carefully, as accepting everything would not maximize their gains. Figure 3 (right) shows that participants who over- or under-accepted earned the least (general linear model with quadratic term, F = `r round(summary(lmEarn)$fstatistic[1], digits = 2)`, Beta = `r round(summary(lmEarn)$coefficients[3,1], digits = 2)`, SE = `r round(summary(lmEarn)$coefficients[3, 2], digits = 2)`, R-squared = `r round(summary(lmEarn)$r.squared, digits = 2)`, *p* `r report_p(summary(lmEarn)$coefficients[3, 4])`). Two-sided, one-sample t-tests against the optimal proportion of acceptances (i.e. $\mu$ = 0 or 1) for each combination of cost type, handling time, and offer showed that participants significantly deviated from optimality in `r round(optimalProp)`% of combinations (*p* < 0.05, FDR corrected), with the percentage of deviations being lowest for the wait group (Wait = `r filter(optimalProp_cost, Cost == "Wait")[2]`%, physical = `r filter(optimalProp_cost, Cost == "Physical")[2]`%, Cognitive = `r filter(optimalProp_cost, Cost == "Cognitive")[2]`%, Easy = `r filter(optimalProp_cost, Cost == "Easy")[2]`%). Together, these results suggest that participants were adequately influenced by the rewarding statistics of the environment, even though they did not always perform optimally.
 
