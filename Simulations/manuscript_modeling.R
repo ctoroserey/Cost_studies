@@ -818,7 +818,139 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
   
   return(out)
 }
-plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0, showChoices = -0.6) {
+optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 0, thetaRange = c(0.15, 0)) {
+  # get every combination of parameters
+  params <- expand.grid(params)
+  
+  # relevant behavior elements
+  o <- subjData$Offer
+  h <- subjData$Handling
+  t <- 20 - h
+  obs_c <- subjData$Choice
+  
+  # Prep list of results to be returned, and keep track per iteration
+  out <- list()
+  out$percentQuit <- mean(obs_c == 0) * 100
+  out$percentAccept <- mean(obs_c == 1) * 100 
+  out$params <- as.numeric() # winning parameters
+  out$rate <- as.numeric() # to store the winning gammas
+  out$pAccept <- as.numeric() # probability of acceptance for winning parameters
+  out$fit_c <- as.numeric() # to store the winning fitted choices
+  out$LLs <- rep(0, nrow(params))
+  out$LL <- Inf
+  
+  # iterate through possible parameters and get the LL
+  #LLs <- sapply(seq(nrow(params)), function(i) {
+  for (param in seq(nrow(params))) {
+    # isolate the parameters for this iteration
+    # and then store them as variables
+    tempr <- params[param, "tempr"]
+    alpha <- params[param, "alpha"]
+    if ("k" %in% colnames(params)) {
+      # use a vector so I can use a common indexing for fixed and to-be-fitted values of k
+      k <- rep(params[param, "k"], nrow(subjData)) # if there is a free k parameter, use its fit, otherwise use the values from exp1
+    } else {
+      k <- subjData$mK
+    }
+    
+    # get the trial-wise gamma to export the probability of acceptance
+    c <- rep(0, nrow(subjData))
+    gamma <- rep(0, nrow(subjData))
+    tau <- h
+    theta <- seq(thetaRange[1], thetaRange[2], length.out = nrow(subjData))
+    
+    # calculate gammas iterating over trials
+    # latex versions: gamma[i]: \gamma_t = (1 - (1 - \alpha) ^ {\tau_t}) \dfrac{R_{t-1} A_{t-1}}{\tau_t} +  (1 - \alpha) ^ {\tau_t} \gamma_{t-1}
+    # ugly tau: \tau_{t} = (H_{t-1} ^ {k_{t-1}}  A_{t - 1}) + T_{t - 1}
+    # prettier, vectorized tau: \tau = (h ^ k  a) + t
+    # gamma for pretty tau: \gamma_t = (1 - (1 - \alpha) ^ {\tau_{t-1}}) \dfrac{r_{t-1} a_{t-1}}{\tau_{t-1}} +  (1 - \alpha) ^ {\tau_{t-1}} \gamma_{t-1}
+    # k_t = \dfrac {1} {N}\sum_{cost}^{t - 1} k_{cost}
+    # P(A): P(A)_t = \dfrac{1}{1 + exp^{-(\beta[r_t - \gamma_th_t^{k_t}])}}
+    for (i in seq(nrow(subjData))) {
+      if (i == 1) {
+        # the environmental rate that participants start with
+        # if we are fitting a single gamma, then add gamma prior with alpha = 0 and k = 1 (check that it reproduces results)
+        # otherwise this functions as a prior bias on the environmental rate
+        if ("gammaPrior" %in% colnames(params)) {
+          gamma[i] <- params[param, "gammaPrior"]
+        } else {
+          gamma[i] <- gammaStart
+        }
+        
+        # choose if the trial rate > env. rate. No k modulation, since I'm assuming the effect doesn't apply right away
+        c[i] <- ifelse(o[i] / h[i] > gamma[i], 1, 0)
+      } else if (i < nrow(subjData)) {
+        # choose if the prospect's reward rate, non-linearly discounted as above > env. rate
+        # in other words, is the local-focus on handling time being affected, or a global environmental rate? (or something in between?)
+        c[i] <- ifelse(o[i] / (h[i] ^ k[i]) > gamma[i], 1, 0)
+        
+        # was the offer accepted?
+        a <- o[i] * c[i]
+        
+        # k
+        k[i + 1] <- theta[i] * k[i] * c[i] + (1 - theta[i]) * k[i - 1]
+        
+        # non-linear estimate of the elapsed time since the last choice
+        tau[i + 1] <- (h[i] ^ k[i] * c[i]) + t[i]
+        
+        # gamma is updated by how much weight is given to the recently experienced reward rate (i.e. left part of eq)
+        gamma[i + 1] <- ((1 - (1 - alpha) ^ tau[i + 1]) * (a / tau[i + 1])) + ((1 - alpha) ^ tau[i + 1]) * gamma[i - 1]
+        
+      } else if (i == nrow(subjData)) {
+        # choice
+        c[i] <- ifelse(o[i] / (h[i] ^ k[i]) > gamma[i], 1, 0)
+      }
+    }
+    
+    # estimate the probability of acceptance based on the difference between the offer rate vs global rate
+    # this is a rehash of the eq updating c[i] above
+    p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ k)))))
+    p[p == 1] <- 0.999
+    p[p == 0] <- 0.001
+    
+    # get the likelihood of the observations based on the model
+    tempChoice <- rep(NA, length(obs_c))
+    tempChoice[obs_c == 1] <- log(p[obs_c == 1])
+    tempChoice[obs_c == 0] <- log(1 - p[obs_c == 0]) # log of probability of choice 1 when choice 0 occurred
+    negLL <- -sum(tempChoice)
+    
+    out$LLs[param] <- negLL
+    
+    # if these parameters improve the fit, store the rate and choices
+    if (negLL < out$LL) {
+      diff <- out$LL - negLL
+      out$LL <- negLL
+      out$rate <- gamma
+      out$fit_c <- c
+      out$params <- params[param, ]
+      out$pAccept <- p
+      
+      # break if the reduction is too small to be significant
+      # based on visual assessment of the likelihood space, which looks convex
+      # if (abs(diff) <= 0.0001) {
+      #   break
+      # }
+    }
+  } 
+  
+  # Summarize the outputs
+  out$LL0 <- -(log(0.5) * length(obs_c))
+  out$Rsquared <- 1 - (out$LL / out$LL0) # pseudo r-squared, quantifying the proportion of deviance reduction vs chance
+  
+  # if doing this with dplyr::do(), return a simplified data.frame instead with the important parameters
+  if (simplify) {
+    out <- round(data.frame(out[-c(4, 5, 6, 7)]), digits = 2)
+    colnames(out) <- c("percentQuit",
+                       "percentAccept",
+                       colnames(params),
+                       "LL",
+                       "LL0",
+                       "Rsq")
+  }
+  
+  return(out)
+}
+plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0, showChoices = -0.6, thetaRange = c(0.15, 0)) {
   
   if (exp == "btw") {
     # choose subject + params
@@ -827,9 +959,10 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0, showChoices = -0.
     params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                    alpha = seq(0, 1, length.out = spaceSize),
                    k = seq(-1, 2, length.out = spaceSize))
+    thetaRange <- c(0, 0)
     
     # run model
-    temp <- optimize_model_dyn_us3(sub, params, simplify = F, gammaStart = gammaOne)
+    temp <- optimize_model_dyn_us3(sub, params, simplify = F, gammaStart = gammaOne, thetaRange = thetaRange)
     print(temp$params)
     
     # get baseline gamma from a simple fit
@@ -890,7 +1023,7 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0, showChoices = -0.
                    alpha = seq(0, 1, length.out = spaceSize))
     
     # run model
-    temp <- optimize_model_dyn_us3(sub, params, simplify = F, gammaStart = gammaOne)
+    temp <- optimize_model_dyn_us3(sub, params, simplify = F, gammaStart = gammaOne, thetaRange = thetaRange)
     print(temp$params)
     
     # plot
@@ -1087,7 +1220,7 @@ recover_results_wth <- function(fitsList, binary = F, matrix = T) {
     pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
     
     # aand plot
-    col2 <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0", "#FFF FFF", "#FDDBC7", "#F4A582", "#D6604D", "#B2182B", "#67001F"))
+    col2 <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0", "#FFFFFF", "#FDDBC7", "#F4A582", "#D6604D", "#B2182B", "#67001F"))
     corrplot(betaMat,
              is.corr = F,
              p.mat = pvalMat,
@@ -1336,12 +1469,12 @@ if (twOC) {
 spaceSize <- 30
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                alpha = seq(0, 1, length.out = spaceSize),
-               k = seq(-1, 2, length.out = spaceSize))
+               k = seq(0, 2, length.out = spaceSize))
 
 trialwiseOC_btw_us_new <- dataBtw %>%
   filter(Cost != "Easy") %>%
   group_by(Cost, SubjID) %>%
-  do(optimize_model_dyn_us3(., params, simplify = T)) %>%
+  do(optimize_model_dyn_us3(., params, simplify = T, thetaRange = c(0, 0))) %>%
   ungroup() %>%
   distinct(SubjID, .keep_all = T)
 
@@ -1350,32 +1483,33 @@ param_compare_plot(trialwiseOC_btw_us_new, "k", meanRate = 1)
 #btw ks to apply to wth
 ks <- trialwiseOC_btw_us_new %>% 
   group_by(Cost) %>% 
-  summarise(mK = median(k)) %>%
+  summarise(mK = mean(k)) %>%
   rename(simpleCost = Cost) # to merge without replacing
 
-# reset data: dataWth <- dataWth %>% select(-mK)
+# reset data: 
+tryCatch(dataWth <- dataWth %>% select(-mK), error = function(e) {print("Oops, no need to remove mK")})
 if (! "mK" %in% colnames(dataWth)) {
   dataWth <- dataWth %>%
     mutate(simpleCost = ifelse(Cost %in% c("Wait-C", "Wait-P"), "Wait", as.character(Cost))) %>% 
-    left_join(ks, by = "simpleCost") %>%
-    group_by(SubjID) %>%
-    mutate(laggedK = dplyr::lag(mK, default = 1),
-           mK = mK * Choice,
-           mK = ifelse(mK == 0, laggedK, mK),
-           mK = recalibrate_k(mK, thetaRange = c(0.15, 0))) %>% 
-    ungroup()
+    left_join(ks, by = "simpleCost") #%>%
+    # group_by(SubjID) %>%
+    # mutate(laggedK = dplyr::lag(mK, default = 1),
+    #        mK = mK * Choice,
+    #        mK = ifelse(mK == 0, laggedK, mK),
+    #        mK = recalibrate_k(mK, thetaRange = c(0.15, 0))) %>% 
+    # ungroup()
 }
 
-# # check that the k evolution looks ok 
-# dataWth %>%
-#   #filter(SubjID == "461") %>%
-#   ggplot(aes(TrialN, mK, color = SubjID, group = SubjID)) +
-#   geom_line(show.legend = F) + 
-#   theme_minimal()
+# check that the k evolution looks ok
+dataWth %>%
+  #filter(SubjID == "461") %>%
+  ggplot(aes(TrialN, mK, color = SubjID, group = SubjID)) +
+  geom_line(show.legend = F) +
+  theme_minimal()
 
 # fit wth
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-               alpha = seq(0, 1, length.out = spaceSize))
+               alpha = seq(0, 0.5, length.out = spaceSize))
 
 trialwiseOC_wth_us_new <- dataWth %>%
   group_by(SubjID) %>%
@@ -1444,7 +1578,7 @@ if (recovery) {
   # fit wth
   spaceSize <- 30
   params <- list(tempr = seq(-1, 1, length.out = spaceSize),
-                 alpha = seq(0, 1, length.out = spaceSize))
+                 alpha = seq(0, 0.5, length.out = spaceSize))
   
   temp_tw_fits_wth <- dataWth %>%
     plyr::dlply("SubjID", identity) %>%
@@ -1452,3 +1586,10 @@ if (recovery) {
   
   recover_results_wth(temp_tw_fits_wth, binary = T)
 }
+
+
+
+
+
+
+
