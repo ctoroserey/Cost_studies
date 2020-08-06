@@ -1791,28 +1791,45 @@ baseCoeffs$SubjID <- subjList_wth # add subject list column to join the demograp
 
 ```
 
-``` {r WTH: 16.1.2. AR, echo = FALSE, include = FALSE}
-# Create an autoregressive predictor based on previous consecutive quits
-dataList <- lapply(dataList, function(data) {data %>% mutate(AR = seqQuits(Choice))})
+``` {r WTH: 16.1.2. AR + sequential effects, echo = FALSE, include = FALSE}
+# tracing the history beyond 7 trials produces non-convergence
+historySize <- lapply(seq(2, 7), function(tail) {
+  dat <- dataWth %>%
+    group_by(SubjID) %>%
+    mutate(recentTravels = seqQuits(Completed),
+           recentOffers = ifelse(TrialN < (tail + 1), Offer, Reduce(`+`, shift(Offer, 1:tail)))) 
+  
+  glmer(Choice ~ Offer + recentTravels + recentOffers + (1 | SubjID), data = dat, family = "binomial")
+})
 
-# fits per participant
-logisticFits_base <- lapply(dataList, function(data) {suppressWarnings(glm(Choice ~ Offer + AR, data = data, family = "binomial"))}) 
+# then get the summary of the tail length that reduced the AIC the most
+historyIndex <- which(sapply(historySize, function(iter) {AIC(iter)}) == min(sapply(historySize, function(iter) {AIC(iter)})))
 
-# get the low/high 95% CIs for AR
-baseCoeffs <- as_tibble(t(sapply(logisticFits_base, function(data) {suppressWarnings(confint(data, "AR"))}))) %>% 
-  dplyr::rename(AR_CILow = `2.5 %`, AR_CIHigh = `97.5 %`) %>%
-  mutate(SubjID = subjList_wth) %>%
-  left_join(baseCoeffs, by = "SubjID")
+historyCoeffs <- round(summary(historySize[[historyIndex]])$coefficients, digits = 2)
 
-# reorder so that SubjID comes first
-#baseCoeffs <- baseCoeffs[ , c(3,4,5,6,7,8,9,1,2)]
 
-# create a vector indicating whether 0 is included or not (i.e. if there is 0, no sequential effect)
-# but first change NA to 0 (visual inspection showed that NAs were tied to p's with full or near full p(accept), meaning they weren't influenced by history)
-baseCoeffs <- baseCoeffs %>% 
-  mutate(AR_CILow = ifelse(is.na(AR_CILow), 0, AR_CILow),
-         AR_CIHigh = ifelse(is.na(AR_CIHigh), 0, AR_CIHigh))
-baseCoeffs$AR_effect <- apply(baseCoeffs, 1, function(x) (!(as.numeric(x["AR_CILow"]) <= 0 & as.numeric(x["AR_CIHigh"]) >= 0)))
+# old
+# # Create an autoregressive predictor based on previous consecutive quits
+# dataList <- lapply(dataList, function(data) {data %>% mutate(AR = seqQuits(Choice))})
+# 
+# # fits per participant
+# logisticFits_base <- lapply(dataList, function(data) {suppressWarnings(glm(Choice ~ Offer + AR, data = data, family = "binomial"))}) 
+# 
+# # get the low/high 95% CIs for AR
+# baseCoeffs <- as_tibble(t(sapply(logisticFits_base, function(data) {suppressWarnings(confint(data, "AR"))}))) %>% 
+#   dplyr::rename(AR_CILow = `2.5 %`, AR_CIHigh = `97.5 %`) %>%
+#   mutate(SubjID = subjList_wth) %>%
+#   left_join(baseCoeffs, by = "SubjID")
+# 
+# # reorder so that SubjID comes first
+# #baseCoeffs <- baseCoeffs[ , c(3,4,5,6,7,8,9,1,2)]
+# 
+# # create a vector indicating whether 0 is included or not (i.e. if there is 0, no sequential effect)
+# # but first change NA to 0 (visual inspection showed that NAs were tied to p's with full or near full p(accept), meaning they weren't influenced by history)
+# baseCoeffs <- baseCoeffs %>% 
+#   mutate(AR_CILow = ifelse(is.na(AR_CILow), 0, AR_CILow),
+#          AR_CIHigh = ifelse(is.na(AR_CIHigh), 0, AR_CIHigh))
+# baseCoeffs$AR_effect <- apply(baseCoeffs, 1, function(x) (!(as.numeric(x["AR_CILow"]) <= 0 & as.numeric(x["AR_CIHigh"]) >= 0)))
 ```
 
 ``` {r WTH: 16.1.3. prop accept x earnings, echo = FALSE, include = T, fig.align="center",fig.width = 4, fig.height = 4}
