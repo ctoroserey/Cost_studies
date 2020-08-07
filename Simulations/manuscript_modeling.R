@@ -818,7 +818,7 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
   
   return(out)
 }
-optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 0, thetaRange = c(0.15, 0)) {
+optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 0) {
   # get every combination of parameters
   params <- expand.grid(params)
   
@@ -857,7 +857,7 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
     c <- rep(0, nrow(subjData))
     gamma <- rep(0, nrow(subjData))
     tau <- h
-    theta <- seq(thetaRange[1], thetaRange[2], length.out = nrow(subjData))
+    #theta <- seq(thetaRange[1], thetaRange[2], length.out = nrow(subjData))
     
     # calculate gammas iterating over trials
     # latex versions: gamma[i]: \gamma_t = (1 - (1 - \alpha) ^ {\tau_t}) \dfrac{R_{t-1} A_{t-1}}{\tau_t} +  (1 - \alpha) ^ {\tau_t} \gamma_{t-1}
@@ -867,19 +867,19 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
     # k_t = \dfrac {1} {N}\sum_{cost}^{t - 1} k_{cost}
     # P(A): P(A)_t = \dfrac{1}{1 + exp^{-(\beta[r_t - \gamma_th_t^{k_t}])}}
     for (i in seq(nrow(subjData))) {
-      if (i == 1) {
+      if (i %in% c(1, nrow(subjData))) {
         # the environmental rate that participants start with
         # if we are fitting a single gamma, then add gamma prior with alpha = 0 and k = 1 (check that it reproduces results)
         # otherwise this functions as a prior bias on the environmental rate
-        if ("gammaPrior" %in% colnames(params)) {
+        if ("gammaPrior" %in% colnames(params) & i == 1) {
           gamma[i] <- params[param, "gammaPrior"]
         } else {
           gamma[i] <- gammaStart
         }
         
-        # choose if the trial rate > env. rate. No k modulation, since I'm assuming the effect doesn't apply right away
-        c[i] <- ifelse(o[i] / h[i] > gamma[i], 1, 0)
-      } else if (i < nrow(subjData)) {
+        # choose if the trial rate > env. rate. 
+        c[i] <- ifelse(o[i] / (h[i] ^ k[i]) > gamma[i], 1, 0)
+      } else {
         # choose if the prospect's reward rate, non-linearly discounted as above > env. rate
         # in other words, is the local-focus on handling time being affected, or a global environmental rate? (or something in between?)
         c[i] <- ifelse(o[i] / (h[i] ^ k[i]) > gamma[i], 1, 0)
@@ -888,17 +888,13 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
         a <- o[i] * c[i]
         
         # k
-        k[i + 1] <- theta[i] * k[i] * c[i] + (1 - theta[i]) * k[i - 1]
+        #k[i + 1] <- theta[i] * k[i] * c[i] + (1 - theta[i]) * k[i - 1]
         
         # non-linear estimate of the elapsed time since the last choice
         tau[i + 1] <- (h[i] ^ k[i] * c[i]) + t[i]
         
         # gamma is updated by how much weight is given to the recently experienced reward rate (i.e. left part of eq)
         gamma[i + 1] <- ((1 - (1 - alpha) ^ tau[i + 1]) * (a / tau[i + 1])) + ((1 - alpha) ^ tau[i + 1]) * gamma[i - 1]
-        
-      } else if (i == nrow(subjData)) {
-        # choice
-        c[i] <- ifelse(o[i] / (h[i] ^ k[i]) > gamma[i], 1, 0)
       }
     }
     
@@ -950,19 +946,18 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
   
   return(out)
 }
-plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0, showChoices = -0.6, thetaRange = c(0.15, 0)) {
+plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0, showChoices = -0.6) {
   
   if (exp == "btw") {
     # choose subject + params
     sub <- filter(dataBtw, SubjID == id)
     spaceSize <- 30
     params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-                   alpha = seq(0, 1, length.out = spaceSize),
-                   k = seq(-1, 2, length.out = spaceSize))
-    thetaRange <- c(0, 0)
+                   alpha = seq(0, 0.2, length.out = spaceSize),
+                   k = seq(0, 2, length.out = spaceSize))
     
     # run model
-    temp <- optimize_model_dyn_us3(sub, params, simplify = F, gammaStart = gammaOne, thetaRange = thetaRange)
+    temp <- optimize_model_dyn_us3(sub, params, simplify = F, gammaStart = gammaOne)
     print(temp$params)
     
     # get baseline gamma from a simple fit
@@ -1019,11 +1014,11 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0, showChoices = -0.
     # choose subject + params
     sub <- filter(dataWth, SubjID == id)
     spaceSize <- 30
-    params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
-                   alpha = seq(0, 1, length.out = spaceSize))
+    params <- list(tempr = seq(0, 2, length.out = spaceSize), 
+                   alpha = seq(0, 0.2, length.out = spaceSize))
     
     # run model
-    temp <- optimize_model_dyn_us3(sub, params, simplify = F, gammaStart = gammaOne, thetaRange = thetaRange)
+    temp <- optimize_model_dyn_us3(sub, params, simplify = F, gammaStart = gammaOne)
     print(temp$params)
     
     # plot
@@ -1255,6 +1250,19 @@ recalibrate_k <- function(ks, thetaRange = c(1, 0)) {
   
   return(learnedK)
 }
+recalibrate_k <- function(ks, thetaRange = c(1, 0)) {
+  # rule
+  theta <- seq(thetaRange[1], thetaRange[2], length.out = length(ks))
+  
+  learnedK <- ks
+  for (l in seq_along(ks)) {
+    if (l > 1 & l < length(learnedK)) {
+      learnedK[l + 1] <- theta[l] * ks[l] + (1 - theta[l]) * learnedK[l - 1]
+    }
+  }
+  
+  return(learnedK)
+}
 
 
 
@@ -1468,13 +1476,13 @@ if (twOC) {
 # but ~0.02 alpha seems sensible.
 spaceSize <- 30
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-               alpha = seq(0, 1, length.out = spaceSize),
+               alpha = seq(0, 0.5, length.out = spaceSize),
                k = seq(0, 2, length.out = spaceSize))
 
 trialwiseOC_btw_us_new <- dataBtw %>%
   filter(Cost != "Easy") %>%
   group_by(Cost, SubjID) %>%
-  do(optimize_model_dyn_us3(., params, simplify = T, thetaRange = c(0, 0))) %>%
+  do(optimize_model_dyn_us3(., params, simplify = T)) %>%
   ungroup() %>%
   distinct(SubjID, .keep_all = T)
 
@@ -1483,7 +1491,7 @@ param_compare_plot(trialwiseOC_btw_us_new, "k", meanRate = 1)
 #btw ks to apply to wth
 ks <- trialwiseOC_btw_us_new %>% 
   group_by(Cost) %>% 
-  summarise(mK = mean(k)) %>%
+  summarise(mK = median(k)) %>%
   rename(simpleCost = Cost) # to merge without replacing
 
 # reset data: 
@@ -1491,19 +1499,20 @@ tryCatch(dataWth <- dataWth %>% select(-mK), error = function(e) {print("Oops, n
 if (! "mK" %in% colnames(dataWth)) {
   dataWth <- dataWth %>%
     mutate(simpleCost = ifelse(Cost %in% c("Wait-C", "Wait-P"), "Wait", as.character(Cost))) %>% 
-    left_join(ks, by = "simpleCost") #%>%
-    # group_by(SubjID) %>%
-    # mutate(laggedK = dplyr::lag(mK, default = 1),
-    #        mK = mK * Choice,
-    #        mK = ifelse(mK == 0, laggedK, mK),
-    #        mK = recalibrate_k(mK, thetaRange = c(0.15, 0))) %>% 
-    # ungroup()
+    left_join(ks, by = "simpleCost") %>%
+    group_by(SubjID) %>%
+    mutate(laggedK = dplyr::lag(mK, default = 1),
+           mK = mK * Choice,
+           mK = ifelse(mK == 0, laggedK, mK),
+           mK = recalibrate_k(mK, thetaRange = c(0.9, 0))) %>%
+    ungroup()
 }
 
 # check that the k evolution looks ok
 dataWth %>%
-  #filter(SubjID == "461") %>%
+  filter(SubjID %in% c("109", "461")) %>%
   ggplot(aes(TrialN, mK, color = SubjID, group = SubjID)) +
+  geom_hline(yintercept = 1, linetype = "dashed") +
   geom_line(show.legend = F) +
   theme_minimal()
 
@@ -1547,7 +1556,7 @@ if (recovery) {
   # create a list with possible starting values for model parameters
   spaceSize <- 30
   params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
-                 alpha = seq(0, 1, length.out = spaceSize),
+                 alpha = seq(0, 0.5, length.out = spaceSize),
                  k = 1)
   
   # between subject exp
@@ -1558,13 +1567,13 @@ if (recovery) {
   
   # fit btw exp final model (alpha + nonlinear k)
   params <- list(tempr = seq(0, 2, length.out = spaceSize),
-                 alpha = seq(0, 1, length.out = spaceSize),
-                 k = seq(-1, 2, length.out = spaceSize))
+                 alpha = seq(0, 0.5, length.out = spaceSize),
+                 k = seq(0, 2, length.out = spaceSize))
   
   temp_tw_fits_btw <- dataBtw %>%
     filter(Cost != "Easy") %>%
     plyr::dlply("SubjID", identity) %>%
-    lapply(., optimize_model_dyn_us3, params, simplify = F, gammaStart = 0.7)
+    lapply(., optimize_model_dyn_us3, params, simplify = F, gammaStart = 0)
   
   
   recover_results_btw(temp_tw_fits_btw, binary = T)
