@@ -764,6 +764,8 @@ $P(accept)_i = \dfrac {1} {1 + e^{-\beta(R_i - \gamma H_i)}}$
 
 **new** The adaptive nature of choices in this experiment demanded more flexibility than the single-parameter model fitted above. Based on the results, an adequate model of behavior should meet X criteria: 1) an initial preference for cognitive effort trials 2) that this preference disappeared as acceptances devolved to a common rate across costs; 3) show that participants kept track of recent offer history; 4) that these effects were robust to block order effects; 5) deviations from optimality that were not simply due to overharvesting; and 6) be applicable to both experiments. Alternative foraging models from the literature were not fitted, as they did not qualitatively meet these criteria (wikenheiser, C&D, Fawcett...)
 
+DIFFICULT TO MODEL: ALL COST ACCEPTANCES DECREASE AT LEAST A BIT. LEARNING SUBJECTIVE TIME DOESN'T DO THAT. IN FACT, IT STILL SEEMS AS IF THE EFFORT FATIGUE SEEN ON EXP 1 HAPPENS AGAIN, AND ALL COSTS DEFAULT TO THE COSTLIEST. THAT DOESN'T INVOLVE TIME NECESSARILY.
+
 ## Results
 
 ### **Between-subjects: Tests of whether decision makers integrate delay and reward information**
