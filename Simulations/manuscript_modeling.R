@@ -6,6 +6,8 @@
 # the idea being that you can enter a model and data, and the function will return the lowest LL and associated parameters
 # maybe also R-squares and things in the current optimization function
 
+library(parallel)
+
 # simpler form of optimization that allows inputting any model expression into a single function call
 # only good for static models
 optimize_model_static <- function(subjData, params, model, simplify = F) {
@@ -558,7 +560,7 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
       
       # s update versions
       # s[i + 1] <- theta[i] * S[i] * c[i] + (1 - theta[i]) * s[i]
-      # s[i + 1] <- theta[i] * S[i] + (1 - theta[i]) * s[i]
+      # s[i + 1] <- (alpha_s / i) * S[i] * c[i] + (1 - (alpha_s / i)) * s[i]
       # s[i + 1] <- s[i] + 1/i * (S[i] - s[i]) # Sutton & Barto, page 37. Add choice to S[l]?
       left <- ((1 - alpha_s) ^ i) * s[1]
       right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * (S[seq(i)] ^ a[seq(i)])
@@ -926,6 +928,7 @@ recalibrate_s <- function(S, thetaRange, choice) {
   l <- 1
   while (l < length(S)) {
     # s[l + 1] <- theta[l] * S[l] * choice[l] + (1 - theta[l]) * s[l]
+    # s[i + 1] <- (alpha_s / i) * S[i] * c[i] + (1 - (alpha_s / i)) * s[i]
     # s[l + 1] <- s[l] + (1/l * (S[l] - s[l])) * choice[l] # Sutton & Barto, page 37. 
     left <- ((1 - a) ^ l) * s[1]
     right <- a * (1 - a) ^ (l - seq(l)) * S[seq(l)] ^ choice[seq(l)]
@@ -964,7 +967,7 @@ if (baseOC_nloptr) {
     ungroup()
 }
 
-## ORIGINAL OC
+## ORIGINAL OC computed using the dynamic model, showing that the adaptive version can be reduced to a single gamma fit
 # great correspondence with NLOPTR, just much slower since it surveys the whole parameter space
 if (bOC) {
   print("Running base OC model through grid search...")
@@ -1000,6 +1003,8 @@ if (bOC) {
     group_by(Cost, SubjID) %>%
     do(optimize_model_dyn_us3(., params, simplify = T)) %>%
     ungroup()
+  
+  param_compare_plot(baseOC, "gammaPrior", meanRate = 0.7)
 }
 
 
@@ -1081,7 +1086,7 @@ if (dOC) {
   # fit to each subject
   dynamicOC <- data %>%
     group_by(Cost, SubjID) %>%
-    do(optimize_model(., params, model_expr, simplify = T)) %>%
+    do(optimize_model_static(., params, model_expr, simplify = T)) %>%
     ungroup()
 }
 
@@ -1151,14 +1156,20 @@ spaceSize <- 30
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                alpha = seq(0, 0.5, length.out = spaceSize),
                s = seq(0, 2, length.out = spaceSize),
-               alpha_s = seq(0, 0.5, length.out = spaceSize))
+               alpha_s = 0) # in the between subjects version all S_costs are the same, so there is no update. Just enforcing that here to save on computation
 
-trialwiseOC_btw_us_new <- dataBtw %>%
+trialwiseOC_btw <- dataBtw %>%
   filter(Cost != "Easy") %>%
   group_by(Cost, SubjID) %>%
   do(optimize_model_dyn_us3(., params, simplify = T)) %>%
   ungroup() %>%
   distinct(SubjID, .keep_all = T)
+
+# NOTE: better to fit this once, and then create a function to simplify. mclapply > purrr:do()
+system.time(trialwiseOC_btw <- dataBtw %>%
+  filter(Cost != "Easy") %>%
+  plyr::dlply("SubjID", identity) %>%
+  mclapply(., optimize_model_dyn_us3, params, simplify = F, mc.cores = detectCores()))
 
 param_compare_plot(trialwiseOC_btw_us_new, "s", meanRate = 1)
 
@@ -1245,7 +1256,7 @@ if (recovery) {
   params <- list(tempr = seq(0, 2, length.out = spaceSize),
                  alpha = seq(0, 0.5, length.out = spaceSize),
                  s = seq(0, 2, length.out = spaceSize),
-                 alpha_s = seq(0, 0.5, length.out = spaceSize))
+                 alpha_s = 0)
   
   temp_tw_fits_btw <- dataBtw %>%
     filter(Cost != "Easy") %>%
