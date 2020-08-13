@@ -522,7 +522,7 @@ plot_dyn_us <- function(id = "58", exp = "btw", gammaOne = 0) {
 }
 
 # to test the effect of parameters 
-plot_alphas <- function(alphas, k = 1, exp = "btw", gammaStart = 0) {
+plot_alphas <- function(alphas, k = 1, exp = "btw", gammaStart = 0.5) {
   if (exp == "btw") {
     # choose sample subject + params
     sub <- filter(dataBtw, SubjID == "58")
@@ -847,13 +847,14 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
     # vectors are initialized by a single value, but they get updated
     tempr <- params[param, "tempr"]
     alpha <- params[param, "alpha"]
+    ifelse("alpha_k" %in% colnames(params), alpha_k <- params[param, "alpha_k"], alpha_k <- 0.15) # evolving time estimate learning. turn into free parameter
     ifelse("k" %in% colnames(params), k <- rep(params[param, "k"], nrow(subjData)), k <- subjData$mK)
     ifelse("gammaPrior" %in% colnames(params), gamma <- rep(params[param, "gammaPrior"], nrow(subjData)), gamma <- rep(gammaStart, nrow(subjData)))
     
     # vectors to store evolving variables
     a <- rep(0, nrow(subjData))
     tau <- rep(0, nrow(subjData))
-    #theta <- seq(thetaRange[1], thetaRange[2], length.out = nrow(subjData))
+    K <- k # experienced k, mainly for updating rule
     
     # calculate gammas iterating over trials
     # latex versions: gamma[i]: \gamma_t = (1 - (1 - \alpha) ^ {\tau_t}) \dfrac{R_{t-1} A_{t-1}}{\tau_t} +  (1 - \alpha) ^ {\tau_t} \gamma_{t-1}
@@ -876,9 +877,9 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
       # K[l + 1] <- theta[l] * ks[l] + (1 - theta[l]) * K[l - 1]
       # K[l + 1] <- (theta[l] ^ (-1 / l)) * ks[l] + (1 - (theta[l] ^ (-1 / l))) * K[l]
       # K[l + 1] <- K[l] + 1/l * (ks[l] - K[l]) # Sutton & Barto, page 37. Add choice to ks[l]?
-      # left <- (1 - a)^l * K[1]
-      # right <- a * (1 - a) ^ (l - seq(l)) * ks[seq(l)] # * c[l]?
-      # K[l + 1] <-  left + sum(right)
+      left <- ((1 - alpha_k) ^ i) * k[1]
+      right <- alpha_k * (1 - alpha_k) ^ (i - seq(i)) * (K[seq(i)] ^ a[seq(i)])
+      k[i + 1] <-  left + sum(right)
       
       # non-linear estimate of the elapsed time since the last choice
       tau[i] <- (h[i] ^ k[i] * a[i]) + t[i]
@@ -911,6 +912,8 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
       out$fit_c <- c
       out$params <- params[param, ]
       out$pAccept <- p
+      
+      plot(k, type = "b")
       
       # break if the reduction is too small to be significant
       # based on visual assessment of the likelihood space, which looks convex
@@ -1242,23 +1245,27 @@ recalibrate_k <- function(ks, thetaRange = c(1, 0)) {
   
   return(learnedK)
 }
-recalibrate_k <- function(ks, thetaRange = c(1, 0)) {
+recalibrate_k <- function(ks, thetaRange, choice) {
   # rule
   theta <- seq(thetaRange[1], thetaRange[2], length.out = length(ks))
   
+  # vector to store the evolving estimates of K 
   K <- ks
-  for (l in seq_along(ks)) {
-    if (l > 1 & l < length(K)) {
-      K[l + 1] <- theta[l] * ks[l] + (1 - theta[l]) * K[l - 1]
-      #K[l + 1] <- (theta[l] ^ (-1 / l)) * ks[l] + (1 - (theta[l] ^ (-1 / l))) * K[l]
-      # K[l + 1] <- K[l] + 1/l * (ks[l] - K[l]) # Sutton & Barto, page 37. Add choice to ks[l]?
-      # left <- (1 - a)^l * K[1]
-      # right <- a * (1 - a) ^ (l - seq(l)) * ks[seq(l)] # * c[l]?
-      # K[l + 1] <-  left + sum(right)
-    }
+  K[1] <- 1
+  
+  a <- theta[1]
+  l <- 1
+  while (l < length(ks)) {
+    # K[l + 1] <- theta[l] * ks[l] * choice[l] + (1 - theta[l]) * K[l]
+    # K[l + 1] <- K[l] + (1/l * (ks[l] - K[l])) * choice[l] # Sutton & Barto, page 37. Add choice to ks[l]?
+    left <- ((1 - a) ^ l) * K[1]
+    right <- a * (1 - a) ^ (l - seq(l)) * ks[seq(l)] ^ choice[seq(l)]
+    K[l + 1] <-  left + sum(right)
+    
+    l <- l + 1
   }
   
-  return(learnedK)
+  return(K)
 }
 
 
