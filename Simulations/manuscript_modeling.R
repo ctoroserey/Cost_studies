@@ -913,7 +913,7 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
       out$params <- params[param, ]
       out$pAccept <- p
       
-      plot(k, type = "b")
+      #plot(k, type = "b")
       
       # break if the reduction is too small to be significant
       # based on visual assessment of the likelihood space, which looks convex
@@ -1009,7 +1009,8 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0.5, showChoices = -
     sub <- filter(dataWth, SubjID == id)
     spaceSize <- 30
     params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-                   alpha = seq(0, 0.5, length.out = spaceSize))
+                   alpha = seq(0, 0.5, length.out = spaceSize),
+                   alpha_k = seq(0, 0.5, length.out = spaceSize))
     
     # run model
     temp <- optimize_model_dyn_us3(sub, params, simplify = F, gammaStart = gammaOne)
@@ -1278,7 +1279,7 @@ baseLogistic <- F # to test whether the brute search converges to a conventional
 fwOC <- F
 dOC <- F
 twOC <- F
-recovery <- F
+recovery <- T
 
 # which experimental dataset?
 data <- dataBtw %>% 
@@ -1323,7 +1324,8 @@ if (bOC) {
   params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                  gammaPrior = seq(0.25, 1.5, length.out = spaceSize),
                  alpha = 0,
-                 k = 1)
+                 k = 1,
+                 alpha_k = 0)
   
   # fit to each subject
   baseOC <- dataBtw %>%
@@ -1503,13 +1505,13 @@ tryCatch(dataWth <- dataWth %>% select(-mK), error = function(e) {print("Oops, n
 if (! "mK" %in% colnames(dataWth)) {
   dataWth <- dataWth %>%
     mutate(simpleCost = ifelse(Cost %in% c("Wait-C", "Wait-P"), "Wait", as.character(Cost))) %>% 
-    left_join(ks, by = "simpleCost") %>%
-    group_by(SubjID) %>%
-    mutate(laggedK = dplyr::lag(mK, default = 1),
-           mK = mK * Choice,
-           mK = ifelse(mK == 0, laggedK, mK),
-           mK = recalibrate_k(mK, thetaRange = c(0.9, 0))) %>%
-    ungroup()
+    left_join(ks, by = "simpleCost") #%>%
+    # group_by(SubjID) %>%
+    # mutate(laggedK = dplyr::lag(mK, default = 1),
+    #        mK = mK * Choice,
+    #        mK = ifelse(mK == 0, laggedK, mK),
+    #        mK = recalibrate_k(mK, thetaRange = c(0.9, 0))) %>%
+    # ungroup()
 }
 
 # check that the k evolution looks ok
