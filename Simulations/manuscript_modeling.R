@@ -602,7 +602,7 @@ plot_alphas <- function(alphas, k = 1, exp = "btw", gammaStart = 0) {
       scale_fill_discrete(name = "Offer") +
       #scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
       ylim(0, NA) +
-      labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
+      labs(x = "Trial Number", y = "Earning rate") +
       theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
             panel.background = element_blank(),
@@ -675,7 +675,7 @@ plot_alphas <- function(alphas, k = 1, exp = "btw", gammaStart = 0) {
       scale_fill_discrete(name = "Offer") +
       #scale_color_manual(values = colsWth) +
       ylim(0, NA) +
-      labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
+      labs(x = "Trial Number", y = "Earning rate") +
       theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
             panel.background = element_blank(),
@@ -818,7 +818,7 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
   
   return(out)
 }
-optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 0) {
+optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 0.5) {
   # get every combination of parameters
   params <- expand.grid(params)
   
@@ -844,19 +844,15 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
   for (param in seq(nrow(params))) {
     # isolate the parameters for this iteration
     # and then store them as variables
+    # vectors are initialized by a single value, but they get updated
     tempr <- params[param, "tempr"]
     alpha <- params[param, "alpha"]
-    if ("k" %in% colnames(params)) {
-      # use a vector so I can use a common indexing for fixed and to-be-fitted values of k
-      k <- rep(params[param, "k"], nrow(subjData)) # if there is a free k parameter, use its fit, otherwise use the values from exp1
-    } else {
-      k <- subjData$mK
-    }
+    ifelse("k" %in% colnames(params), k <- rep(params[param, "k"], nrow(subjData)), k <- subjData$mK)
+    ifelse("gammaPrior" %in% colnames(params), gamma <- rep(params[param, "gammaPrior"], nrow(subjData)), gamma <- rep(gammaStart, nrow(subjData)))
     
-    # get the trial-wise gamma to export the probability of acceptance
-    c <- rep(0, nrow(subjData))
-    gamma <- rep(0, nrow(subjData))
-    tau <- h
+    # vectors to store evolving variables
+    a <- rep(0, nrow(subjData))
+    tau <- rep(0, nrow(subjData))
     #theta <- seq(thetaRange[1], thetaRange[2], length.out = nrow(subjData))
     
     # calculate gammas iterating over trials
@@ -866,36 +862,31 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
     # gamma for pretty tau: \gamma_t = (1 - (1 - \alpha) ^ {\tau_{t-1}}) \dfrac{r_{t-1} a_{t-1}}{\tau_{t-1}} +  (1 - \alpha) ^ {\tau_{t-1}} \gamma_{t-1}
     # k_t = \dfrac {1} {N}\sum_{cost}^{t - 1} k_{cost}
     # P(A): P(A)_t = \dfrac{1}{1 + exp^{-(\beta[r_t - \gamma_th_t^{k_t}])}}
-    for (i in seq(nrow(subjData))) {
-      if (i %in% c(1, nrow(subjData))) {
-        # the environmental rate that participants start with
-        # if we are fitting a single gamma, then add gamma prior with alpha = 0 and k = 1 (check that it reproduces results)
-        # otherwise this functions as a prior bias on the environmental rate
-        if ("gammaPrior" %in% colnames(params) & i == 1) {
-          gamma[i] <- params[param, "gammaPrior"]
-        } else {
-          gamma[i] <- gammaStart
-        }
-        
-        # choose if the trial rate > env. rate. 
-        c[i] <- ifelse(o[i] / (h[i] ^ k[i]) > gamma[i], 1, 0)
-      } else {
-        # choose if the prospect's reward rate, non-linearly discounted as above > env. rate
-        # in other words, is the local-focus on handling time being affected, or a global environmental rate? (or something in between?)
-        c[i] <- ifelse(o[i] / (h[i] ^ k[i]) > gamma[i], 1, 0)
-        
-        # was the offer accepted?
-        a <- o[i] * c[i]
-        
-        # k
-        #k[i + 1] <- theta[i] * k[i] * c[i] + (1 - theta[i]) * k[i - 1]
-        
-        # non-linear estimate of the elapsed time since the last choice
-        tau[i + 1] <- (h[i] ^ k[i] * c[i]) + t[i]
-        
-        # gamma is updated by how much weight is given to the recently experienced reward rate (i.e. left part of eq)
-        gamma[i + 1] <- ((1 - (1 - alpha) ^ tau[i + 1]) * (a / tau[i + 1])) + ((1 - alpha) ^ tau[i + 1]) * gamma[i - 1]
-      }
+    i <- 1
+    while (i < nrow(subjData)) {
+      # choose if the prospect's reward rate, non-linearly discounted as above > env. rate
+      # in other words, is the local-focus on handling time being affected, or a global environmental rate? (or something in between?)
+      a[i] <- ifelse(o[i] / (h[i] ^ k[i]) > gamma[i], 1, 0)
+      
+      # amount earned
+      ao <- o[i] * a[i]
+      
+      # k update versions
+      # k[i + 1] <- theta[i] * k[i] * c[i] + (1 - theta[i]) * k[i - 1]
+      # K[l + 1] <- theta[l] * ks[l] + (1 - theta[l]) * K[l - 1]
+      # K[l + 1] <- (theta[l] ^ (-1 / l)) * ks[l] + (1 - (theta[l] ^ (-1 / l))) * K[l]
+      # K[l + 1] <- K[l] + 1/l * (ks[l] - K[l]) # Sutton & Barto, page 37. Add choice to ks[l]?
+      # left <- (1 - a)^l * K[1]
+      # right <- a * (1 - a) ^ (l - seq(l)) * ks[seq(l)] # * c[l]?
+      # K[l + 1] <-  left + sum(right)
+      
+      # non-linear estimate of the elapsed time since the last choice
+      tau[i] <- (h[i] ^ k[i] * a[i]) + t[i]
+      
+      # gamma is updated by how much weight is given to the recently experienced reward rate (i.e. left part of eq)
+      gamma[i + 1] <- ((1 - (1 - alpha) ^ tau[i]) * (ao / tau[i])) + ((1 - alpha) ^ tau[i]) * gamma[i]
+      
+      i <- i + 1
     }
     
     # estimate the probability of acceptance based on the difference between the offer rate vs global rate
@@ -945,15 +936,15 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
   }
   
   return(out)
-}
-plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0, showChoices = -0.6) {
+}  # these produce diff results for basic model. see why
+plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0.5, showChoices = -0.6) {
   
   if (exp == "btw") {
     # choose subject + params
     sub <- filter(dataBtw, SubjID == id)
     spaceSize <- 30
     params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-                   alpha = seq(0, 0.2, length.out = spaceSize),
+                   alpha = seq(0, 0.5, length.out = spaceSize),
                    k = seq(0, 2, length.out = spaceSize))
     
     # run model
@@ -1003,7 +994,7 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0, showChoices = -0.
       scale_fill_discrete(name = "Offer") +
       scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
       ylim(showChoices, NA) +
-      labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
+      labs(x = "Trial Number", y = "Earning rate") +
       theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
             panel.background = element_blank(),
@@ -1015,7 +1006,7 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0, showChoices = -0.
     sub <- filter(dataWth, SubjID == id)
     spaceSize <- 30
     params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-                   alpha = seq(0, 0.2, length.out = spaceSize))
+                   alpha = seq(0, 0.5, length.out = spaceSize))
     
     # run model
     temp <- optimize_model_dyn_us3(sub, params, simplify = F, gammaStart = gammaOne)
@@ -1044,7 +1035,7 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0, showChoices = -0.
       scale_fill_discrete(name = "Offer") +
       scale_color_manual(values = colsWth) +
       ylim(showChoices, NA) +
-      labs(x = "Trial Number", y = "Ongoing Opportunity Cost (gamma)") +
+      labs(x = "Trial Number", y = "Earning rate") +
       theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
             panel.background = element_blank(),
@@ -1059,7 +1050,7 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0, showChoices = -0.
 # one for each experiment, since the plots are different
 recover_results_btw <- function(fitsList, binary = F) {
   # extract fits
-  fits <- do.call(c, sapply(fitsList, "[", "pAccept"))
+  fits <- do.call(base::c, sapply(fitsList, "[", "pAccept"))
   if (binary) {
     # to get stochastic-less choices
     fits <- ifelse(fits > 0.5, 1, 0)
@@ -1242,7 +1233,8 @@ recalibrate_k <- function(ks, thetaRange = c(1, 0)) {
   
   learnedK <- rep(0, length(ks))
   for (l in seq_along(ks)) {
-    if (l == 1) {learnedK[l] <- ks[1]
+    if (l == 1) {
+      learnedK[l] <- ks[1]
     } else {
       learnedK[l] <- theta[l] * ks[l] + (1 - theta[l]) * learnedK[l - 1]
     }
@@ -1254,10 +1246,15 @@ recalibrate_k <- function(ks, thetaRange = c(1, 0)) {
   # rule
   theta <- seq(thetaRange[1], thetaRange[2], length.out = length(ks))
   
-  learnedK <- ks
+  K <- ks
   for (l in seq_along(ks)) {
-    if (l > 1 & l < length(learnedK)) {
-      learnedK[l + 1] <- theta[l] * ks[l] + (1 - theta[l]) * learnedK[l - 1]
+    if (l > 1 & l < length(K)) {
+      K[l + 1] <- theta[l] * ks[l] + (1 - theta[l]) * K[l - 1]
+      #K[l + 1] <- (theta[l] ^ (-1 / l)) * ks[l] + (1 - (theta[l] ^ (-1 / l))) * K[l]
+      # K[l + 1] <- K[l] + 1/l * (ks[l] - K[l]) # Sutton & Barto, page 37. Add choice to ks[l]?
+      # left <- (1 - a)^l * K[1]
+      # right <- a * (1 - a) ^ (l - seq(l)) * ks[seq(l)] # * c[l]?
+      # K[l + 1] <-  left + sum(right)
     }
   }
   
@@ -1316,7 +1313,7 @@ if (bOC) {
   
   # alternative using the big model function
   spaceSize <- 30
-  params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
+  params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                  gammaPrior = seq(0.25, 1.5, length.out = spaceSize),
                  alpha = 0,
                  k = 1)
@@ -1535,12 +1532,12 @@ if (recovery) {
   # so far both single gamma and alpha + k perform well, though the latter is preferred due to explanatory power and generalization to exp 2
   
   ## recover results using basic model
-  model_expr <- expr(tempr[[1]] * (reward - (gamma[[1]] * handling)))
+  #model_expr <- expr(tempr[[1]] * (reward - (gammaPrior[[1]] * handling)))
   
   # create a list with possible starting values for model parameters
   # parameter names must match model ones
   spaceSize <- 30
-  params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
+  params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                  gammaPrior = seq(0.25, 1.5, length.out = spaceSize),
                  alpha = 0,
                  k = 1)
@@ -1551,6 +1548,7 @@ if (recovery) {
     plyr::dlply("SubjID", identity) %>%
     lapply(., optimize_model_dyn_us3, params, simplify = F)
   
+  recover_results_btw(temp_bOC_fits, binary = T)
   
   ## alpha only
   # create a list with possible starting values for model parameters
@@ -1576,7 +1574,7 @@ if (recovery) {
     lapply(., optimize_model_dyn_us3, params, simplify = F, gammaStart = 0)
   
   
-  recover_results_btw(temp_tw_fits_btw, binary = T)
+  recover_results_btw(temp_tw_fits_btw, binary = F)
   
   ### Within subjects (reproduce 16.3.3)
   # partial replication! without temperature I get the first block fine
@@ -1586,7 +1584,7 @@ if (recovery) {
   
   # fit wth
   spaceSize <- 30
-  params <- list(tempr = seq(-1, 1, length.out = spaceSize),
+  params <- list(tempr = seq(0, 2, length.out = spaceSize),
                  alpha = seq(0, 0.5, length.out = spaceSize))
   
   temp_tw_fits_wth <- dataWth %>%
