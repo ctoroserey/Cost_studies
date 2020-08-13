@@ -1296,7 +1296,6 @@ if (baseOC_nloptr) {
     ungroup()
 }
 
-
 ## ORIGINAL OC
 # great correspondence with NLOPTR, just much slower since it surveys the whole parameter space
 if (bOC) {
@@ -1483,7 +1482,8 @@ if (twOC) {
 spaceSize <- 30
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                alpha = seq(0, 0.5, length.out = spaceSize),
-               k = seq(0, 2, length.out = spaceSize))
+               k = seq(0, 2, length.out = spaceSize),
+               alpha_k = seq(0, 0.5, length.out = spaceSize))
 
 trialwiseOC_btw_us_new <- dataBtw %>%
   filter(Cost != "Easy") %>%
@@ -1514,17 +1514,18 @@ if (! "mK" %in% colnames(dataWth)) {
     # ungroup()
 }
 
-# check that the k evolution looks ok
-dataWth %>%
-  filter(SubjID %in% c("109", "461")) %>%
-  ggplot(aes(TrialN, mK, color = SubjID, group = SubjID)) +
-  geom_hline(yintercept = 1, linetype = "dashed") +
-  geom_line(show.legend = F) +
-  theme_minimal()
+# # check that the k evolution looks ok
+# dataWth %>%
+#   filter(SubjID %in% c("109", "461")) %>%
+#   ggplot(aes(TrialN, mK, color = SubjID, group = SubjID)) +
+#   geom_hline(yintercept = 1, linetype = "dashed") +
+#   geom_line(show.legend = F) +
+#   theme_minimal()
 
 # fit wth
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-               alpha = seq(0, 0.5, length.out = spaceSize))
+               alpha = seq(0, 0.5, length.out = spaceSize),
+               alpha_k = seq(0, 0.5, length.out = spaceSize))
 
 trialwiseOC_wth_us_new <- dataWth %>%
   group_by(SubjID) %>%
@@ -1544,38 +1545,39 @@ if (recovery) {
   #model_expr <- expr(tempr[[1]] * (reward - (gammaPrior[[1]] * handling)))
   
   # create a list with possible starting values for model parameters
-  # parameter names must match model ones
-  spaceSize <- 30
-  params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-                 gammaPrior = seq(0.25, 1.5, length.out = spaceSize),
-                 alpha = 0,
-                 k = 1)
-  
-  # fit to each btw subject
-  temp_bOC_fits <- dataBtw %>%
-    filter(Cost != "Easy") %>%
-    plyr::dlply("SubjID", identity) %>%
-    lapply(., optimize_model_dyn_us3, params, simplify = F)
-  
-  recover_results_btw(temp_bOC_fits, binary = T)
-  
-  ## alpha only
-  # create a list with possible starting values for model parameters
-  spaceSize <- 30
-  params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
-                 alpha = seq(0, 0.5, length.out = spaceSize),
-                 k = 1)
-  
-  # between subject exp
-  temp_dOC_fits <- dataBtw %>%
-    filter(Cost != "Easy") %>%
-    plyr::dlply("SubjID", identity) %>%
-    lapply(., optimize_model_dyn_us3, params, simplify = F)
+  # # parameter names must match model ones
+  # spaceSize <- 30
+  # params <- list(tempr = seq(0, 2, length.out = spaceSize), 
+  #                gammaPrior = seq(0.25, 1.5, length.out = spaceSize),
+  #                alpha = 0,
+  #                k = 1)
+  # 
+  # # fit to each btw subject
+  # temp_bOC_fits <- dataBtw %>%
+  #   filter(Cost != "Easy") %>%
+  #   plyr::dlply("SubjID", identity) %>%
+  #   lapply(., optimize_model_dyn_us3, params, simplify = F)
+  # 
+  # recover_results_btw(temp_bOC_fits, binary = T)
+  # 
+  # ## alpha only
+  # # create a list with possible starting values for model parameters
+  # spaceSize <- 30
+  # params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
+  #                alpha = seq(0, 0.5, length.out = spaceSize),
+  #                k = 1)
+  # 
+  # # between subject exp
+  # temp_dOC_fits <- dataBtw %>%
+  #   filter(Cost != "Easy") %>%
+  #   plyr::dlply("SubjID", identity) %>%
+  #   lapply(., optimize_model_dyn_us3, params, simplify = F)
   
   # fit btw exp final model (alpha + nonlinear k)
   params <- list(tempr = seq(0, 2, length.out = spaceSize),
                  alpha = seq(0, 0.5, length.out = spaceSize),
-                 k = seq(0, 2, length.out = spaceSize))
+                 k = seq(0, 2, length.out = spaceSize),
+                 alpha_k = seq(0, 0.5, length.out = spaceSize))
   
   temp_tw_fits_btw <- dataBtw %>%
     filter(Cost != "Easy") %>%
@@ -1594,7 +1596,8 @@ if (recovery) {
   # fit wth
   spaceSize <- 30
   params <- list(tempr = seq(0, 2, length.out = spaceSize),
-                 alpha = seq(0, 0.5, length.out = spaceSize))
+                 alpha = seq(0, 0.5, length.out = spaceSize),
+                 alpha_k = seq(0, 0.5, length.out = spaceSize))
   
   temp_tw_fits_wth <- dataWth %>%
     plyr::dlply("SubjID", identity) %>%
