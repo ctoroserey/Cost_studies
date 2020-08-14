@@ -87,7 +87,7 @@ optimize_model_static <- function(subjData, params, model, simplify = F) {
 }
 
 # variants of vanilla C&D
-optimize_model_dyn_us <- function(subjData, params, simplify = F, gammaStart = 0) {
+optimize_model_cd <- function(subjData, params, simplify = F, gammaStart = 0) {
   # get every combination of parameters
   params <- expand.grid(params)
   
@@ -262,7 +262,7 @@ plot_alphas <- function(alphas, s = 1, exp = "btw", gammaStart = 0.5) {
     model_expr <- expr(tempr[[1]] * (reward - (gamma[[1]] * handling)))
     
     # fit to subject
-    baseOC <- optimize_model(sub, params, model_expr, simplify = T)
+    baseOC <- optimize_model_static(sub, params, model_expr, simplify = T)
     
     # plot
     ratePlot <- temp %>%
@@ -381,7 +381,7 @@ plot_alphas <- function(alphas, s = 1, exp = "btw", gammaStart = 0.5) {
 # preferred function, which works for all types of models considered so far
 # like, s = 1 and alpha = 0 returns the single parameter model
 # generative version: model calculates choices per fitted previous choices, not just based on observed sub choices
-optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 0.5) {
+optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart = 0.5) {
   # get every combination of parameters
   params <- expand.grid(params)
   
@@ -401,6 +401,7 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
   out$fit_c <- as.numeric() # to store the winning fitted choices
   out$LLs <- rep(0, nrow(params))
   out$LL <- Inf
+  out$evolvingS <- as.numeric()
   
   # iterate through possible parameters and get the LL
   #LLs <- sapply(seq(nrow(params)), function(i) {
@@ -471,9 +472,10 @@ optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 
       diff <- out$LL - negLL
       out$LL <- negLL
       out$rate <- gamma
-      out$fit_c <- c
+      out$fit_c <- a
       out$params <- params[param, ]
       out$pAccept <- p
+      out$evolvingS <- s
       
       #plot(s, type = "b")
       
@@ -513,7 +515,7 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0.5, showChoices = -
                    s = seq(0, 2, length.out = spaceSize))
     
     # run model
-    temp <- optimize_model_dyn_us3(sub, params, simplify = F, gammaStart = gammaOne)
+    temp <- optimize_model_adaptive(sub, params, simplify = F, gammaStart = gammaOne)
     print(temp$params)
     
     # get baseline gamma from a simple fit
@@ -575,7 +577,7 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0.5, showChoices = -
                    alpha_s = seq(0, 0.2, length.out = spaceSize))
     
     # run model
-    temp <- optimize_model_dyn_us3(sub, params, simplify = F, gammaStart = gammaOne)
+    temp <- optimize_model_adaptive(sub, params, simplify = F, gammaStart = gammaOne)
     print(temp$params)
     
     # plot
@@ -647,7 +649,7 @@ recover_results_btw <- function(fitsList, binary = F) {
           text = element_text(size = 12))
   
 }
-recover_results_wth <- function(fitsList, binary = F, matrix = T) {
+recover_results_wth <- function(fitsList, binary = F, matrix = T, order = F) {
   # use model fits to reproduce observed behavioral plots
   # the reported pre-post results, including mixed effects, use half 1 and half 2 raw, but the results are pretty much conserved either way.
   # here the middle blocks are eliminated to denote prevent the uneven assignment of the middle blocks to bias stuff either way
@@ -671,7 +673,7 @@ recover_results_wth <- function(fitsList, binary = F, matrix = T) {
     )) %>%
     filter(Block != 2) %>%
     mutate(Block = ifelse(Block == 1, "First Two Blocks", "Last Two Blocks")) %>%
-    group_by(Cost, BlockOrder, Block, Offer) %>%
+    {if (order) group_by(., Cost, BlockOrder, Block, Offer) else group_by(., Cost, Block, Offer)} %>%
     summarise(propAccept = mean(fitChoice),
               SE = sd(fitChoice) / sqrt(nSubjs_wth)) %>%
     ungroup() %>%
@@ -685,7 +687,7 @@ recover_results_wth <- function(fitsList, binary = F, matrix = T) {
     scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
     scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
     labs(x = "Reward", y = "Proportion Accepted") +
-    facet_wrap(vars(BlockOrder, Block)) +
+    {if (order) facet_wrap(vars(BlockOrder, Block)) else facet_wrap(vars(Block))} +
     theme(legend.key = element_blank(),
           legend.position = c(0.9, 0.25),
           panel.grid.major = element_blank(), 
@@ -823,7 +825,7 @@ simplify_results <- function(fitLists, exp = "btw") {
   temp <- sapply(fitLists, function(sub) {sub[c("percentQuit", "percentAccept", "params", "LL", "LL0", "Rsquared")]})
   
   # expand them
-  df <- unnest(as.tibble(t(temp)), cols = c(percentQuit, percentAccept, params, LL, LL0, Rsquared))
+  df <- unnest(as.tibble(t(temp)))
   
   # append subject id and cost (if relevant)
   if (exp == "btw") {
@@ -846,7 +848,7 @@ simplify_results <- function(fitLists, exp = "btw") {
 
 ## which models to run?
 baseOC_nloptr <- F
-bOC <- T
+bOC <- F
 baseLogistic <- F # to test whether the brute search converges to a conventional logistic through glm()
 fwOC <- F
 dOC <- F
@@ -902,7 +904,7 @@ if (bOC) {
   baseOC <- dataBtw %>%
     filter(Cost != "Easy") %>%
     group_by(Cost, SubjID) %>%
-    do(optimize_model_dyn_us3(., params, simplify = T)) %>%
+    do(optimize_model_adaptive(., params, simplify = T)) %>%
     ungroup()
   
   param_compare_plot(baseOC, "gammaPrior", meanRate = 0.7)
@@ -1054,17 +1056,17 @@ if (twOC) {
 # so I tested a number of iterations to ensure that the results persist
 # at 30 and 50 it's the same. As alpha is reduced to ~0, s increases for cog.
 # but ~0.02 alpha seems sensible.
-spaceSize <- 30
+spaceSize <- 50
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-               alpha = seq(0, 0.5, length.out = spaceSize),
+               alpha = seq(0.001, 0.2, length.out = spaceSize),
                s = seq(0, 2, length.out = spaceSize),
                alpha_s = 0) # in the between subjects version all S_costs are the same, so there is no update. Just enforcing that here to save on computation
 
 # fit the model to each individual
-adaptiveOC_btw <- dataBtw %>%
+system.time(adaptiveOC_btw <- dataBtw %>%
   filter(Cost != "Easy") %>%
   plyr::dlply("SubjID", identity) %>%
-  mclapply(., optimize_model_dyn_us3, params, simplify = F, mc.cores = detectCores())
+  mclapply(., optimize_model_adaptive, params, simplify = F, mc.cores = detectCores()))
 
 # summarise
 adaptiveOC_btw_summary <- simplify_results(adaptiveOC_btw)
@@ -1072,8 +1074,12 @@ adaptiveOC_btw_summary <- simplify_results(adaptiveOC_btw)
 # plot comparisons
 param_compare_plot(adaptiveOC_btw_summary, "s", meanRate = 1)
 
+# standard stats
+summary(aov(s ~ Cost, adaptiveOC_btw_summary))
+t.test(filter(adaptiveOC_btw_summary, Cost == "Cognitive")$s, mu = 1)
+
 # plot result recovery
-recover_results_btw(adaptiveOC_btw, binary = F)
+recover_results_btw(adaptiveOC_btw, binary = T)
 
 #btw ss to apply to wth
 ss <- adaptiveOC_btw_summary %>% 
@@ -1098,22 +1104,31 @@ if (! "mS" %in% colnames(dataWth)) {
 # FIT WITHIN SUBJECTS
 spaceSize <- 50
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-               alpha = seq(0, 0.2, length.out = spaceSize),
-               alpha_s = seq(0, 1, length.out = spaceSize))
+               alpha = seq(0.001, 0.2, length.out = spaceSize),
+               alpha_s = seq(0, 0.5, length.out = spaceSize))
 
 # fit per individual
 system.time(adaptiveOC_wth <- dataWth %>%
   plyr::dlply("SubjID", identity) %>%
-  mclapply(., optimize_model_dyn_us3, params, simplify = F, mc.cores = detectCores()))
+  mclapply(., optimize_model_adaptive, params, simplify = F, mc.cores = detectCores()))
 
 # summarise
 adaptiveOC_wth_summary <- simplify_results(adaptiveOC_wth, exp = "wth")
 
 # plot comparisons
-plot(adaptiveOC_wth_summary$alpha, adaptiveOC_wth_summary$alpha_s)
+alphaCors <- cor.test(adaptiveOC_wth_summary$alpha, adaptiveOC_wth_summary$alpha_s)
+plot(adaptiveOC_wth_summary$alpha, adaptiveOC_wth_summary$alpha_s, 
+     xlab = "Global alpha (OC)",
+     ylab = "Focal alpha (S)",
+     main = paste("Correlation = ", round(alphaCors$estimate[[1]], digits = 2), "p = ", round(alphaCors$p.value[[1]], digits = 4)),
+     xaxt = "n")
+axis(side = 1, at = unique(adaptiveOC_wth_summary$alpha), labels = FALSE)
 
 # plot result recovery
-recover_results_wth(adaptiveOC_wth, binary = T)
+recover_results_wth(adaptiveOC_wth, binary = F)
+
+
+save.image(paste("/restricted/projectnb/cd-lab/Claudio/Cost_studies/data_", Sys.Date(), "_good.RData", sep = ""))
 
 
 
