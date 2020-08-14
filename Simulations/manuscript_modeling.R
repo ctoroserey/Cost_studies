@@ -1167,11 +1167,12 @@ if (twOC) {
 }
 
 
-### test
+### ADAPTIVE MODELING
 # taking the cumulative average of the subjective time perception makes subjective overall time seem slower.
 # a free parameter could be added to index the degree to which participants cared about this (replaces k as a free parameter, since s is adopted from exp 1)
 # weird that the higher the weight on cum_means, the lower the OC ie less selective. Think about it.
-# fit btw exp
+
+# FIT BETWEEN SUBJECTS
 # alpha will often default to the next lowest to 0
 # so I tested a number of iterations to ensure that the results persist
 # at 30 and 50 it's the same. As alpha is reduced to ~0, s increases for cog.
@@ -1217,7 +1218,7 @@ if (! "mS" %in% colnames(dataWth)) {
     # ungroup()
 }
 
-# fit wth
+# FIT WITHIN SUBJECTS
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                alpha = seq(0, 0.5, length.out = spaceSize),
                alpha_s = seq(0, 0.5, length.out = spaceSize))
