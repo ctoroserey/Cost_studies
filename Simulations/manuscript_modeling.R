@@ -940,7 +940,31 @@ recalibrate_s <- function(S, thetaRange, choice) {
   return(S)
 }
 
-
+# get a summary from a group's fits from the dynamical fits
+simplify_results <- function(fitLists, exp = "btw") {
+  # get the relevant parameters
+  temp <- sapply(trialwiseOC_btw, function(sub) {sub[c("percentQuit", "percentAccept", "params", "LL", "LL0", "Rsquared")]})
+  
+  # expand them
+  df <- unnest(as.tibble(t(temp)), cols = c(percentQuit, percentAccept, params, LL, LL0, Rsquared))
+  
+  # append subject id and cost (if relevant)
+  if (exp == "btw") {
+    subList <- dataBtw %>% 
+      filter(Cost != "Easy") %>% 
+      distinct(SubjID, .keep_all = T) %>% 
+      select(SubjID, Cost)
+  } else if (exp == "wth") {
+    subList <- dataWth %>% 
+      distinct(SubjID, .keep_all = T) %>% 
+      select(SubjID)
+  }
+  
+  # final summary
+  df <- cbind(subList, df)
+  
+  return(df)
+}
 
 
 ## which models to run?
@@ -1158,23 +1182,23 @@ params <- list(tempr = seq(0, 2, length.out = spaceSize),
                s = seq(0, 2, length.out = spaceSize),
                alpha_s = 0) # in the between subjects version all S_costs are the same, so there is no update. Just enforcing that here to save on computation
 
-trialwiseOC_btw <- dataBtw %>%
-  filter(Cost != "Easy") %>%
-  group_by(Cost, SubjID) %>%
-  do(optimize_model_dyn_us3(., params, simplify = T)) %>%
-  ungroup() %>%
-  distinct(SubjID, .keep_all = T)
-
-# NOTE: better to fit this once, and then create a function to simplify. mclapply > purrr:do()
-system.time(trialwiseOC_btw <- dataBtw %>%
+# fit the model to each individual
+adaptiveOC_btw <- dataBtw %>%
   filter(Cost != "Easy") %>%
   plyr::dlply("SubjID", identity) %>%
-  mclapply(., optimize_model_dyn_us3, params, simplify = F, mc.cores = detectCores()))
+  mclapply(., optimize_model_dyn_us3, params, simplify = F, mc.cores = detectCores())
 
-param_compare_plot(trialwiseOC_btw_us_new, "s", meanRate = 1)
+# summarise
+adaptiveOC_btw_summary <- simplify_results(adaptiveOC_btw)
+
+# plot comparisons
+param_compare_plot(adaptiveOC_btw_summary, "s", meanRate = 1)
+
+# plot result recovery
+recover_results_btw(adaptiveOC_btw, binary = F)
 
 #btw ss to apply to wth
-ss <- trialwiseOC_btw_us_new %>% 
+ss <- adaptiveOC_btw_summary %>% 
   group_by(Cost) %>% 
   summarise(mS = median(s)) %>%
   rename(simpleCost = Cost) # to merge without replacing
@@ -1182,9 +1206,9 @@ ss <- trialwiseOC_btw_us_new %>%
 # reset data: 
 tryCatch(dataWth <- dataWth %>% select(-mS), error = function(e) {print("Oops, no need to remove mS")})
 if (! "mS" %in% colnames(dataWth)) {
-  dataWth <- dataWth %>%
+  suppressWarnings(dataWth <- dataWth %>%
     mutate(simpleCost = ifelse(Cost %in% c("Wait-C", "Wait-P"), "Wait", as.character(Cost))) %>% 
-    left_join(ss, by = "simpleCost") #%>%
+    left_join(ss, by = "simpleCost")) #%>%
     # group_by(SubjID) %>%
     # mutate(laggedS = dplyr::lag(mS, default = 1),
     #        mS = mS * Choice,
@@ -1193,97 +1217,27 @@ if (! "mS" %in% colnames(dataWth)) {
     # ungroup()
 }
 
-# # check that the s evolution looks ok
-# dataWth %>%
-#   filter(SubjID %in% c("109", "461")) %>%
-#   ggplot(aes(TrialN, mS, color = SubjID, group = SubjID)) +
-#   geom_hline(yintercept = 1, linetype = "dashed") +
-#   geom_line(show.legend = F) +
-#   theme_minimal()
-
 # fit wth
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                alpha = seq(0, 0.5, length.out = spaceSize),
                alpha_s = seq(0, 0.5, length.out = spaceSize))
 
-trialwiseOC_wth_us_new <- dataWth %>%
-  group_by(SubjID) %>%
-  do(optimize_model_dyn_us3(., params, simplify = T)) %>%
-  ungroup() %>%
-  distinct(SubjID, .keep_all = T)
+# fit per individual
+system.time(adaptiveOC_wth <- dataWth %>%
+  plyr::dlply("SubjID", identity) %>%
+  mclapply(., optimize_model_dyn_us3, params, simplify = F, mc.cores = detectCores()))
+
+# summarise
+adaptiveOC_wth_summary <- simplify_results(adaptiveOC_wth)
+
+# plot comparisons
+plot(adaptiveOC_wth_summary$alpha, adaptiveOC_wth_summary$alpha_s)
+
+# plot result recovery
+recover_results_wth(adaptiveOC_wth, binary = F)
 
 
 
-### Result recovery
-if (recovery) {
-  ### Between subjects
-  # attempt to recover the observed results from 16.2.2, reproducing the prop-completed plot
-  # so far both single gamma and alpha + s perform well, though the latter is preferred due to explanatory power and generalization to exp 2
-  
-  ## recover results using basic model
-  #model_expr <- expr(tempr[[1]] * (reward - (gammaPrior[[1]] * handling)))
-  
-  # create a list with possible starting values for model parameters
-  # # parameter names must match model ones
-  # spaceSize <- 30
-  # params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-  #                gammaPrior = seq(0.25, 1.5, length.out = spaceSize),
-  #                alpha = 0,
-  #                s = 1)
-  # 
-  # # fit to each btw subject
-  # temp_bOC_fits <- dataBtw %>%
-  #   filter(Cost != "Easy") %>%
-  #   plyr::dlply("SubjID", identity) %>%
-  #   lapply(., optimize_model_dyn_us3, params, simplify = F)
-  # 
-  # recover_results_btw(temp_bOC_fits, binary = T)
-  # 
-  # ## alpha only
-  # # create a list with possible starting values for model parameters
-  # spaceSize <- 30
-  # params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
-  #                alpha = seq(0, 0.5, length.out = spaceSize),
-  #                s = 1)
-  # 
-  # # between subject exp
-  # temp_dOC_fits <- dataBtw %>%
-  #   filter(Cost != "Easy") %>%
-  #   plyr::dlply("SubjID", identity) %>%
-  #   lapply(., optimize_model_dyn_us3, params, simplify = F)
-  
-  # fit btw exp final model (alpha + nonlinear s)
-  params <- list(tempr = seq(0, 2, length.out = spaceSize),
-                 alpha = seq(0, 0.5, length.out = spaceSize),
-                 s = seq(0, 2, length.out = spaceSize),
-                 alpha_s = 0)
-  
-  temp_tw_fits_btw <- dataBtw %>%
-    filter(Cost != "Easy") %>%
-    plyr::dlply("SubjID", identity) %>%
-    lapply(., optimize_model_dyn_us3, params, simplify = F, gammaStart = 0)
-  
-  
-  recover_results_btw(temp_tw_fits_btw, binary = F)
-  
-  ### Within subjects (reproduce 16.3.3)
-  # partial replication! without temperature I get the first block fine
-  # with temperature I get the last one perfect (i.e. based on probabilities). First block still matches kind of.
-  # the reported pre-post results, including mixed effects, use half 1 and half 2 raw, but the results are pretty much conserved either way.
-  # here the middle blocks are eliminated to denote prevent the uneven assignment of the middle blocks to bias stuff either way
-  
-  # fit wth
-  spaceSize <- 30
-  params <- list(tempr = seq(0, 2, length.out = spaceSize),
-                 alpha = seq(0, 0.5, length.out = spaceSize),
-                 alpha_s = seq(0, 0.5, length.out = spaceSize))
-  
-  temp_tw_fits_wth <- dataWth %>%
-    plyr::dlply("SubjID", identity) %>%
-    lapply(., optimize_model_dyn_us3, params, simplify = F)
-  
-  recover_results_wth(temp_tw_fits_wth, binary = T)
-}
 
 
 
