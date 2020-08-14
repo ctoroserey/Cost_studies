@@ -381,129 +381,6 @@ plot_alphas <- function(alphas, s = 1, exp = "btw", gammaStart = 0.5) {
 # preferred function, which works for all types of models considered so far
 # like, s = 1 and alpha = 0 returns the single parameter model
 # generative version: model calculates choices per fitted previous choices, not just based on observed sub choices
-optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 0) {
-  # get every combination of parameters
-  params <- expand.grid(params)
-  
-  # relevant behavior elements
-  o <- subjData$Offer
-  h <- subjData$Handling
-  t <- 20 - h
-  obs_c <- subjData$Choice
-  
-  # Prep list of results to be returned, and keep track per iteration
-  out <- list()
-  out$percentQuit <- mean(obs_c == 0) * 100
-  out$percentAccept <- mean(obs_c == 1) * 100 
-  out$params <- as.numeric() # winning parameters
-  out$rate <- as.numeric() # to store the winning gammas
-  out$pAccept <- as.numeric() # probability of acceptance for winning parameters
-  out$fit_c <- as.numeric() # to store the winning fitted choices
-  out$LLs <- rep(0, nrow(params))
-  out$LL <- Inf
-  
-  # iterate through possible parameters and get the LL
-  #LLs <- sapply(seq(nrow(params)), function(i) {
-  for (param in seq(nrow(params))) {
-    # isolate the parameters for this iteration
-    # and then store them as variables
-    tempr <- params[param, "tempr"]
-    alpha <- params[param, "alpha"]
-    if ("s" %in% colnames(params)) {
-      # use a vector so I can use a common indexing for fixed and to-be-fitted values of s
-      s <- rep(params[param, "s"], nrow(subjData)) # if there is a free s parameter, use its fit, otherwise use the values from exp1
-    } else {
-      s <- subjData$mS
-    }
-    
-    # get the trial-wise gamma to export the probability of acceptance
-    c <- rep(0, nrow(subjData))
-    gamma <- rep(0, nrow(subjData))
-    
-    # calculate gammas iterating over trials
-    # latex versions: gamma[i]: \gamma_t = (1 - (1 - \alpha) ^ {\tau_t}) \dfrac{R_{t-1} A_{t-1}}{\tau_t} +  (1 - \alpha) ^ {\tau_t} \gamma_{t-1}
-    # ugly tau: \tau_{t} = (H_{t-1} ^ {s_{t-1}}  A_{t - 1}) + T_{t - 1}
-    # prettier, vectorized tau: \tau = (h ^ s  a) + t
-    # gamma for pretty tau: \gamma_t = (1 - (1 - \alpha) ^ {\tau_{t-1}}) \dfrac{r_{t-1} a_{t-1}}{\tau_{t-1}} +  (1 - \alpha) ^ {\tau_{t-1}} \gamma_{t-1}
-    # s_t = \dfrac {1} {N}\sum_{cost}^{t - 1} s_{cost}
-    # P(A): P(A)_t = \dfrac{1}{1 + exp^{-(\beta[r_t - \gamma_th_t^{s_t}])}}
-    for (i in seq(nrow(subjData))) {
-      if (i == 1) {
-        # the environmental rate that participants start with
-        # if we are fitting a single gamma, then add gamma prior with alpha = 0 and s = 1 (check that it reproduces results)
-        # otherwise this functions as a prior bias on the environmental rate
-        if ("gammaPrior" %in% colnames(params)) {
-          gamma[i] <- params[param, "gammaPrior"]
-        } else {
-          gamma[i] <- gammaStart
-        }
-        
-        # choose if the trial rate > env. rate
-        c[i] <- ifelse(o[i] / h[i] > gamma[i], 1, 0)
-      } else {
-        # non-linear estimate of the elapsed time since the last choice
-        tau <- (h[i - 1] ^ s[i - 1] * c[i - 1]) + t[i - 1]
-        
-        # was the previous offer accepted?
-        a <- o[i - 1] * c[i - 1]
-        
-        # gamma is updated by how much weight is given to the recently experienced reward rate (i.e. left part of eq)
-        gamma[i] <- ((1 - (1 - alpha) ^ tau) * (a / tau)) + ((1 - alpha) ^ tau) * gamma[i - 1]
-        
-        # choose if the prospect's reward rate, non-linearly discounted as above > env. rate
-        # in other words, is the local-focus on handling time being affected, or a global environmental rate? (or something in between?)
-        c[i] <- ifelse(o[i] / (h[i] ^ s[i]) > gamma[i], 1, 0)
-      } 
-    }
-    
-    # estimate the probability of acceptance based on the difference between the offer rate vs global rate
-    # this is a rehash of the eq updating c[i] above
-    p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ s)))))
-    p[p == 1] <- 0.999
-    p[p == 0] <- 0.001
-    
-    # get the likelihood of the observations based on the model
-    tempChoice <- rep(NA, length(obs_c))
-    tempChoice[obs_c == 1] <- log(p[obs_c == 1])
-    tempChoice[obs_c == 0] <- log(1 - p[obs_c == 0]) # log of probability of choice 1 when choice 0 occurred
-    negLL <- -sum(tempChoice)
-    
-    out$LLs[param] <- negLL
-    
-    # if these parameters improve the fit, store the rate and choices
-    if (negLL < out$LL) {
-      diff <- out$LL - negLL
-      out$LL <- negLL
-      out$rate <- gamma
-      out$fit_c <- c
-      out$params <- params[param, ]
-      out$pAccept <- p
-      
-      # break if the reduction is too small to be significant
-      # based on visual assessment of the likelihood space, which looks convex
-      # if (abs(diff) <= 0.0001) {
-      #   break
-      # }
-    }
-  } 
-  
-  # Summarize the outputs
-  out$LL0 <- -(log(0.5) * length(obs_c))
-  out$Rsquared <- 1 - (out$LL / out$LL0) # pseudo r-squared, quantifying the proportion of deviance reduction vs chance
-  
-  # if doing this with dplyr::do(), return a simplified data.frame instead with the important parameters
-  if (simplify) {
-    out <- round(data.frame(out[-c(4, 5, 6, 7)]), digits = 2)
-    colnames(out) <- c("percentQuit",
-                       "percentAccept",
-                       colnames(params),
-                       "LL",
-                       "LL0",
-                       "Rsq")
-  }
-  
-  return(out)
-}
 optimize_model_dyn_us3 <- function(subjData, params, simplify = F, gammaStart = 0.5) {
   # get every combination of parameters
   params <- expand.grid(params)
@@ -695,7 +572,7 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0.5, showChoices = -
     spaceSize <- 30
     params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                    alpha = seq(0, 0.5, length.out = spaceSize),
-                   alpha_s = seq(0, 0.5, length.out = spaceSize))
+                   alpha_s = seq(0, 0.2, length.out = spaceSize))
     
     # run model
     temp <- optimize_model_dyn_us3(sub, params, simplify = F, gammaStart = gammaOne)
@@ -794,7 +671,7 @@ recover_results_wth <- function(fitsList, binary = F, matrix = T) {
     )) %>%
     filter(Block != 2) %>%
     mutate(Block = ifelse(Block == 1, "First Two Blocks", "Last Two Blocks")) %>%
-    group_by(Cost, Block, Offer) %>%
+    group_by(Cost, BlockOrder, Block, Offer) %>%
     summarise(propAccept = mean(fitChoice),
               SE = sd(fitChoice) / sqrt(nSubjs_wth)) %>%
     ungroup() %>%
@@ -808,7 +685,7 @@ recover_results_wth <- function(fitsList, binary = F, matrix = T) {
     scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
     scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
     labs(x = "Reward", y = "Proportion Accepted") +
-    facet_wrap(vars(Block)) +
+    facet_wrap(vars(BlockOrder, Block)) +
     theme(legend.key = element_blank(),
           legend.position = c(0.9, 0.25),
           panel.grid.major = element_blank(), 
@@ -943,7 +820,7 @@ recalibrate_s <- function(S, thetaRange, choice) {
 # get a summary from a group's fits from the dynamical fits
 simplify_results <- function(fitLists, exp = "btw") {
   # get the relevant parameters
-  temp <- sapply(trialwiseOC_btw, function(sub) {sub[c("percentQuit", "percentAccept", "params", "LL", "LL0", "Rsquared")]})
+  temp <- sapply(fitLists, function(sub) {sub[c("percentQuit", "percentAccept", "params", "LL", "LL0", "Rsquared")]})
   
   # expand them
   df <- unnest(as.tibble(t(temp)), cols = c(percentQuit, percentAccept, params, LL, LL0, Rsquared))
@@ -1219,9 +1096,10 @@ if (! "mS" %in% colnames(dataWth)) {
 }
 
 # FIT WITHIN SUBJECTS
+spaceSize <- 50
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-               alpha = seq(0, 0.5, length.out = spaceSize),
-               alpha_s = seq(0, 0.5, length.out = spaceSize))
+               alpha = seq(0, 0.2, length.out = spaceSize),
+               alpha_s = seq(0, 1, length.out = spaceSize))
 
 # fit per individual
 system.time(adaptiveOC_wth <- dataWth %>%
@@ -1229,13 +1107,13 @@ system.time(adaptiveOC_wth <- dataWth %>%
   mclapply(., optimize_model_dyn_us3, params, simplify = F, mc.cores = detectCores()))
 
 # summarise
-adaptiveOC_wth_summary <- simplify_results(adaptiveOC_wth)
+adaptiveOC_wth_summary <- simplify_results(adaptiveOC_wth, exp = "wth")
 
 # plot comparisons
 plot(adaptiveOC_wth_summary$alpha, adaptiveOC_wth_summary$alpha_s)
 
 # plot result recovery
-recover_results_wth(adaptiveOC_wth, binary = F)
+recover_results_wth(adaptiveOC_wth, binary = T)
 
 
 
