@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 
 # using NLOPTR is pointless here
 # instead I'm just going to feed any sensible combination of parameters to the model and minimize the negLL manually
@@ -6,7 +7,73 @@
 # the idea being that you can enter a model and data, and the function will return the lowest LL and associated parameters
 # maybe also R-squares and things in the current optimization function
 
+## libraries
+library(tidyverse)
+library(ggfortify)
+library(knitr)
+library(pander) 
+library(nloptr)
+library(pwr)
+library(lme4)
+#library(lmerTest)
+library(gridExtra)
+library(reshape2)
+library(corrplot)
+library(survival)
+library(ggfortify)
+library(patchwork)
+library(data.table)
 library(parallel)
+
+# remove break time and start counting from 0
+standardize_time <- function(subjData) {
+  # remove the break time (variable across subjects) and start counting time from 0 (otherwise it can add physical effort calibration)
+  breakTime <- min(subjData$ExpTime[subjData$Block == 4]) - max(subjData$ExpTime[subjData$Block == 3])
+  subjData$ExpTime[which(subjData$Block > 3)] <- subjData$ExpTime[which(subjData$Block > 3)] - breakTime + 16
+  subjData$ExpTime <- subjData$ExpTime - min(subjData$ExpTime)
+  
+  return(subjData)
+}
+
+# summary matrices for refrence-changing models
+betaMatrix <- function(model, rearrange = NA) {
+  # get a similarity matrix of the resulting coefficient pairings for the cost conditions
+  # first, do a full_join based on column names on the list of coefficient vectors from each dummy code relevel
+  # then match the names of columns and rows so NAs are in the diagonal
+  
+  # get the names of the reference group per model iteration
+  refnames <- names(model)
+  
+  # coefficient matrix
+  temp <- lapply(model, function(data) {coefficients(data)$SubjID[1, 2:4]})
+  mixCoeffs <- bind_rows(temp) 
+  preln <- ifelse("Cost" %in% substr(names(mixCoeffs), 1, 4), 4, 5) # count how many characters precede the name of each cost (diff across studies)
+  dimnames(mixCoeffs) <- list(refnames, substr(names(mixCoeffs), preln + 1, 20))
+  mixCoeffs <- as.matrix(mixCoeffs[, match(rownames(mixCoeffs), colnames(mixCoeffs))])
+  mixCoeffs[is.na(mixCoeffs)] <- 0
+  
+  # now the pvals
+  temp <- lapply(model, function(data) {as.list(summary(data)$coefficients[2:4, 4])})
+  mixPvals <- as.matrix(bind_rows(temp)) 
+  dimnames(mixPvals) <- list(refnames, substr(colnames(mixPvals), preln + 1, 20))
+  mixPvals <- as.matrix(mixPvals[, match(rownames(mixPvals), colnames(mixPvals))])
+  mixPvals[is.na(mixPvals)] <- 1
+  
+  # if you would like to re-arrange the coefficient order, supply a vector with the desired sequence
+  if (length(rearrange) > 1) {
+    mixCoeffs <- mixCoeffs[rearrange, rearrange]
+    dimnames(mixCoeffs) <- list(rearrange, rearrange)
+    mixPvals <- mixPvals[rearrange, rearrange]
+    dimnames(mixPvals) <- list(rearrange, rearrange)
+  }
+  
+  # combine matrices into list to return
+  out <- list(Betas = round(mixCoeffs, digits = 2),
+              Pvals = round(mixPvals, digits = 5))
+  
+  return(out)
+  
+}
 
 # simpler form of optimization that allows inputting any model expression into a single function call
 # only good for static models
@@ -257,7 +324,6 @@ plot_alphas <- function(alphas, s = 1, exp = "btw", gammaStart = 0.5) {
     
     # create a list with possible starting values for model parameters
     # parameter names must match model ones
-    spaceSize <- 30
     params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
                    gamma = seq(0.25, 1.5, length.out = spaceSize))
     model_expr <- expr(tempr[[1]] * (reward - (gamma[[1]] * handling)))
@@ -434,7 +500,7 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     while (i < nrow(subjData)) {
       # choose if the prospect's reward rate, non-linearly discounted as above > env. rate
       # in other words, is the local-focus on handling time being affected, or a global environmental rate? (or something in between?)
-      a[i] <- ifelse(o[i] / (h[i] ^ s[i]) - fatigue[i] > gamma[i], 1, 0)
+      a[i] <- ifelse(o[i] / (h[i] ^ s[i]) > gamma[i], 1, 0)
       
       # amount earned
       ao <- o[i] * a[i]
@@ -458,7 +524,7 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     
     # estimate the probability of acceptance based on the difference between the offer rate vs global rate
     # this is a rehash of the eq updating c[i] above
-    p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ s) - fatigue))))
+    p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ s)))))
     p[p == 1] <- 0.999
     p[p == 0] <- 0.001
     
@@ -849,6 +915,112 @@ simplify_results <- function(fitLists, exp = "btw") {
 }
 
 
+## aesthetic options
+lbls <- c("Wait","Cognitive","Physical","Easy") # between subj
+colsBtw = c("#78AB05","#D9541A","deepskyblue4", "darkgoldenrod2") # plot colors (wait, effort)
+colsWth <- c("#D9541A", "#78AB05", "dodgerblue4", "deepskyblue3")#"grey30", "grey70") # plot colors (wait, effort)
+lthick = 2 # line thickness for plots
+
+######## LOAD DATA
+setwd("../Cost2/data")
+files <- dir(pattern = '_log.csv')
+
+# load data
+dataBtw <- tibble(SubjID = files) %>%
+  mutate(contents = map(SubjID, ~ suppressWarnings(read_csv(., col_types = cols()))))  %>%
+  mutate(Cost = substring(SubjID, 5, 8),
+         Cost = case_when(Cost == "wait" ~ "Wait",
+                          Cost == "cogT" ~ "Cognitive",
+                          Cost == "phys" ~ "Physical",
+                          Cost == "phea" ~ "Easy"),
+         SubjID = as.integer(substring(SubjID, 0, 3))) %>%
+  unnest() %>%
+  rename(TrialN = X1,
+         ExpTime = Experiment.Time) %>%
+  mutate(rawChoice = Choice, 
+         RT = ifelse(RT > 14.1, 14, RT),
+         Choice = ifelse(Choice == 2, 1, Choice), # forced travels (2) become acceptances (1)
+         Completed = ifelse(rawChoice == 2, 0, rawChoice),
+         Half = ifelse(Block < 4, "Half_1", "Half_2"),
+         Cost = factor(Cost, levels = c("Physical", "Cognitive", "Wait", "Easy")),
+         optimal = case_when(
+           (Handling == 10 & Offer < 8) ~ 0,
+           (Handling == 14 & Offer < 20) ~ 0,
+           TRUE ~ 1
+         )
+  ) %>%
+  group_by(SubjID) %>% 
+  do(standardize_time(.)) %>% 
+  group_by(SubjID, Block) %>%
+  mutate(blockTime = ExpTime - min(ExpTime),
+         blockElapsed = blockTime - dplyr::lag(blockTime, default = 0)) %>% # how much time elapsed between trials, counting per block
+  ungroup()
+
+# get a simple subject list and the number of subjects
+subjList_btw <- unique(dataBtw$SubjID)
+nSubjs_btw <- length(subjList_btw)
+
+
+# First looks at the new data
+# The RT is upper-bounded because a glitch in the code made one 10s last 14s
+setwd('../../Cost3/data/')
+files <- dir(pattern = 'main_log.csv')
+
+# load the data and remove extreme subjects
+dataWth <- data_frame(SubjID = files) %>% 
+  mutate(contents = map(SubjID, ~ suppressWarnings(read_csv(., col_types = cols()))))  %>%
+  mutate(SubjID = substring(SubjID, 0, 3)) %>%
+  unnest() %>%
+  mutate(RT = ifelse(RT > 10.1, 10, RT),
+         Half = ifelse(Block < 4, "Half_1", "Half_2"),
+         Btype = BlockType) %>%
+  unite(Cost, Cost, BlockType) %>%
+  rename(TrialN = X1) %>%
+  mutate(rawChoice = Choice,
+         Choice = ifelse(Choice == 2, 1, Choice),
+         Completed = ifelse(rawChoice == 2, 0, rawChoice),
+         Cost = case_when(Cost == "WAIT_0" ~ "Wait-C",
+                          Cost == "COGNITIVE_0" ~ "Cognitive",
+                          Cost == "GRIP_1" ~ "Physical",
+                          Cost == "WAIT_1" ~ "Wait-P"),
+         Cost = as.factor(Cost)) %>%
+  group_by(SubjID) %>%
+  mutate(BlockOrder = ifelse(Btype[1] == 0, "Cognitive1st", "Physical1st")) %>%
+  group_by(SubjID) %>% 
+  do(standardize_time(.)) %>% 
+  group_by(SubjID, Block) %>%
+  mutate(blockTime = ExpTime - min(ExpTime)) %>%
+  ungroup()
+
+# load the cognitive task performance logs
+files <- dir(pattern = 'coglog')
+colname <- c("Handling", "Offer", "Outcome", "RT", "Trial_Time", "ExpTime", "Trial_outcome","Type", "Setup")
+
+dataWth_coglogs <- data_frame(SubjID = files) %>% 
+  mutate(contents = map(SubjID, ~ suppressWarnings(read_csv(., col_names = colname, col_types = cols()))),
+         SubjID = substring(SubjID, 8, 10)) %>%
+  unnest() %>%
+  mutate(Trial_time = ifelse(RT > 10.1, 10, RT),
+         Trial_Time = round(Trial_Time)) %>%
+  group_by(SubjID) %>%
+  mutate(Half = ifelse(ExpTime < (max(ExpTime) / 2), "Half_1", "Half_2")) %>%
+  ungroup()
+
+
+# Get just the subject list and number of subjects
+subjList_wth <- unique(dataWth$SubjID)
+nSubjs_wth <- length(subjList_wth)
+
+#########
+setwd('../..')
+
+# what makes this run unique?
+qualifier <- "bigspace"
+
+# how big should the parameter space be?
+spaceSize <- 20
+write(paste("n of possibilities per parameter:", spaceSize), stdout())
+
 ## which models to run?
 baseOC_nloptr <- F
 bOC <- F
@@ -857,6 +1029,7 @@ fwOC <- F
 dOC <- F
 twOC <- F
 recovery <- T
+
 
 # which experimental dataset?
 data <- dataBtw %>% 
@@ -885,7 +1058,6 @@ if (bOC) {
 
   # create a list with possible starting values for model parameters
   # parameter names must match model ones
-  spaceSize <- 30
   params <- list(tempr = seq(0, 2, length.out = spaceSize),
                  gamma = seq(0.25, 1.5, length.out = spaceSize))
   
@@ -928,7 +1100,6 @@ if (fwOC) {
   
   # create a list with possible starting values for model parameters
   # parameter names must match model ones
-  spaceSize <- 30
   params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
                  gamma = seq(0, 2, length.out = spaceSize))
   
@@ -948,7 +1119,6 @@ if (baseLogistic) {
   model_expr <- expr(intercept[[1]] + (betaRwd[[1]] * reward) + (betaHand[[1]] * handling))
   
   # create a list with possible starting values for model parameters
-  spaceSize <- 20
   params <- list(intercept = seq(-1, 1, length.out = spaceSize), 
                  betaRwd = seq(-5, 5, length.out = spaceSize),
                  betaHand = seq(-5, 5, length.out = spaceSize))
@@ -987,7 +1157,6 @@ if (dOC) {
 
   # create a list with possible starting values for model parameters
   # parameter names must match model ones
-  spaceSize <- 30
   params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
                  alpha = seq(0.25, 2, length.out = spaceSize))
   
@@ -1005,7 +1174,6 @@ if (twOC) {
   
   ## vanilla C&W (slightly adapted for prey selection)
   # create a list with possible starting values for model parameters
-  spaceSize <- 30
   params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
                  alpha = seq(0, 1, length.out = spaceSize))
   
@@ -1061,11 +1229,12 @@ if (twOC) {
 # so I tested a number of iterations to ensure that the results persist
 # at 30 and 50 it's the same. As alpha is reduced to ~0, s increases for cog.
 # but ~0.02 alpha seems sensible.
-spaceSize <- 50
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                alpha = seq(0.001, 0.2, length.out = spaceSize),
-               s = seq(0, 2, length.out = spaceSize),
+               s = seq(0.001, 2, length.out = spaceSize),
                alpha_s = 0) # in the between subjects version all S_costs are the same, so there is no update. Just enforcing that here to save on computation
+head(expand.grid(params))
+write("Fitting between-subject data", stdout())
 
 # fit the model to each individual
 system.time(adaptiveOC_btw <- dataBtw %>%
@@ -1107,7 +1276,9 @@ if (! "mS" %in% colnames(dataWth)) {
 }
 
 # FIT WITHIN SUBJECTS
-spaceSize <- 50
+
+write("Fitting within-subject data", stdout())
+
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                alpha = seq(0.001, 0.2, length.out = spaceSize),
                alpha_s = seq(0, 0.5, length.out = spaceSize))
@@ -1130,7 +1301,7 @@ plot(adaptiveOC_wth_summary$alpha, adaptiveOC_wth_summary$alpha_s,
 axis(side = 1, at = unique(adaptiveOC_wth_summary$alpha), labels = FALSE)
 
 # plot result recovery
-recover_results_wth(adaptiveOC_wth, binary = F)
+recover_results_wth(adaptiveOC_wth, binary = F, order = T)
 
 
 ### testing grounds
@@ -1150,7 +1321,15 @@ temp <- dataBtw %>%
 #   geom_hline(yintercept = 0) +
 #   theme_minimal()
 
-save.image(paste("/restricted/projectnb/cd-lab/Claudio/Cost_studies/data_", Sys.Date(), "_good.RData", sep = ""))
+save.image(paste("/restricted/projectnb/cd-lab/Claudio/Cost_studies/data_", Sys.Date(), "_", qualifier, ".RData", sep = ""))
+
+
+
+
+
+
+
+
 
 
 
