@@ -28,6 +28,7 @@ optimize_model_static <- function(subjData, params, model, simplify = F) {
   rawChoice <- subjData$rawChoice
   expTime <- round(subjData$ExpTime) + 0.1 # to avoid dividing 0 by 0
   blockTime <- subjData$blockTime
+  effort <- subjData$Effort
     
   # combine parameters into every possible combination
   params <- expand.grid(params)
@@ -390,6 +391,8 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
   h <- subjData$Handling
   t <- 20 - h
   obs_c <- subjData$Choice
+  effort <- ifelse(subjData$Cost == "Wait", 0, 1)
+  fatigue <- 0 # for gradual decrease: (0.01 * subjData$TrialN * effort) 
   
   # Prep list of results to be returned, and keep track per iteration
   out <- list()
@@ -431,7 +434,7 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     while (i < nrow(subjData)) {
       # choose if the prospect's reward rate, non-linearly discounted as above > env. rate
       # in other words, is the local-focus on handling time being affected, or a global environmental rate? (or something in between?)
-      a[i] <- ifelse(o[i] / (h[i] ^ s[i]) > gamma[i], 1, 0)
+      a[i] <- ifelse(o[i] / (h[i] ^ s[i]) - fatigue[i] > gamma[i], 1, 0)
       
       # amount earned
       ao <- o[i] * a[i]
@@ -455,7 +458,7 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     
     # estimate the probability of acceptance based on the difference between the offer rate vs global rate
     # this is a rehash of the eq updating c[i] above
-    p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ s)))))
+    p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ s) - fatigue))))
     p[p == 1] <- 0.999
     p[p == 0] <- 0.001
     
@@ -875,39 +878,41 @@ if (baseOC_nloptr) {
 if (bOC) {
   print("Running base OC model through grid search...")
   
-  # # model to be fit
-  # # make sure that you specify the inverse temperature
-  # # extra parameters as dfs for now, that's why the `[[1]]`
-  # model_expr <- expr(tempr[[1]] * (reward - (gamma[[1]] * handling)))
-  # 
-  # # create a list with possible starting values for model parameters
-  # # parameter names must match model ones
+  # model to be fit
+  # make sure that you specify the inverse temperature
+  # extra parameters as dfs for now, that's why the `[[1]]`
+  model_expr <- expr(tempr[[1]] * (reward - (gamma[[1]] * handling)))
+
+  # create a list with possible starting values for model parameters
+  # parameter names must match model ones
+  spaceSize <- 30
+  params <- list(tempr = seq(0, 2, length.out = spaceSize),
+                 gamma = seq(0.25, 1.5, length.out = spaceSize))
+  
+  # fit per sub
+  system.time(baseOC <- dataBtw %>%
+                filter(Cost != "Easy") %>%
+                group_by(Cost, SubjID) %>%
+                plyr::dlply("SubjID", identity) %>%
+                mclapply(., optimize_model_static, params, model_expr, simplify = F, mc.cores = detectCores()))
+  
+  # # alternative using the big model function
   # spaceSize <- 30
-  # params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
-  #                gamma = seq(0.25, 1.5, length.out = spaceSize))
+  # params <- list(tempr = seq(0, 2, length.out = spaceSize), 
+  #                gammaPrior = seq(0.25, 1.5, length.out = spaceSize),
+  #                alpha = 0,
+  #                s = 1,
+  #                alpha_s = 0)
   # 
   # # fit to each subject
-  # baseOC <- data %>%
-  #   group_by(Cost, SubjID) %>%
-  #   do(optimize_model(., params, model_expr, simplify = T)) %>%
-  #   ungroup()
+  # system.time(baseOC <- dataBtw %>%
+  #               filter(Cost != "Easy") %>%
+  #               group_by(Cost, SubjID) %>%
+  #               plyr::dlply("SubjID", identity) %>%
+  #               mclapply(., optimize_model_adaptive, params, simplify = F, mc.cores = detectCores()))
   
-  # alternative using the big model function
-  spaceSize <- 30
-  params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-                 gammaPrior = seq(0.25, 1.5, length.out = spaceSize),
-                 alpha = 0,
-                 s = 1,
-                 alpha_s = 0)
-  
-  # fit to each subject
-  baseOC <- dataBtw %>%
-    filter(Cost != "Easy") %>%
-    group_by(Cost, SubjID) %>%
-    do(optimize_model_adaptive(., params, simplify = T)) %>%
-    ungroup()
-  
-  param_compare_plot(baseOC, "gammaPrior", meanRate = 0.7)
+  baseOC_summary <- simplify_results(baseOC)
+  param_compare_plot(baseOC_summary, "gamma", meanRate = 0.7)
 }
 
 
@@ -1127,6 +1132,23 @@ axis(side = 1, at = unique(adaptiveOC_wth_summary$alpha), labels = FALSE)
 # plot result recovery
 recover_results_wth(adaptiveOC_wth, binary = F)
 
+
+### testing grounds
+# do those who complete more effort trials end up being more fatigued? (accepting less by the end?)
+temp <- dataBtw %>%
+  filter(Cost %in% c("Cognitive", "Physical")) %>%
+  group_by(SubjID, Cost) %>%
+  mutate(pComplete = mean(Completed)) %>%
+  group_by(SubjID, Cost, pComplete, Half) %>%
+  summarise(pAccept = mean(Completed)) %>%
+  ungroup() %>%
+  spread(Half, pAccept) %>%
+  mutate(diff = Half_2 - Half_1) 
+#cor.test(temp$Half_1, temp$diff)
+# ggplot(aes(Half_1, diff, color = Cost), dat = temp) +
+#   geom_point(show.legend = T) +
+#   geom_hline(yintercept = 0) +
+#   theme_minimal()
 
 save.image(paste("/restricted/projectnb/cd-lab/Claudio/Cost_studies/data_", Sys.Date(), "_good.RData", sep = ""))
 
