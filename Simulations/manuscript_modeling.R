@@ -449,6 +449,8 @@ plot_alphas <- function(alphas, s = 1, exp = "btw", gammaStart = 0.5) {
 # like, s = 1 and alpha = 0 returns the single parameter model
 # generative version: model calculates choices per fitted previous choices, not just based on observed sub choices
 optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart = 0.5) {
+  #write(paste("Working on subject", unique(SubjData$SubjID)), stdout())
+  
   # get every combination of parameters
   params <- expand.grid(params)
   
@@ -1102,7 +1104,7 @@ setwd('../..')
 qualifier <- "newUpdate"
 
 # how big should the parameter space be?
-spaceSize <- 30
+spaceSize <- 50
 write(paste("n of possibilities per parameter:", spaceSize), stdout())
 
 ## which models to run?
@@ -1317,7 +1319,7 @@ params <- list(tempr = seq(0, 2, length.out = spaceSize),
                alpha = seq(0.001, 0.2, length.out = spaceSize),
                s = seq(0.001, 2, length.out = spaceSize),
                alpha_s = 0) # in the between subjects version all S_costs are the same, so there is no update. Just enforcing that here to save on computation
-head(expand.grid(params))
+
 write("Fitting between-subject data", stdout())
 
 # fit the model to each individual
@@ -1406,6 +1408,9 @@ temp <- dataBtw %>%
 #   theme_minimal()
 
 save.image(paste("/restricted/projectnb/cd-lab/Claudio/Cost_studies/data_", Sys.Date(), "_", qualifier, ".RData", sep = ""))
+
+
+
 
 
 
