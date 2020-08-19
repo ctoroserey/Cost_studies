@@ -506,11 +506,12 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
       ao <- o[i] * a[i]
       
       # s update versions
-      # s[i + 1] <- theta[i] * S[i] * c[i] + (1 - theta[i]) * s[i]
+      # s[i + 1] <- alpha_s[i] * S[i] * c[i] + (1 - alpha_s[i]) * s[i]
       # s[i + 1] <- (alpha_s / i) * S[i] * c[i] + (1 - (alpha_s / i)) * s[i]
-      # s[i + 1] <- s[i] + 1/i * (S[i] - s[i]) # Sutton & Barto, page 37. Add choice to S[l]?
+      # s[i + 1] <- s[i] + 1/i * (S[i] ^ a[i] - s[i]) # Sutton & Barto, page 37. Added choice to S[i], such that no-experienced bias estimates back to 1 (i.e. nominal time)
       left <- ((1 - alpha_s) ^ i) * s[1]
       right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * (S[seq(i)] ^ a[seq(i)])
+      right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * ((S[seq(i)] * a[seq(i)]) + (dplyr::lag(s[seq(i)], default = 0)) * (1 - a[seq(i)])) # if trial isn't experienced, retain the i-1 s
       s[i + 1] <-  left + sum(right)
       
       # non-linear estimate of the elapsed time since the last choice
@@ -573,7 +574,7 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
   
   return(out)
 }  # these produce diff results for basic model. see why
-plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0.5, showChoices = -0.6) {
+plot_adaptive_sub <- function(id = "58", exp = "btw", gammaOne = 0.5, showChoices = -0.6) {
   
   if (exp == "btw") {
     # choose subject + params
@@ -595,7 +596,6 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0.5, showChoices = -
     
     # create a list with possible starting values for model parameters
     # parameter names must match model ones
-    spaceSize <- 30
     params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
                    gamma = seq(0.25, 1.5, length.out = spaceSize))
     
@@ -611,7 +611,7 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0.5, showChoices = -
              fitChoice = ifelse(trialRate > g, -0.25, -5),
              newChoice = ifelse(Choice == 1, -0.5, -5),
              trialRate = ifelse(trialRate > 3, 3, trialRate),
-             pChoice = temp$probAccept,
+             pChoice = temp$pAccept,
              g = ifelse(g > 3, 3.2, g)) %>%
       ggplot(aes(TrialN, g)) +
       geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
@@ -651,12 +651,12 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0.5, showChoices = -
     
     # plot
     ratePlot <- sub %>%
-      mutate(trialRate = Offer / Handling ^ mS,
+      mutate(trialRate = Offer / (Handling ^ mS),
              g = temp$rate,
              fitChoice = ifelse(trialRate > g, -0.25, -5),
              newChoice = ifelse(Choice == 1, -0.5, -5),
              trialRate = ifelse(trialRate > 3, 3, trialRate),
-             pChoice = temp$probAccept,
+             pChoice = temp$pAccept,
              g = ifelse(g > 3, 3.2, g)) %>%
       ggplot(aes(TrialN, g)) +
       geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
@@ -682,6 +682,90 @@ plot_dyn_us3 <- function(id = "58", exp = "btw", gammaOne = 0.5, showChoices = -
   
   suppressWarnings(print(ratePlot))
 }
+plot_adaptive_fitsub <- function(id = "58", exp = "btw", showChoices = -0.6) {
+  
+  if (exp == "btw") {
+    # choose subject + params
+    sub <- filter(dataBtw, SubjID == id)
+    
+    # get fits
+    temp <- adaptiveOC_btw[[id]]
+    s <- as.numeric(temp$params["s"])
+    s
+    # plot
+    ratePlot <- sub %>%
+      mutate(trialRate = Offer / (Handling ^ s),
+             g = temp$rate,
+             fitChoice = ifelse(trialRate > g, -0.25, -5),
+             newChoice = ifelse(Choice == 1, -0.5, -5),
+             trialRate = ifelse(trialRate > 3, 3, trialRate),
+             pChoice = temp$pAccept,
+             g = ifelse(g > 3, 3.2, g)) %>%
+      ggplot(aes(TrialN, g)) +
+        geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
+        geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
+        #geom_hline(yintercept = baseOC$gamma) + # single gamma estimated for an individual
+        #geom_hline(yintercept = 0.74, linetype = "dashed", color = "grey30") + # mean optimal rate across blocks
+        geom_line(aes(color = Handling), size = 0.5) +
+        geom_point(aes(color = Handling), size = 1.2) +
+        geom_point(aes(TrialN, fitChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+        geom_point(aes(TrialN, newChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+        #geom_point(aes(TrialN, pChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+        #annotate("text", x = max(sub$TrialN) + 8, y = baseOC$gamma + 0.25, label = "Fitted \n Gamma", size = 5) +
+        #annotate("text", x = max(sub$TrialN) + 8, y = 0.55, label = "Optimal", size = 5, color = "grey30") +
+        annotate("text", x = max(sub$TrialN), y = -0.3, label = "Predicted choices", size = 3) +
+        annotate("text", x = max(sub$TrialN), y = -0.55, label = "Observed choices", size = 3) +
+        scale_fill_discrete(name = "Offer") +
+        scale_color_continuous(breaks = c(2, 10, 14), labels = c(2, 10, 14)) +
+        ylim(showChoices, NA) +
+        labs(x = "Trial Number", y = "Earning rate") +
+        theme(panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_blank(),
+              axis.line = element_line(colour = "black"),
+              text = element_text(size = 16))
+    
+  } else if (exp == "wth") {
+    # choose subject + params
+    sub <- filter(dataWth, SubjID == id)
+    
+    # get fits
+    temp <- adaptiveOC_wth[[id]]
+    
+    # plot
+    ratePlot <- sub %>%
+      mutate(trialRate = Offer / (Handling ^ mS),
+             g = temp$rate,
+             fitChoice = ifelse(trialRate > g, -0.25, -5),
+             newChoice = ifelse(Choice == 1, -0.5, -5),
+             trialRate = ifelse(trialRate > 3, 3, trialRate),
+             pChoice = temp$pAccept,
+             g = ifelse(g > 3, 3.2, g)) %>%
+      ggplot(aes(TrialN, g)) +
+      geom_line(aes(TrialN, trialRate), linetype = "dashed", size = 0.2) +
+      geom_point(aes(TrialN, trialRate, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black", size = 1) +
+      #geom_hline(yintercept = 0.7, linetype = "dashed", color = "grey30") + # mean optimal rate across blocks
+      geom_line(size = 0.5, color = "grey50") +
+      geom_point(aes(color = Cost), size = 1.2) +
+      geom_point(aes(TrialN, fitChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+      geom_point(aes(TrialN, newChoice, fill = factor(Offer, levels = c(4, 8, 20))), pch = 21, color = "black") +
+      #annotate("text", x = max(sub$TrialN) + 8, y = 0.63, label = "Optimal", size = 5, color = "grey30") +
+      annotate("text", x = max(sub$TrialN), y = -0.3, label = "Predicted choices", size = 3) +
+      annotate("text", x = max(sub$TrialN), y = -0.55, label = "Observed choices", size = 3) +
+      scale_fill_discrete(name = "Offer") +
+      scale_color_manual(values = colsWth) +
+      ylim(showChoices, NA) +
+      labs(x = "Trial Number", y = "Earning rate") +
+      theme(panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.background = element_blank(),
+            axis.line = element_line(colour = "black"),
+            text = element_text(size = 16))
+  }
+  
+  suppressWarnings(print(ratePlot))
+}
+
 
 # reproduce main experimental plot findings using fitted model values
 # one for each experiment, since the plots are different
@@ -864,28 +948,27 @@ recover_results_wth <- function(fitsList, binary = F, matrix = T, order = F) {
 # meaning that early in the experiment, they keep track of the perceived time per cost, but they slowly settle into previous history towards the end
 # similar result to the cumulative mean, but more flexible early in the experiment
 # theta vector fixed for now. Think of how to make it free
-recalibrate_s <- function(S, thetaRange, choice) {
-  # rule
-  theta <- seq(thetaRange[1], thetaRange[2], length.out = length(S))
-  
+recalibrate_s <- function(S, alpha_s, choice) {
   # vector to store the evolving estimates of s
   s <- S
-  s[1] <- 1
+  #s[1] <- 1
+  a <- choice
   
-  a <- theta[1]
   l <- 1
   while (l < length(S)) {
-    # s[l + 1] <- theta[l] * S[l] * choice[l] + (1 - theta[l]) * s[l]
-    # s[i + 1] <- (alpha_s / i) * S[i] * c[i] + (1 - (alpha_s / i)) * s[i]
-    # s[l + 1] <- s[l] + (1/l * (S[l] - s[l])) * choice[l] # Sutton & Barto, page 37. 
-    left <- ((1 - a) ^ l) * s[1]
-    right <- a * (1 - a) ^ (l - seq(l)) * S[seq(l)] ^ choice[seq(l)]
+    # s update verslons
+    #s[l + 1] <- alpha_s[l] * S[l] * a[l] + (1 - alpha_s[l]) * s[l]
+    #s[l + 1] <- (alpha_s / l) * S[l] * a[l] + (1 - (alpha_s / l)) * s[l]
+    #s[l + 1] <- s[l] + 1/l * (S[l] ^ a[l] - s[l]) # Sutton & Barto, page 37. Added cholce to S[l], such that no-experlenced blas estlmates back to 1 (l.e. nomlnal tlme)
+    left <- ((1 - alpha_s) ^ l) * s[1]
+    right <- alpha_s * (1 - alpha_s) ^ (l - seq(l)) * (S[seq(l)] ^ a[seq(l)])
+    right <- alpha_s * (1 - alpha_s) ^ (l - seq(l)) * ((S[seq(l)] * a[seq(l)]) + (dplyr::lag(s[seq(l)], default = 0)) * (1 - a[seq(l)])) # if trial isn't experienced, retain the i-1 s
     s[l + 1] <-  left + sum(right)
     
     l <- l + 1
   }
   
-  return(S)
+  return(s)
 }
 
 # get a summary from a group's fits from the dynamical fits
@@ -1015,10 +1098,10 @@ nSubjs_wth <- length(subjList_wth)
 setwd('../..')
 
 # what makes this run unique?
-qualifier <- "bigspace"
+qualifier <- "newUpdate"
 
 # how big should the parameter space be?
-spaceSize <- 20
+spaceSize <- 30
 write(paste("n of possibilities per parameter:", spaceSize), stdout())
 
 ## which models to run?
@@ -1301,7 +1384,7 @@ plot(adaptiveOC_wth_summary$alpha, adaptiveOC_wth_summary$alpha_s,
 axis(side = 1, at = unique(adaptiveOC_wth_summary$alpha), labels = FALSE)
 
 # plot result recovery
-recover_results_wth(adaptiveOC_wth, binary = F, order = T)
+recover_results_wth(adaptiveOC_wth, binary = T, order = T)
 
 
 ### testing grounds
