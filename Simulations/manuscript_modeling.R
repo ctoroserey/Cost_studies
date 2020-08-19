@@ -902,13 +902,13 @@ recover_results_wth <- function(fitsList, binary = F, matrix = T, order = F) {
                 totalQuits = sum(Choice == 0),
                 propAccepted = mean(Choice))
     
-    mixLogis_post$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+    mixLogis_post$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
     mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-C"))
-    mixLogis_post$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+    mixLogis_post$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
     mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-P"))
-    mixLogis_post$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+    mixLogis_post$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
     mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
-    mixLogis_post$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+    mixLogis_post$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
     
     ## now produce a summary matrix
     # get the beta and pvalue matrices
@@ -1409,7 +1409,21 @@ temp <- dataBtw %>%
 #   geom_hline(yintercept = 0) +
 #   theme_minimal()
 
+dataWth %>%
+  #filter(SubjID %in% sample(SubjID, 4)) %>%
+  group_by(SubjID) %>%
+  mutate(firstCost = Cost[1]) %>%
+  #filter(firstCost == "Cognitive") %>%
+  ungroup() %>%
+  ggplot(aes(TrialN, evolvingS, color = BlockOrder)) +
+    geom_hline(yintercept = 1) +
+    geom_line(aes(group = SubjID), show.legend = T, alpha = 0.2) +
+    stat_smooth(method = "loess") +
+    theme_minimal()
+
 save.image(paste("/restricted/projectnb/cd-lab/Claudio/Cost_studies/data_", Sys.Date(), "_", qualifier, ".RData", sep = ""))
+
+
 
 
 
