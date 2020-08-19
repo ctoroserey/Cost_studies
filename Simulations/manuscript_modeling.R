@@ -488,6 +488,7 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     a <- rep(0, nrow(subjData))
     tau <- rep(0, nrow(subjData))
     S <- s # experienced s, mainly for updating rule
+    #s[1] <- 1
     
     # calculate gammas iterating over trials
     # latex versions: gamma[i]: \gamma_t = (1 - (1 - \alpha) ^ {\tau_t}) \dfrac{R_{t-1} A_{t-1}}{\tau_t} +  (1 - \alpha) ^ {\tau_t} \gamma_{t-1}
