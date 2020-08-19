@@ -7,6 +7,8 @@
 # the idea being that you can enter a model and data, and the function will return the lowest LL and associated parameters
 # maybe also R-squares and things in the current optimization function
 
+#$ -pe omp 28
+
 ## libraries
 library(tidyverse)
 library(ggfortify)
@@ -460,7 +462,7 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
   t <- 20 - h
   obs_c <- subjData$Choice
   effort <- ifelse(subjData$Cost == "Wait", 0, 1)
-  fatigue <- 0 # for gradual decrease: (0.01 * subjData$TrialN * effort) 
+  #fatigue <- 0.01 * subjData$TrialN * effort
   
   # Prep list of results to be returned, and keep track per iteration
   out <- list()
@@ -490,8 +492,8 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     a <- rep(0, nrow(subjData))
     tau <- rep(0, nrow(subjData))
     S <- s # experienced s, mainly for updating rule
-    #s[1] <- 1
-    
+    if (! "s" %in% colnames(params)) {s[1] <- 1}
+
     # calculate gammas iterating over trials
     # latex versions: gamma[i]: \gamma_t = (1 - (1 - \alpha) ^ {\tau_t}) \dfrac{R_{t-1} A_{t-1}}{\tau_t} +  (1 - \alpha) ^ {\tau_t} \gamma_{t-1}
     # ugly tau: \tau_{t} = (H_{t-1} ^ {s_{t-1}}  A_{t - 1}) + T_{t - 1}
@@ -503,7 +505,7 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     while (i < nrow(subjData)) {
       # choose if the prospect's reward rate, non-linearly discounted as above > env. rate
       # in other words, is the local-focus on handling time being affected, or a global environmental rate? (or something in between?)
-      a[i] <- ifelse(o[i] / (h[i] ^ s[i]) > gamma[i], 1, 0)
+      a[i] <- ifelse(o[i] / (h[i] ^ s[i])  > gamma[i], 1, 0)
       
       # amount earned
       ao <- o[i] * a[i]
@@ -1101,10 +1103,10 @@ nSubjs_wth <- length(subjList_wth)
 setwd('../..')
 
 # what makes this run unique?
-qualifier <- "newUpdate"
+qualifier <- "newUpdate_bigspace_s1is1"
 
 # how big should the parameter space be?
-spaceSize <- 50
+spaceSize <- 200
 write(paste("n of possibilities per parameter:", spaceSize), stdout())
 
 ## which models to run?
