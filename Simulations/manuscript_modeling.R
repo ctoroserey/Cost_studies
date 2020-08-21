@@ -1009,7 +1009,7 @@ colsBtw = c("#78AB05","#D9541A","deepskyblue4", "darkgoldenrod2") # plot colors 
 colsWth <- c("#D9541A", "#78AB05", "dodgerblue4", "deepskyblue3")#"grey30", "grey70") # plot colors (wait, effort)
 lthick = 2 # line thickness for plots
 
-######## LOAD DATA
+###-- LOAD DATA
 setwd("../Cost2/data")
 files <- dir(pattern = '_log.csv')
 
@@ -1099,14 +1099,14 @@ dataWth_coglogs <- data_frame(SubjID = files) %>%
 subjList_wth <- unique(dataWth$SubjID)
 nSubjs_wth <- length(subjList_wth)
 
-#########
+###-- 
 setwd('../..')
 
 # what makes this run unique?
-qualifier <- "newUpdate_bigspace_s1is1"
+qualifier <- "newUpdate_regspace_s1is1"
 
 # how big should the parameter space be?
-spaceSize <- 200
+spaceSize <- 50
 write(paste("n of possibilities per parameter:", spaceSize), stdout())
 
 ## which models to run?
@@ -1389,10 +1389,15 @@ plot(adaptiveOC_wth_summary$alpha, adaptiveOC_wth_summary$alpha_s,
 axis(side = 1, at = unique(adaptiveOC_wth_summary$alpha), labels = FALSE)
 
 # plot result recovery
-recover_results_wth(adaptiveOC_wth, binary = T, order = T)
+recover_results_wth(adaptiveOC_wth, binary = T, order = F)
 
 
-### testing grounds
+### TESTING GROUNDS
+# according to this, both studies show similar reductions of acceptances over time
+# though the negative slope of wth is steeper
+# this doesn't apply to the btw wait condition, and it's accentuated by handling time
+# so this reintroduces fatigue I guess, though it can't explain everything.
+
 # do those who complete more effort trials end up being more fatigued? (accepting less by the end?)
 temp <- dataBtw %>%
   filter(Cost %in% c("Cognitive", "Physical")) %>%
@@ -1421,7 +1426,63 @@ dataWth %>%
     stat_smooth(method = "loess") +
     theme_minimal()
 
+##  ACCEPTANCES OVER TIME FOR BOTH EXPS COMBINED
+dataWth_short <- dataWth %>%
+  select(SubjID, Cost, Handling, TrialN, Choice, Block) %>%
+  mutate(Exp = "Within-subjects")
+
+dataBtw_short <- dataBtw %>%
+  select(SubjID, Cost, Handling, TrialN, Choice, Block) %>%
+  mutate(Exp = "Between-subjects")
+
+dataAll <- rbind(dataWth_short, dataBtw_short)
+
+slidingWindow <- dataAll %>%
+  filter(Cost  != "Easy") %>%
+  group_by(SubjID, Handling) %>%
+  mutate(TrialN = seq(length(TrialN)),
+         slide = ceiling(TrialN / 10)) %>% 
+  group_by(Exp, SubjID, Handling, slide) %>%
+  summarise(pAccept = mean(Choice)) 
+
+
+
+#summary(glmer(pAccept ~ slide *  Exp + (1 | SubjID), family = "binomial", data = slidingWindow))
+# simple loess showing acceptances across trials (rather than getting the mean per trial over subjects)
+dataAll %>%
+  filter(Cost != "Easy",
+         Handling == 10) %>%
+  ggplot(aes(TrialN, Choice, group = Exp, color = Exp, fill = Exp)) +
+  geom_smooth(method = "loess", show.legend = T) +
+  ylim(0, 1) +
+  theme_classic()
+
+# proportion accepted every 10 trials
+slidingWindow %>%
+  ggplot(aes(slide, pAccept)) +
+  #geom_line(aes(group = Handling), show.legend = F) +
+  #geom_point(aes(group = SubjID), show.legend = F, alpha = 0.2) +
+  #geom_smooth(aes(color = interaction(Exp, Handling), group = interaction(Exp, Handling)), show.legend = T) +
+  geom_smooth(aes(color = Handling, linetype = Exp, group = interaction(Exp, Handling)), show.legend = T) +
+  ylim(0, 1) +
+  theme_classic()
+
+# p accept per block
+dataAll %>%
+  filter(Cost != "Easy") %>%
+  group_by(Exp, SubjID, Block) %>%
+  summarise(pAccept = mean(Choice)) %>%
+  ggplot(aes(Block, pAccept, group = Exp, color = Exp, fill = Exp)) +
+  geom_smooth(method = "loess", show.legend = T) +
+  ylim(0, 1) +
+  theme_classic()
+
 save.image(paste("/restricted/projectnb/cd-lab/Claudio/Cost_studies/data_", Sys.Date(), "_", qualifier, ".RData", sep = ""))
+
+
+
+
+
 
 
 
