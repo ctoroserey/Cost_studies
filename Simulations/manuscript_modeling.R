@@ -450,7 +450,7 @@ plot_alphas <- function(alphas, s = 1, exp = "btw", gammaStart = 0.5) {
 # preferred function, which works for all types of models considered so far
 # like, s = 1 and alpha = 0 returns the single parameter model
 # generative version: model calculates choices per fitted previous choices, not just based on observed sub choices
-optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart = 0.5) {
+optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart = 0.4) {
   #write(paste("Working on subject", unique(SubjData$SubjID)), stdout())
   
   # get every combination of parameters
@@ -458,8 +458,8 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
   
   # relevant behavior elements
   o <- subjData$Offer
-  h <- subjData$Handling + 2 # 2s for the reward achievement window
-  t <- 20 - h # not 16 - h because the offer window is 2s. I don't like adding it, because I assume participants don't assimilate it, but Joe prefers it.
+  h <- subjData$Handling + 2 # if they accept the handling, they experience the reward window
+  t <- 20 - h # and the travel includes the 2s offer window from the next trial
   obs_c <- subjData$Choice
   effort <- ifelse(subjData$Cost == "Wait", 0, 1)
   #fatigue <- 0.01 * subjData$TrialN * effort
@@ -492,13 +492,15 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     a <- rep(0, nrow(subjData))
     tau <- rep(0, nrow(subjData))
     S <- s # experienced s, mainly for updating rule
-    if (! "s" %in% colnames(params)) {s[1] <- 1}
+    #if (! "s" %in% colnames(params)) {s[1] <- 1}
 
     # calculate gammas iterating over trials
-    # latex versions: gamma[i]: \gamma_{t+1} = (1 - (1 - \alpha) ^ {\tau_t}) \dfrac{R_{t} A_{t}}{\tau_t} +  (1 - \alpha) ^ {\tau_t} \gamma_{t}
-    # \tau_{t} = H_{t} ^ {s_{t}}  A_{t} + T_{t}
-    # s_{t + 1} = (1 - \alpha)^t S_1 + \sum^{t}_{i = 1} \alpha(1 - \alpha)^{t - i} (S_t A_t + s_{t - 1}(1 - A_t))
-    # P(A): P(A)_t = \dfrac{1}{1 + exp^{-(\beta[R_t - \gamma_tH_t^{s_t}])}}
+    # latex versions: gamma[i]: \gamma_t = (1 - (1 - \alpha) ^ {\tau_t}) \dfrac{R_{t-1} A_{t-1}}{\tau_t} +  (1 - \alpha) ^ {\tau_t} \gamma_{t-1}
+    # ugly tau: \tau_{t} = (H_{t-1} ^ {s_{t-1}}  A_{t - 1}) + T_{t - 1}
+    # prettier, vectorized tau: \tau = (h ^ s  a) + t
+    # gamma for pretty tau: \gamma_t = (1 - (1 - \alpha) ^ {\tau_{t-1}}) \dfrac{r_{t-1} a_{t-1}}{\tau_{t-1}} +  (1 - \alpha) ^ {\tau_{t-1}} \gamma_{t-1}
+    # s_t = \dfrac {1} {N}\sum_{cost}^{t - 1} s_{cost}
+    # P(A): P(A)_t = \dfrac{1}{1 + exp^{-(\beta[r_t - \gamma_th_t^{s_t}])}}
     i <- 1
     while (i < nrow(subjData)) {
       # choose if the prospect's reward rate, non-linearly discounted as above > env. rate
@@ -900,13 +902,13 @@ recover_results_wth <- function(fitsList, binary = F, matrix = T, order = F) {
                 totalQuits = sum(Choice == 0),
                 propAccepted = mean(Choice))
     
-    mixLogis_post$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+    mixLogis_post$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
     mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-C"))
-    mixLogis_post$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+    mixLogis_post$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
     mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-P"))
-    mixLogis_post$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+    mixLogis_post$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
     mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
-    mixLogis_post$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+    mixLogis_post$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
     
     ## now produce a summary matrix
     # get the beta and pvalue matrices
@@ -1000,26 +1002,6 @@ simplify_results <- function(fitLists, exp = "btw") {
   return(df)
 }
 
-# plot the evolusion of S from the wth fits
-plot_fittedS <- function(fitsList) {
-  # extract fits
-  fits <- do.call(c, sapply(fitsList, "[", "evolvingS"))
-  data <- dataWth %>%
-    mutate(evolvingS = fits) %>% #rbinom(length(fits), 1, fits))
-    group_by(SubjID) %>%
-    mutate(firstCost = Cost[1]) %>%
-    ungroup()
-  
-  
-  data %>%
-    ggplot(aes(TrialN, evolvingS)) +
-    geom_hline(yintercept = 1, linetype = "dashed") +
-    geom_line(aes(group = SubjID, color = BlockOrder), show.legend = T, alpha = 0.2) +
-    geom_smooth(aes(color = BlockOrder), method = "loess") +
-    theme_minimal()
-}
-
-
 
 ## aesthetic options
 lbls <- c("Wait","Cognitive","Physical","Easy") # between subj
@@ -1027,7 +1009,7 @@ colsBtw = c("#78AB05","#D9541A","deepskyblue4", "darkgoldenrod2") # plot colors 
 colsWth <- c("#D9541A", "#78AB05", "dodgerblue4", "deepskyblue3")#"grey30", "grey70") # plot colors (wait, effort)
 lthick = 2 # line thickness for plots
 
-###-- LOAD DATA
+######## LOAD DATA
 setwd("../Cost2/data")
 files <- dir(pattern = '_log.csv')
 
@@ -1117,15 +1099,18 @@ dataWth_coglogs <- data_frame(SubjID = files) %>%
 subjList_wth <- unique(dataWth$SubjID)
 nSubjs_wth <- length(subjList_wth)
 
-###-- 
+#########
 setwd('../..')
 
 # what makes this run unique?
-qualifier <- "newUpdate_regspace_s1is1"
+qualifier <- "newUpdate_50space_experiencedTimes_mgammastart"
+write(paste("Run description:", qualifier), stdout())
 
 # how big should the parameter space be?
 spaceSize <- 50
 write(paste("n of possibilities per parameter:", spaceSize), stdout())
+
+write(paste("n of cores =", detectCores()), stdout())
 
 ## which models to run?
 baseOC_nloptr <- F
@@ -1407,15 +1392,10 @@ plot(adaptiveOC_wth_summary$alpha, adaptiveOC_wth_summary$alpha_s,
 axis(side = 1, at = unique(adaptiveOC_wth_summary$alpha), labels = FALSE)
 
 # plot result recovery
-recover_results_wth(adaptiveOC_wth, binary = T, order = F)
+recover_results_wth(adaptiveOC_wth, binary = T, order = T)
 
 
-### TESTING GROUNDS
-# according to this, both studies show similar reductions of acceptances over time
-# though the negative slope of wth is steeper
-# this doesn't apply to the btw wait condition, and it's accentuated by handling time
-# so this reintroduces fatigue I guess, though it can't explain everything.
-
+### testing grounds
 # do those who complete more effort trials end up being more fatigued? (accepting less by the end?)
 temp <- dataBtw %>%
   filter(Cost %in% c("Cognitive", "Physical")) %>%
@@ -1432,83 +1412,7 @@ temp <- dataBtw %>%
 #   geom_hline(yintercept = 0) +
 #   theme_minimal()
 
-dataWth %>%
-  #filter(SubjID %in% sample(SubjID, 4)) %>%
-  group_by(SubjID) %>%
-  mutate(firstCost = Cost[1]) %>%
-  #filter(firstCost == "Cognitive") %>%
-  ungroup() %>%
-  ggplot(aes(TrialN, evolvingS, color = BlockOrder)) +
-    geom_hline(yintercept = 1) +
-    geom_line(aes(group = SubjID), show.legend = T, alpha = 0.2) +
-    stat_smooth(method = "loess") +
-    theme_minimal()
-
-##  ACCEPTANCES OVER TIME FOR BOTH EXPS COMBINED
-dataWth_short <- dataWth %>%
-  select(SubjID, Cost, Handling, TrialN, Choice, Block) %>%
-  mutate(Exp = "Within-subjects")
-
-dataBtw_short <- dataBtw %>%
-  select(SubjID, Cost, Handling, TrialN, Choice, Block) %>%
-  mutate(Exp = "Between-subjects")
-
-dataAll <- rbind(dataWth_short, dataBtw_short)
-
-slidingWindow <- dataAll %>%
-  filter(Cost  != "Easy") %>%
-  group_by(SubjID, Handling) %>%
-  mutate(TrialN = seq(length(TrialN)),
-         slide = ceiling(TrialN / 10)) %>% 
-  group_by(Exp, SubjID, Handling, slide) %>%
-  summarise(pAccept = mean(Choice)) 
-
-
-
-#summary(glmer(pAccept ~ slide *  Exp + (1 | SubjID), family = "binomial", data = slidingWindow))
-# simple loess showing acceptances across trials (rather than getting the mean per trial over subjects)
-dataAll %>%
-  filter(Cost != "Easy",
-         Handling == 10) %>%
-  mutate(simpleCost = case_when(Cost == "Wait-C" ~ "Wait",
-                                Cost == "Wait-P" ~ "Wait",
-                                Cost == "Wait" ~ "Wait",
-                                Cost == "Physical" ~ "Physical",
-                                Cost == "Cognitive" ~ "Cognitive")) %>% 
-  ggplot(aes(TrialN, Choice, group = simpleCost, linetype = Exp, color = simpleCost, fill = simpleCost)) +
-    geom_smooth(method = "loess", show.legend = T) +
-    ylim(0, 1) +
-    facet_wrap(vars(Exp)) +
-    theme_classic()
-
-# proportion accepted every 10 trials
-slidingWindow %>%
-  ggplot(aes(slide, pAccept)) +
-  #geom_line(aes(group = Handling), show.legend = F) +
-  #geom_point(aes(group = SubjID), show.legend = F, alpha = 0.2) +
-  #geom_smooth(aes(color = interaction(Exp, Handling), group = interaction(Exp, Handling)), show.legend = T) +
-  geom_smooth(aes(color = Handling, linetype = Exp, group = interaction(Exp, Handling)), show.legend = T) +
-  ylim(0, 1) +
-  theme_classic()
-
-# p accept per block
-dataAll %>%
-  filter(Cost != "Easy") %>%
-  group_by(Exp, SubjID, Block) %>%
-  summarise(pAccept = mean(Choice)) %>%
-  ggplot(aes(Block, pAccept, group = Exp, color = Exp, fill = Exp)) +
-  geom_smooth(method = "loess", show.legend = T) +
-  ylim(0, 1) +
-  theme_classic()
-
 save.image(paste("/restricted/projectnb/cd-lab/Claudio/Cost_studies/data_", Sys.Date(), "_", qualifier, ".RData", sep = ""))
-
-
-
-
-
-
-
 
 
 
