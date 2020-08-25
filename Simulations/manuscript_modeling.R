@@ -1000,6 +1000,26 @@ simplify_results <- function(fitLists, exp = "btw") {
   return(df)
 }
 
+# plot the evolusion of S from the wth fits
+plot_fittedS <- function(fitsList) {
+  # extract fits
+  fits <- do.call(c, sapply(fitsList, "[", "evolvingS"))
+  data <- dataWth %>%
+    mutate(evolvingS = fits) %>% #rbinom(length(fits), 1, fits))
+    group_by(SubjID) %>%
+    mutate(firstCost = Cost[1]) %>%
+    ungroup()
+  
+  
+  data %>%
+    ggplot(aes(TrialN, evolvingS)) +
+    geom_hline(yintercept = 1, linetype = "dashed") +
+    geom_line(aes(group = SubjID, color = BlockOrder), show.legend = T, alpha = 0.2) +
+    geom_smooth(aes(color = BlockOrder), method = "loess") +
+    theme_minimal()
+}
+
+
 
 ## aesthetic options
 lbls <- c("Wait","Cognitive","Physical","Easy") # between subj
