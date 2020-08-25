@@ -1470,10 +1470,16 @@ slidingWindow <- dataAll %>%
 dataAll %>%
   filter(Cost != "Easy",
          Handling == 10) %>%
-  ggplot(aes(TrialN, Choice, group = Exp, color = Exp, fill = Exp)) +
-  geom_smooth(method = "loess", show.legend = T) +
-  ylim(0, 1) +
-  theme_classic()
+  mutate(simpleCost = case_when(Cost == "Wait-C" ~ "Wait",
+                                Cost == "Wait-P" ~ "Wait",
+                                Cost == "Wait" ~ "Wait",
+                                Cost == "Physical" ~ "Physical",
+                                Cost == "Cognitive" ~ "Cognitive")) %>% 
+  ggplot(aes(TrialN, Choice, group = simpleCost, linetype = Exp, color = simpleCost, fill = simpleCost)) +
+    geom_smooth(method = "loess", show.legend = T) +
+    ylim(0, 1) +
+    facet_wrap(vars(Exp)) +
+    theme_classic()
 
 # proportion accepted every 10 trials
 slidingWindow %>%
