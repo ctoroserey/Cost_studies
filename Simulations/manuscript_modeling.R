@@ -458,8 +458,8 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
   
   # relevant behavior elements
   o <- subjData$Offer
-  h <- subjData$Handling
-  t <- 20 - h
+  h <- subjData$Handling + 2 # 2s for the reward achievement window
+  t <- 20 - h # not 16 - h because the offer window is 2s. I don't like adding it, because I assume participants don't assimilate it, but Joe prefers it.
   obs_c <- subjData$Choice
   effort <- ifelse(subjData$Cost == "Wait", 0, 1)
   #fatigue <- 0.01 * subjData$TrialN * effort
@@ -495,12 +495,10 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     if (! "s" %in% colnames(params)) {s[1] <- 1}
 
     # calculate gammas iterating over trials
-    # latex versions: gamma[i]: \gamma_t = (1 - (1 - \alpha) ^ {\tau_t}) \dfrac{R_{t-1} A_{t-1}}{\tau_t} +  (1 - \alpha) ^ {\tau_t} \gamma_{t-1}
-    # ugly tau: \tau_{t} = (H_{t-1} ^ {s_{t-1}}  A_{t - 1}) + T_{t - 1}
-    # prettier, vectorized tau: \tau = (h ^ s  a) + t
-    # gamma for pretty tau: \gamma_t = (1 - (1 - \alpha) ^ {\tau_{t-1}}) \dfrac{r_{t-1} a_{t-1}}{\tau_{t-1}} +  (1 - \alpha) ^ {\tau_{t-1}} \gamma_{t-1}
-    # s_t = \dfrac {1} {N}\sum_{cost}^{t - 1} s_{cost}
-    # P(A): P(A)_t = \dfrac{1}{1 + exp^{-(\beta[r_t - \gamma_th_t^{s_t}])}}
+    # latex versions: gamma[i]: \gamma_{t+1} = (1 - (1 - \alpha) ^ {\tau_t}) \dfrac{R_{t} A_{t}}{\tau_t} +  (1 - \alpha) ^ {\tau_t} \gamma_{t}
+    # \tau_{t} = H_{t} ^ {s_{t}}  A_{t} + T_{t}
+    # s_{t + 1} = (1 - \alpha)^t S_1 + \sum^{t}_{i = 1} \alpha(1 - \alpha)^{t - i} (S_t A_t + s_{t - 1}(1 - A_t))
+    # P(A): P(A)_t = \dfrac{1}{1 + exp^{-(\beta[R_t - \gamma_tH_t^{s_t}])}}
     i <- 1
     while (i < nrow(subjData)) {
       # choose if the prospect's reward rate, non-linearly discounted as above > env. rate

@@ -1077,7 +1077,7 @@ propFails <- dataBtw %>%
 ```
 
 ``` {r BTW: 16.2.2. rmANOVA plot, echo = FALSE, fig.align = "center", fig.width = 10, fig.height = 6}
-# # code to calculate the rwd/sec rate for each acceptance threshold per handling
+# # code to calculate the rwd/sec rate for each acceptance threshold per handling (calculate the optimal solution)
 # rwd <- c(4, 8, 20)
 # handling <- c(14, 10, 2) + 2 # add 2 to H and T to account for offer and reward disclosure windows
 # travel <- c(2, 6, 14) + 2
