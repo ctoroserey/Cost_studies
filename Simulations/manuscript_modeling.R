@@ -484,7 +484,7 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     # vectors are initialized by a single value, but they get updated
     tempr <- params[param, "tempr"]
     alpha <- params[param, "alpha"]
-    ifelse("alpha_s" %in% colnames(params), alpha_s <- params[param, "alpha_s"], alpha_s <- 0.15) # evolving time estimate learning. turn into free parameter
+    ifelse("alpha_s" %in% colnames(params), alpha_s <- params[param, "alpha_s"], alpha_s <- 0) # evolving time estimate learning. turn into free parameter
     ifelse("s" %in% colnames(params), s <- rep(params[param, "s"], nrow(subjData)), s <- subjData$mS)
     ifelse("gammaPrior" %in% colnames(params), gamma <- rep(params[param, "gammaPrior"], nrow(subjData)), gamma <- rep(gammaStart, nrow(subjData)))
     
@@ -697,7 +697,8 @@ plot_adaptive_fitsub <- function(id = "58", exp = "btw", showChoices = -0.6) {
     s
     # plot
     ratePlot <- sub %>%
-      mutate(trialRate = Offer / (Handling ^ s),
+      mutate(Handling = Handling + 2,
+             trialRate = Offer / (Handling ^ s),
              g = temp$rate,
              fitChoice = ifelse(trialRate > g, -0.25, -5),
              newChoice = ifelse(Choice == 1, -0.5, -5),
@@ -835,22 +836,22 @@ recover_results_wth <- function(fitsList, binary = F, matrix = T, order = F) {
     ungroup() %>%
     mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>% 
     ggplot(aes(Offer, propAccept, color = Cost)) +
-    geom_point(size = 3, show.legend = T) +
-    geom_line(size = 1, show.legend = F) +
-    scale_color_manual(values = colsWth) +
-    scale_fill_manual(values = colsWth) +
-    geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = T) +
-    scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
-    scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
-    labs(x = "Reward", y = "Proportion Accepted") +
-    {if (order) facet_wrap(vars(BlockOrder, Block)) else facet_wrap(vars(Block))} +
-    theme(legend.key = element_blank(),
-          legend.position = c(0.9, 0.25),
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(), 
-          panel.background = element_blank(), 
-          axis.line = element_line(colour = "black"),
-          text = element_text(size = 16))
+      geom_point(size = 3, show.legend = T) +
+      geom_line(size = 1, show.legend = F) +
+      scale_color_manual(values = colsWth) +
+      scale_fill_manual(values = colsWth) +
+      geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = T) +
+      scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
+      scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
+      labs(x = "Reward", y = "Proportion Accepted") +
+      {if (order) facet_wrap(vars(BlockOrder, Block)) else facet_wrap(vars(Block))} +
+      theme(legend.key = element_blank(),
+            legend.position = c(0.9, 0.25),
+            panel.grid.major = element_blank(), 
+            panel.grid.minor = element_blank(), 
+            panel.background = element_blank(), 
+            axis.line = element_line(colour = "black"),
+            text = element_text(size = 16))
   
   print(plot)
   
@@ -900,13 +901,13 @@ recover_results_wth <- function(fitsList, binary = F, matrix = T, order = F) {
                 totalQuits = sum(Choice == 0),
                 propAccepted = mean(Choice))
     
-    mixLogis_post$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+    mixLogis_post$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData, control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
     mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-C"))
-    mixLogis_post$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+    mixLogis_post$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData, control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
     mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-P"))
-    mixLogis_post$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+    mixLogis_post$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData, control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
     mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
-    mixLogis_post$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+    mixLogis_post$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData, control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
     
     ## now produce a summary matrix
     # get the beta and pvalue matrices
@@ -998,6 +999,24 @@ simplify_results <- function(fitLists, exp = "btw") {
   df <- cbind(subList, df)
   
   return(df)
+}
+
+plot_fittedS <- function(fitsList) {
+  # extract fits
+  fits <- do.call(c, sapply(fitsList, "[", "evolvingS"))
+  data <- dataWth %>%
+    mutate(evolvingS = fits) %>% #rbinom(length(fits), 1, fits))
+    group_by(SubjID) %>%
+    mutate(firstCost = Cost[1]) %>%
+    ungroup()
+  
+  
+  data %>%
+    ggplot(aes(TrialN, evolvingS)) +
+    geom_hline(yintercept = 1, linetype = "dashed") +
+    geom_line(aes(group = SubjID, color = BlockOrder), show.legend = T, alpha = 0.2) +
+    geom_smooth(aes(color = BlockOrder), method = "loess") +
+    theme_minimal()
 }
 
 
@@ -1320,7 +1339,7 @@ if (twOC) {
 # but ~0.02 alpha seems sensible.
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                alpha = seq(0.001, 0.2, length.out = spaceSize),
-               s = seq(0.001, 2, length.out = spaceSize),
+               s = seq(0.5, 1.5, length.out = spaceSize),
                alpha_s = 0) # in the between subjects version all S_costs are the same, so there is no update. Just enforcing that here to save on computation
 
 write("Fitting between-subject data", stdout())
@@ -1355,13 +1374,7 @@ tryCatch(dataWth <- dataWth %>% select(-mS), error = function(e) {print("Oops, n
 if (! "mS" %in% colnames(dataWth)) {
   suppressWarnings(dataWth <- dataWth %>%
     mutate(simpleCost = ifelse(Cost %in% c("Wait-C", "Wait-P"), "Wait", as.character(Cost))) %>% 
-    left_join(ss, by = "simpleCost")) #%>%
-    # group_by(SubjID) %>%
-    # mutate(laggedS = dplyr::lag(mS, default = 1),
-    #        mS = mS * Choice,
-    #        mS = ifelse(mS == 0, laggedS, mS),
-    #        mS = recalibrate_s(mS, thetaRange = c(0.9, 0))) %>%
-    # ungroup()
+    left_join(ss, by = "simpleCost")) 
 }
 
 # FIT WITHIN SUBJECTS
