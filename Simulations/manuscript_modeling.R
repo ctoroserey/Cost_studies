@@ -7,7 +7,7 @@
 # the idea being that you can enter a model and data, and the function will return the lowest LL and associated parameters
 # maybe also R-squares and things in the current optimization function
 
-#$ -pe omp 28
+#$ -pe omp 36
 
 ## libraries
 library(tidyverse)
