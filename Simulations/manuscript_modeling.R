@@ -7,7 +7,7 @@
 # the idea being that you can enter a model and data, and the function will return the lowest LL and associated parameters
 # maybe also R-squares and things in the current optimization function
 
-#$ -pe omp 36
+#$ -pe omp 28
 
 ## libraries
 library(tidyverse)
@@ -15,15 +15,15 @@ library(ggfortify)
 library(knitr)
 library(pander) 
 library(nloptr)
-library(pwr)
+#library(pwr)
 library(lme4)
 #library(lmerTest)
 library(gridExtra)
 library(reshape2)
 library(corrplot)
-library(survival)
+#library(survival)
 library(ggfortify)
-library(patchwork)
+#library(patchwork)
 library(data.table)
 library(parallel)
 
@@ -1120,7 +1120,7 @@ nSubjs_wth <- length(subjList_wth)
 setwd('../..')
 
 # what makes this run unique?
-qualifier <- "newUpdate_50space_experiencedTimes_mgammastart"
+qualifier <- "newUpdate_50space_experiencedTimes_mgammastart_extrabounds"
 write(paste("Run description:", qualifier), stdout())
 
 # how big should the parameter space be?
@@ -1338,7 +1338,7 @@ if (twOC) {
 # at 30 and 50 it's the same. As alpha is reduced to ~0, s increases for cog.
 # but ~0.02 alpha seems sensible.
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-               alpha = seq(0.001, 0.2, length.out = spaceSize),
+               alpha = seq(0.001, 1, length.out = spaceSize),
                s = seq(0.5, 1.5, length.out = spaceSize),
                alpha_s = 0) # in the between subjects version all S_costs are the same, so there is no update. Just enforcing that here to save on computation
 
@@ -1382,8 +1382,8 @@ if (! "mS" %in% colnames(dataWth)) {
 write("Fitting within-subject data", stdout())
 
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-               alpha = seq(0.001, 0.2, length.out = spaceSize),
-               alpha_s = seq(0, 0.5, length.out = spaceSize))
+               alpha = seq(0.001, 1, length.out = spaceSize),
+               alpha_s = seq(0, 1, length.out = spaceSize))
 
 # fit per individual
 system.time(adaptiveOC_wth <- dataWth %>%
