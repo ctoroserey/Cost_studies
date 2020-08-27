@@ -458,8 +458,8 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
   
   # relevant behavior elements
   o <- subjData$Offer
-  h <- subjData$Handling + 2 # if they accept the handling, they experience the reward window
-  t <- 20 - h # and the travel includes the 2s offer window from the next trial
+  h <- subjData$Handling # if they accept the handling, they experience the reward window
+  t <- 14 - h # and the travel includes the 2s offer window from the next trial
   obs_c <- subjData$Choice
   effort <- ifelse(subjData$Cost == "Wait", 0, 1)
   #fatigue <- 0.01 * subjData$TrialN * effort
@@ -1120,7 +1120,7 @@ nSubjs_wth <- length(subjList_wth)
 setwd('../..')
 
 # what makes this run unique?
-qualifier <- "newUpdate_50space_experiencedTimes_mgammastart_extrabounds"
+qualifier <- "newUpdate_50space_experiencedTimes_travelminus2"
 write(paste("Run description:", qualifier), stdout())
 
 # how big should the parameter space be?
@@ -1139,6 +1139,85 @@ twOC <- F
 recovery <- T
 
 
+### ADAPTIVE MODELING
+# taking the cumulative average of the subjective time perception makes subjective overall time seem slower.
+# a free parameter could be added to index the degree to which participants cared about this (replaces k as a free parameter, since s is adopted from exp 1)
+# weird that the higher the weight on cum_means, the lower the OC ie less selective. Think about it.
+
+# FIT BETWEEN SUBJECTS
+# alpha will often default to the next lowest to 0
+# so I tested a number of iterations to ensure that the results persist
+# at 30 and 50 it's the same. As alpha is reduced to ~0, s increases for cog.
+# but ~0.02 alpha seems sensible.
+params <- list(tempr = seq(0, 2, length.out = spaceSize), 
+               alpha = seq(0.001, 0.2, length.out = spaceSize),
+               s = seq(0.5, 1.5, length.out = spaceSize),
+               alpha_s = 0) # in the between subjects version all S_costs are the same, so there is no update. Just enforcing that here to save on computation
+
+write("Fitting between-subject data", stdout())
+
+# fit the model to each individual
+system.time(adaptiveOC_btw <- dataBtw %>%
+  filter(Cost != "Easy") %>%
+  plyr::dlply("SubjID", identity) %>%
+  mclapply(., optimize_model_adaptive, params, simplify = F, mc.cores = detectCores()))
+
+# summarise
+adaptiveOC_btw_summary <- simplify_results(adaptiveOC_btw)
+
+# plot comparisons
+param_compare_plot(adaptiveOC_btw_summary, "s", meanRate = 1)
+
+# standard stats
+summary(aov(s ~ Cost, adaptiveOC_btw_summary))
+t.test(filter(adaptiveOC_btw_summary, Cost == "Cognitive")$s, mu = 1)
+
+# plot result recovery
+recover_results_btw(adaptiveOC_btw, binary = T)
+
+#btw ss to apply to wth
+ss <- adaptiveOC_btw_summary %>% 
+  group_by(Cost) %>% 
+  summarise(mS = median(s)) %>%
+  rename(simpleCost = Cost) # to merge without replacing
+
+# reset data: 
+tryCatch(dataWth <- dataWth %>% select(-mS), error = function(e) {print("Oops, no need to remove mS")})
+if (! "mS" %in% colnames(dataWth)) {
+  suppressWarnings(dataWth <- dataWth %>%
+    mutate(simpleCost = ifelse(Cost %in% c("Wait-C", "Wait-P"), "Wait", as.character(Cost))) %>% 
+    left_join(ss, by = "simpleCost")) 
+}
+
+# FIT WITHIN SUBJECTS
+
+write("Fitting within-subject data", stdout())
+
+params <- list(tempr = seq(0, 2, length.out = spaceSize), 
+               alpha = seq(0.001, 0.2, length.out = spaceSize),
+               alpha_s = seq(0, 0.5, length.out = spaceSize))
+
+# fit per individual
+system.time(adaptiveOC_wth <- dataWth %>%
+  plyr::dlply("SubjID", identity) %>%
+  mclapply(., optimize_model_adaptive, params, simplify = F, mc.cores = detectCores()))
+
+# summarise
+adaptiveOC_wth_summary <- simplify_results(adaptiveOC_wth, exp = "wth")
+
+# plot comparisons
+alphaCors <- cor.test(adaptiveOC_wth_summary$alpha, adaptiveOC_wth_summary$alpha_s)
+plot(adaptiveOC_wth_summary$alpha, adaptiveOC_wth_summary$alpha_s, 
+     xlab = "Global alpha (OC)",
+     ylab = "Focal alpha (S)",
+     main = paste("Correlation = ", round(alphaCors$estimate[[1]], digits = 2), "p = ", round(alphaCors$p.value[[1]], digits = 4)),
+     xaxt = "n")
+axis(side = 1, at = unique(adaptiveOC_wth_summary$alpha), labels = FALSE)
+
+# plot result recovery
+recover_results_wth(adaptiveOC_wth, binary = T, order = T)
+
+# more basic models
 # which experimental dataset?
 data <- dataBtw %>% 
   filter(Cost != "Easy")
@@ -1163,7 +1242,7 @@ if (bOC) {
   # make sure that you specify the inverse temperature
   # extra parameters as dfs for now, that's why the `[[1]]`
   model_expr <- expr(tempr[[1]] * (reward - (gamma[[1]] * handling)))
-
+  
   # create a list with possible starting values for model parameters
   # parameter names must match model ones
   params <- list(tempr = seq(0, 2, length.out = spaceSize),
@@ -1257,12 +1336,12 @@ if (baseLogistic) {
 # to track dynamicOC without choice, remove the lag and choice from the model
 if (dOC) {
   print("Running ongoing OC (based on choice history) using a grid search...")
-
+  
   # model to be fit
   # make sure that you specify the inverse temperature
   # extra parameters as dfs for now, that's why the `[[1]]`
   model_expr <- expr(tempr[[1]] * (reward - ((dplyr::lag(cumsum(reward * choice), default = 0) / (expTime ^ alpha[[1]])) * handling)))
-
+  
   # create a list with possible starting values for model parameters
   # parameter names must match model ones
   params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
@@ -1325,86 +1404,6 @@ if (twOC) {
     distinct(SubjID, .keep_all = T)
   
 }
-
-
-### ADAPTIVE MODELING
-# taking the cumulative average of the subjective time perception makes subjective overall time seem slower.
-# a free parameter could be added to index the degree to which participants cared about this (replaces k as a free parameter, since s is adopted from exp 1)
-# weird that the higher the weight on cum_means, the lower the OC ie less selective. Think about it.
-
-# FIT BETWEEN SUBJECTS
-# alpha will often default to the next lowest to 0
-# so I tested a number of iterations to ensure that the results persist
-# at 30 and 50 it's the same. As alpha is reduced to ~0, s increases for cog.
-# but ~0.02 alpha seems sensible.
-params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-               alpha = seq(0.001, 1, length.out = spaceSize),
-               s = seq(0.5, 1.5, length.out = spaceSize),
-               alpha_s = 0) # in the between subjects version all S_costs are the same, so there is no update. Just enforcing that here to save on computation
-
-write("Fitting between-subject data", stdout())
-
-# fit the model to each individual
-system.time(adaptiveOC_btw <- dataBtw %>%
-  filter(Cost != "Easy") %>%
-  plyr::dlply("SubjID", identity) %>%
-  mclapply(., optimize_model_adaptive, params, simplify = F, mc.cores = detectCores()))
-
-# summarise
-adaptiveOC_btw_summary <- simplify_results(adaptiveOC_btw)
-
-# plot comparisons
-param_compare_plot(adaptiveOC_btw_summary, "s", meanRate = 1)
-
-# standard stats
-summary(aov(s ~ Cost, adaptiveOC_btw_summary))
-t.test(filter(adaptiveOC_btw_summary, Cost == "Cognitive")$s, mu = 1)
-
-# plot result recovery
-recover_results_btw(adaptiveOC_btw, binary = T)
-
-#btw ss to apply to wth
-ss <- adaptiveOC_btw_summary %>% 
-  group_by(Cost) %>% 
-  summarise(mS = median(s)) %>%
-  rename(simpleCost = Cost) # to merge without replacing
-
-# reset data: 
-tryCatch(dataWth <- dataWth %>% select(-mS), error = function(e) {print("Oops, no need to remove mS")})
-if (! "mS" %in% colnames(dataWth)) {
-  suppressWarnings(dataWth <- dataWth %>%
-    mutate(simpleCost = ifelse(Cost %in% c("Wait-C", "Wait-P"), "Wait", as.character(Cost))) %>% 
-    left_join(ss, by = "simpleCost")) 
-}
-
-# FIT WITHIN SUBJECTS
-
-write("Fitting within-subject data", stdout())
-
-params <- list(tempr = seq(0, 2, length.out = spaceSize), 
-               alpha = seq(0.001, 1, length.out = spaceSize),
-               alpha_s = seq(0, 1, length.out = spaceSize))
-
-# fit per individual
-system.time(adaptiveOC_wth <- dataWth %>%
-  plyr::dlply("SubjID", identity) %>%
-  mclapply(., optimize_model_adaptive, params, simplify = F, mc.cores = detectCores()))
-
-# summarise
-adaptiveOC_wth_summary <- simplify_results(adaptiveOC_wth, exp = "wth")
-
-# plot comparisons
-alphaCors <- cor.test(adaptiveOC_wth_summary$alpha, adaptiveOC_wth_summary$alpha_s)
-plot(adaptiveOC_wth_summary$alpha, adaptiveOC_wth_summary$alpha_s, 
-     xlab = "Global alpha (OC)",
-     ylab = "Focal alpha (S)",
-     main = paste("Correlation = ", round(alphaCors$estimate[[1]], digits = 2), "p = ", round(alphaCors$p.value[[1]], digits = 4)),
-     xaxt = "n")
-axis(side = 1, at = unique(adaptiveOC_wth_summary$alpha), labels = FALSE)
-
-# plot result recovery
-recover_results_wth(adaptiveOC_wth, binary = T, order = T)
-
 
 ### testing grounds
 # do those who complete more effort trials end up being more fatigued? (accepting less by the end?)
