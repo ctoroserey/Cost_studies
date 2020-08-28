@@ -458,8 +458,8 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
   
   # relevant behavior elements
   o <- subjData$Offer
-  h <- subjData$Handling # if they accept the handling, they experience the reward window
-  t <- 14 - h # and the travel includes the 2s offer window from the next trial
+  h <- subjData$Handling + 2 # if they accept the handling, they experience the reward window
+  t <- 20 - h # and the travel includes the 2s offer window from the next trial
   obs_c <- subjData$Choice
   effort <- ifelse(subjData$Cost == "Wait", 0, 1)
   #fatigue <- 0.01 * subjData$TrialN * effort
@@ -964,7 +964,9 @@ recalibrate_s <- function(S, alpha_s, choice) {
     #s[l + 1] <- alpha_s[l] * S[l] * a[l] + (1 - alpha_s[l]) * s[l]
     #s[l + 1] <- (alpha_s / l) * S[l] * a[l] + (1 - (alpha_s / l)) * s[l]
     #s[l + 1] <- s[l] + 1/l * (S[l] ^ a[l] - s[l]) # Sutton & Barto, page 37. Added cholce to S[l], such that no-experlenced blas estlmates back to 1 (l.e. nomlnal tlme)
-    left <- ((1 - alpha_s) ^ l) * s[1]
+    #s[l + 1] <- s[l] + (1/l * (S[l] - s[l])) * a[l]
+    #s[l + 1] <- s[l] + (alpha_s/l * (S[l] - s[l])) * a[l]
+    left <- ((1 - alpha_s) ^ l) * s[1] ^ choice[1]
     right <- alpha_s * (1 - alpha_s) ^ (l - seq(l)) * (S[seq(l)] ^ a[seq(l)])
     right <- alpha_s * (1 - alpha_s) ^ (l - seq(l)) * ((S[seq(l)] * a[seq(l)]) + (dplyr::lag(s[seq(l)], default = 0)) * (1 - a[seq(l)])) # if trial isn't experienced, retain the i-1 s
     s[l + 1] <-  left + sum(right)
@@ -1120,7 +1122,7 @@ nSubjs_wth <- length(subjList_wth)
 setwd('../..')
 
 # what makes this run unique?
-qualifier <- "newUpdate_50space_experiencedTimes_travelminus2"
+qualifier <- "newUpdate_50space_experiencedTimes_highalphaS"
 write(paste("Run description:", qualifier), stdout())
 
 # how big should the parameter space be?
@@ -1195,7 +1197,7 @@ write("Fitting within-subject data", stdout())
 
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                alpha = seq(0.001, 0.2, length.out = spaceSize),
-               alpha_s = seq(0, 0.5, length.out = spaceSize))
+               alpha_s = seq(0.1, 0.5, length.out = spaceSize))
 
 # fit per individual
 system.time(adaptiveOC_wth <- dataWth %>%
