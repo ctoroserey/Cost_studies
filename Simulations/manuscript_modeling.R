@@ -770,6 +770,78 @@ plot_adaptive_fitsub <- function(id = "58", exp = "btw", showChoices = -0.6) {
   suppressWarnings(print(ratePlot))
 }
 
+# simple function meant to create different choice sequences as a function of fixed parameters
+# almost good enough to use in NLOPTR as the optimization function
+generate_data_wth <- function(subjData, tempr = 0.5, alpha = 0.01, alpha_s = 0.2, gammaStart = 0.4) {
+  # simple function meant to create different choice sequences as a function of fixed parameters
+  # almost good enough to use in NLOPTR as the optimization function
+  
+  # relevant behavior elements
+  o <- subjData$Offer
+  h <- subjData$Handling + 2 # if they accept the handling, they experience the reward window
+  t <- 20 - h # and the travel includes the 2s offer window from the next trial
+  
+  # iterate through possible parameters and get the LL
+  # and then store them as variables
+  # vectors are initialized by a single value, but they get updated
+  s <- subjData$mS
+  gamma <- rep(gammaStart, nrow(subjData))
+  
+  # vectors to store evolving variables
+  a <- rep(0, nrow(subjData))
+  tau <- rep(0, nrow(subjData))
+  S <- s # experienced s, mainly for updating rule
+  #if (! "s" %in% colnames(params)) {s[1] <- 1}
+  
+  # calculate gammas iterating over trials
+  # latex versions: gamma[i]: \gamma_{t+1} = (1 - (1 - \alpha) ^ {\tau_t}) \dfrac{R_{t} A_{t}}{\tau_t} +  (1 - \alpha) ^ {\tau_t} \gamma_{t}
+  # \tau_{t} = H_{t} ^ {s_{t}}  A_{t} + T_{t}
+  # s_{t + 1} = (1 - \alpha)^t S_1 + \sum^{t}_{i = 1} \alpha(1 - \alpha)^{t - i} (S_t A_t + s_{t - 1}(1 - A_t))
+  # P(A): P(A)_t = \dfrac{1}{1 + exp^{-(\beta[R_t - \gamma_tH_t^{s_t}])}}
+  i <- 1
+  while (i < nrow(subjData)) {
+    # choose if the prospect's reward rate, non-linearly discounted as above > env. rate
+    # in other words, is the local-focus on handling time being affected, or a global environmental rate? (or something in between?)
+    a[i] <- ifelse(o[i] / (h[i] ^ s[i])  > gamma[i], 1, 0)
+    
+    # amount earned
+    ao <- o[i] * a[i]
+    
+    # s update versions
+    # s[i + 1] <- alpha_s[i] * S[i] * c[i] + (1 - alpha_s[i]) * s[i]
+    # s[i + 1] <- (alpha_s / i) * S[i] * c[i] + (1 - (alpha_s / i)) * s[i]
+    # s[i + 1] <- s[i] + 1/i * (S[i] ^ a[i] - s[i]) # Sutton & Barto, page 37. Added choice to S[i], such that no-experienced bias estimates back to 1 (i.e. nominal time)
+    left <- ((1 - alpha_s) ^ i) * s[1]
+    right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * (S[seq(i)] ^ a[seq(i)])
+    right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * ((S[seq(i)] * a[seq(i)]) + (dplyr::lag(s[seq(i)], default = 0)) * (1 - a[seq(i)])) # if trial isn't experienced, retain the i-1 s
+    s[i + 1] <-  left + sum(right)
+    
+    # non-linear estimate of the elapsed time since the last choice
+    tau[i] <- (h[i] ^ s[i] * a[i]) + t[i]
+    
+    # gamma is updated by how much weight is given to the recently experienced reward rate (i.e. left part of eq)
+    gamma[i + 1] <- ((1 - (1 - alpha) ^ tau[i]) * (ao / tau[i])) + ((1 - alpha) ^ tau[i]) * gamma[i]
+    
+    i <- i + 1
+  }
+  
+  # estimate the probability of acceptance based on the difference between the offer rate vs global rate
+  # this is a rehash of the eq updating c[i] above
+  p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ s)))))
+  p[p == 1] <- 0.999
+  p[p == 0] <- 0.001
+  
+  # store results and return list
+  out <- list()
+  out$pAccept <- p
+  out$rats <- gamma
+  out$fit_c <- a
+  out$evolvingS <- s
+  
+  return(out)
+  
+} 
+
 
 # reproduce main experimental plot findings using fitted model values
 # one for each experiment, since the plots are different
