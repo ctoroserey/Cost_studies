@@ -1484,6 +1484,23 @@ if (twOC) {
 
 ### testing grounds
 
+plot_fittedmS <- function(fitsList) {
+  # extract fits
+  fits <- do.call(c, sapply(fitsList, "[", "mtrialS"))
+  data <- dataWth %>%
+    mutate(evolvingS = fits) %>% #rbinom(length(fits), 1, fits))
+    group_by(SubjID) %>%
+    mutate(firstCost = Cost[1]) %>%
+    ungroup()
+  
+  
+  data %>%
+    ggplot(aes(TrialN, evolvingS)) +
+    geom_hline(yintercept = 1, linetype = "dashed") +
+    geom_line(aes(group = SubjID, color = BlockOrder), show.legend = T, alpha = 0.2) +
+    geom_smooth(aes(color = BlockOrder), method = "loess") +
+    theme_minimal()
+}
 
 recalibrate_s <- function(S, alpha_s, choice) {
   # vector to store the evolving estimates of s
@@ -1518,6 +1535,7 @@ generate_data_wth <- function(subjData, tempr = 0.5, alpha = 0.01, alpha_s = 0.2
   o <- subjData$Offer
   h <- subjData$Handling + 2 # if they accept the handling, they experience the reward window
   t <- 20 - h # and the travel includes the 2s offer window from the next trial
+  trial <- subjData$TrialN
   
   # iterate through possible parameters and get the LL
   # and then store them as variables
@@ -1546,16 +1564,16 @@ generate_data_wth <- function(subjData, tempr = 0.5, alpha = 0.01, alpha_s = 0.2
     ao <- o[i] * a[i]
     
     # s update versions
-    # s[i + 1] <- alpha_s[i] * S[i] * c[i] + (1 - alpha_s[i]) * s[i]
-    # s[i + 1] <- (alpha_s / i) * S[i] * c[i] + (1 - (alpha_s / i)) * s[i]
+    #s[i + 1] <- alpha_s[i] * S[i] * a[i] + (1 - alpha_s[i]) * s[i]
+    #s[i + 1] <- (alpha_s / i) * S[i] * a[i] + (1 - (alpha_s / i)) * s[i]
     #s[i + 1] <- s[i] + 1/i * (S[i] ^ a[i] - s[i]) # Sutton & Barto, page 37. Added choice to S[i], such that no-experienced bias estimates back to 1 (i.e. nominal time)
-    #s[i + 1] <- s[i] + (1/i * (S[i] - s[i])) * a[i]
+    s[i + 1] <- s[i] + (1/i * (S[i] - s[i])) * a[i]
     #s[i + 1] <- s[i] + (alpha_s/i * (S[i] - s[i])) * a[i]
     #s[i + 1] <- s[i] + (alpha_s * (S[i] - s[i])) * a[i]
     left <- ((1 - alpha_s) ^ i) * s[1] ^ a[1]
     right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * (S[seq(i)] ^ a[seq(i)])
     right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * ((S[seq(i)] * a[seq(i)]) + (dplyr::lag(s[seq(i)], default = 1)) * (1 - a[seq(i)])) # if trial isn't experienced, retain the i-1 s
-    s[i + 1] <-  left + sum(right)
+    #s[i + 1] <-  left + sum(right)
     
     # non-linear estimate of the elapsed time since the last choice
     tau[i] <- (h[i] ^ s[i] * a[i]) + t[i]
@@ -1568,7 +1586,11 @@ generate_data_wth <- function(subjData, tempr = 0.5, alpha = 0.01, alpha_s = 0.2
   
   # estimate the probability of acceptance based on the difference between the offer rate vs global rate
   # this is a rehash of the eq updating c[i] above
-  p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ s)))))
+  w <- (trial / max(trial)) ^ alpha_s
+  ms <- (S + s) / 2
+  ms <- ((s * w) + (S * (1 - w)))
+  
+  p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ ms)))))
   p[p == 1] <- 0.999
   p[p == 0] <- 0.001
   
@@ -1578,6 +1600,7 @@ generate_data_wth <- function(subjData, tempr = 0.5, alpha = 0.01, alpha_s = 0.2
   out$rats <- gamma
   out$fit_c <- a
   out$evolvingS <- s
+  out$mtrialS <- ms
   
   return(out)
   
@@ -1590,8 +1613,9 @@ tempfits <- dataWth %>%
   plyr::dlply("SubjID", identity) %>%
   lapply(., generate_data_wth, alpha_s = 0.1, alpha = 0.001, tempr = 0.78)
 
-plot_fittedS(tempfits) + ylim(0.8, 1.2) 
-recover_results_wth(tempfits, binary = F, matrix = F, order = F)
+plot_fittedS(tempfits)
+plot_fittedmS(tempfits) #+ ylim(0.8, 1.2) 
+recover_results_wth(tempfits, binary = F, matrix = F, order = T)
 
 
 
@@ -1601,6 +1625,9 @@ recover_results_wth(tempfits, binary = F, matrix = F, order = F)
 
 
 save.image(paste("/restricted/projectnb/cd-lab/Claudio/Cost_studies/data_", Sys.Date(), "_", qualifier, ".RData", sep = ""))
+
+
+
 
 
 
