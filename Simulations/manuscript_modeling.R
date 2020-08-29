@@ -462,6 +462,7 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
   t <- 20 - h # and the travel includes the 2s offer window from the next trial
   obs_c <- subjData$Choice
   effort <- ifelse(subjData$Cost == "Wait", 0, 1)
+  trial <- subjData$TrialN
   #fatigue <- 0.01 * subjData$TrialN * effort
   
   # Prep list of results to be returned, and keep track per iteration
@@ -512,11 +513,11 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
       # s[i + 1] <- alpha_s[i] * S[i] * c[i] + (1 - alpha_s[i]) * s[i]
       # s[i + 1] <- (alpha_s / i) * S[i] * c[i] + (1 - (alpha_s / i)) * s[i]
       # s[i + 1] <- s[i] + 1/i * (S[i] ^ a[i] - s[i]) # Sutton & Barto, page 37. Added choice to S[i], such that no-experienced bias estimates back to 1 (i.e. nominal time)
-      s[l + 1] <- s[l] + (1/l * (S[l] - s[l])) * a[l]
+      s[i + 1] <- s[i] + (1/i * (S[i] - s[i])) * a[i]
       #s[l + 1] <- s[l] + (alpha_s/l * (S[l] - s[l])) * a[l]
-      left <- ((1 - alpha_s) ^ i) * s[1]
-      right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * (S[seq(i)] ^ a[seq(i)])
-      right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * ((S[seq(i)] * a[seq(i)]) + (dplyr::lag(s[seq(i)], default = 0)) * (1 - a[seq(i)])) # if trial isn't experienced, retain the i-1 s
+      #left <- ((1 - alpha_s) ^ i) * s[1]
+      #right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * (S[seq(i)] ^ a[seq(i)])
+      #right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * ((S[seq(i)] * a[seq(i)]) + (dplyr::lag(s[seq(i)], default = 0)) * (1 - a[seq(i)])) # if trial isn't experienced, retain the i-1 s
       #s[i + 1] <-  left + sum(right)
       
       # non-linear estimate of the elapsed time since the last choice
