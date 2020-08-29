@@ -512,12 +512,12 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
       # s[i + 1] <- alpha_s[i] * S[i] * c[i] + (1 - alpha_s[i]) * s[i]
       # s[i + 1] <- (alpha_s / i) * S[i] * c[i] + (1 - (alpha_s / i)) * s[i]
       # s[i + 1] <- s[i] + 1/i * (S[i] ^ a[i] - s[i]) # Sutton & Barto, page 37. Added choice to S[i], such that no-experienced bias estimates back to 1 (i.e. nominal time)
-      #s[l + 1] <- s[l] + (1/l * (S[l] - s[l])) * a[l]
+      s[l + 1] <- s[l] + (1/l * (S[l] - s[l])) * a[l]
       #s[l + 1] <- s[l] + (alpha_s/l * (S[l] - s[l])) * a[l]
       left <- ((1 - alpha_s) ^ i) * s[1]
       right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * (S[seq(i)] ^ a[seq(i)])
       right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * ((S[seq(i)] * a[seq(i)]) + (dplyr::lag(s[seq(i)], default = 0)) * (1 - a[seq(i)])) # if trial isn't experienced, retain the i-1 s
-      s[i + 1] <-  left + sum(right)
+      #s[i + 1] <-  left + sum(right)
       
       # non-linear estimate of the elapsed time since the last choice
       tau[i] <- (h[i] ^ s[i] * a[i]) + t[i]
@@ -530,7 +530,9 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     
     # estimate the probability of acceptance based on the difference between the offer rate vs global rate
     # this is a rehash of the eq updating c[i] above
-    p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ s)))))
+    w <- (trial / max(trial)) ^ alpha_s
+    ms <- ((s * w) + (S * (1 - w)))
+    p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ ms)))))
     p[p == 1] <- 0.999
     p[p == 0] <- 0.001
     
@@ -551,6 +553,7 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
       out$params <- params[param, ]
       out$pAccept <- p
       out$evolvingS <- s
+      out$mtrialS <- ms
       
       #plot(s, type = "b")
       
@@ -1197,7 +1200,7 @@ nSubjs_wth <- length(subjList_wth)
 setwd('../..')
 
 # what makes this run unique?
-qualifier <- "newUpdate_50space_experiencedTimes_highalphaS"
+qualifier <- "newUpdate_50space_experiencedTimes_newSintegration"
 write(paste("Run description:", qualifier), stdout())
 
 # how big should the parameter space be?
@@ -1229,7 +1232,7 @@ recovery <- T
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                alpha = seq(0.001, 0.2, length.out = spaceSize),
                s = seq(0.5, 1.5, length.out = spaceSize),
-               alpha_s = 0) # in the between subjects version all S_costs are the same, so there is no update. Just enforcing that here to save on computation
+               alpha_s = 1) # in the between subjects version all S_costs are the same, so there is no update. Just enforcing that here to save on computation
 
 write("Fitting between-subject data", stdout())
 
@@ -1272,7 +1275,7 @@ write("Fitting within-subject data", stdout())
 
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                alpha = seq(0.001, 0.2, length.out = spaceSize),
-               alpha_s = seq(0.1, 0.5, length.out = spaceSize))
+               alpha_s = seq(0.01, 0.5, length.out = spaceSize))
 
 # fit per individual
 system.time(adaptiveOC_wth <- dataWth %>%
@@ -1484,138 +1487,138 @@ if (twOC) {
 
 ### testing grounds
 
-plot_fittedmS <- function(fitsList) {
-  # extract fits
-  fits <- do.call(c, sapply(fitsList, "[", "mtrialS"))
-  data <- dataWth %>%
-    mutate(evolvingS = fits) %>% #rbinom(length(fits), 1, fits))
-    group_by(SubjID) %>%
-    mutate(firstCost = Cost[1]) %>%
-    ungroup()
-  
-  
-  data %>%
-    ggplot(aes(TrialN, evolvingS)) +
-    geom_hline(yintercept = 1, linetype = "dashed") +
-    geom_line(aes(group = SubjID, color = BlockOrder), show.legend = T, alpha = 0.2) +
-    geom_smooth(aes(color = BlockOrder), method = "loess") +
-    theme_minimal()
-}
-
-recalibrate_s <- function(S, alpha_s, choice) {
-  # vector to store the evolving estimates of s
-  s <- S
-  #s[1] <- 1
-  a <- choice
-  
-  l <- 1
-  while (l < length(S)) {
-    # s update verslons
-    #s[l + 1] <- alpha_s[l] * S[l] * a[l] + (1 - alpha_s[l]) * s[l]
-    #s[l + 1] <- (alpha_s / l) * S[l] * a[l] + (1 - (alpha_s / l)) * s[l]
-    s[l + 1] <- s[l] + 1/l * (S[l] ^ a[l] - s[l]) # Sutton & Barto, page 37. Added cholce to S[l], such that no-experlenced blas estlmates back to 1 (l.e. nomlnal tlme)
-    s[l + 1] <- s[l] + (1/l * (S[l] - s[l])) * a[l]
-    s[l + 1] <- s[l] + (alpha_s/l * (S[l] - s[l])) * a[l]
-    left <- ((1 - alpha_s) ^ l) * (s[1] ^ choice[1])
-    right <- alpha_s * (1 - alpha_s) ^ (l - seq(l)) * (S[seq(l)] ^ a[seq(l)])
-    right <- alpha_s * (1 - alpha_s) ^ (l - seq(l)) * ((S[seq(l)] * a[seq(l)]) + (dplyr::lag(s[seq(l)], default = 0)) * (1 - a[seq(l)])) # if trial isn't experienced, retain the i-1 s
-    #s[l + 1] <-  left + sum(right)
-    
-    l <- l + 1
-  }
-  
-  return(s)
-}
-
-generate_data_wth <- function(subjData, tempr = 0.5, alpha = 0.01, alpha_s = 0.2, gammaStart = 0.4) {
-  # simple function meant to create different choice sequences as a function of fixed parameters
-  # almost good enough to use in NLOPTR as the optimization function
-  
-  # relevant behavior elements
-  o <- subjData$Offer
-  h <- subjData$Handling + 2 # if they accept the handling, they experience the reward window
-  t <- 20 - h # and the travel includes the 2s offer window from the next trial
-  trial <- subjData$TrialN
-  
-  # iterate through possible parameters and get the LL
-  # and then store them as variables
-  # vectors are initialized by a single value, but they get updated
-  s <- subjData$mS
-  gamma <- rep(gammaStart, nrow(subjData))
-  
-  # vectors to store evolving variables
-  a <- rep(0, nrow(subjData))
-  tau <- rep(0, nrow(subjData))
-  S <- s # experienced s, mainly for updating rule
-  #s[1] <- 1
-  
-  # calculate gammas iterating over trials
-  # latex versions: gamma[i]: \gamma_{t+1} = (1 - (1 - \alpha) ^ {\tau_t}) \dfrac{R_{t} A_{t}}{\tau_t} +  (1 - \alpha) ^ {\tau_t} \gamma_{t}
-  # \tau_{t} = H_{t} ^ {s_{t}}  A_{t} + T_{t}
-  # s_{t + 1} = (1 - \alpha)^t S_1 + \sum^{t}_{i = 1} \alpha(1 - \alpha)^{t - i} (S_t A_t + s_{t - 1}(1 - A_t))
-  # P(A): P(A)_t = \dfrac{1}{1 + exp^{-(\beta[R_t - \gamma_tH_t^{s_t}])}}
-  i <- 1
-  while (i < nrow(subjData)) {
-    # choose if the prospect's reward rate, non-linearly discounted as above > env. rate
-    # in other words, is the local-focus on handling time being affected, or a global environmental rate? (or something in between?)
-    a[i] <- ifelse(o[i] / (h[i] ^ s[i])  > gamma[i], 1, 0)
-    
-    # amount earned
-    ao <- o[i] * a[i]
-    
-    # s update versions
-    #s[i + 1] <- alpha_s[i] * S[i] * a[i] + (1 - alpha_s[i]) * s[i]
-    #s[i + 1] <- (alpha_s / i) * S[i] * a[i] + (1 - (alpha_s / i)) * s[i]
-    #s[i + 1] <- s[i] + 1/i * (S[i] ^ a[i] - s[i]) # Sutton & Barto, page 37. Added choice to S[i], such that no-experienced bias estimates back to 1 (i.e. nominal time)
-    s[i + 1] <- s[i] + (1/i * (S[i] - s[i])) * a[i]
-    #s[i + 1] <- s[i] + (alpha_s/i * (S[i] - s[i])) * a[i]
-    #s[i + 1] <- s[i] + (alpha_s * (S[i] - s[i])) * a[i]
-    left <- ((1 - alpha_s) ^ i) * s[1] ^ a[1]
-    right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * (S[seq(i)] ^ a[seq(i)])
-    right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * ((S[seq(i)] * a[seq(i)]) + (dplyr::lag(s[seq(i)], default = 1)) * (1 - a[seq(i)])) # if trial isn't experienced, retain the i-1 s
-    #s[i + 1] <-  left + sum(right)
-    
-    # non-linear estimate of the elapsed time since the last choice
-    tau[i] <- (h[i] ^ s[i] * a[i]) + t[i]
-    
-    # gamma is updated by how much weight is given to the recently experienced reward rate (i.e. left part of eq)
-    gamma[i + 1] <- ((1 - (1 - alpha) ^ tau[i]) * (ao / tau[i])) + ((1 - alpha) ^ tau[i]) * gamma[i]
-    
-    i <- i + 1
-  }
-  
-  # estimate the probability of acceptance based on the difference between the offer rate vs global rate
-  # this is a rehash of the eq updating c[i] above
-  w <- (trial / max(trial)) ^ alpha_s
-  ms <- (S + s) / 2
-  ms <- ((s * w) + (S * (1 - w)))
-  
-  p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ ms)))))
-  p[p == 1] <- 0.999
-  p[p == 0] <- 0.001
-  
-  # store results and return list
-  out <- list()
-  out$pAccept <- p
-  out$rats <- gamma
-  out$fit_c <- a
-  out$evolvingS <- s
-  out$mtrialS <- ms
-  
-  return(out)
-  
-} 
-
-
-
-
-tempfits <- dataWth %>%
-  plyr::dlply("SubjID", identity) %>%
-  lapply(., generate_data_wth, alpha_s = 0.1, alpha = 0.001, tempr = 0.78)
-
-plot_fittedS(tempfits)
-plot_fittedmS(tempfits) #+ ylim(0.8, 1.2) 
-recover_results_wth(tempfits, binary = F, matrix = F, order = T)
+# plot_fittedmS <- function(fitsList) {
+#   # extract fits
+#   fits <- do.call(c, sapply(fitsList, "[", "mtrialS"))
+#   data <- dataWth %>%
+#     mutate(evolvingS = fits) %>% #rbinom(length(fits), 1, fits))
+#     group_by(SubjID) %>%
+#     mutate(firstCost = Cost[1]) %>%
+#     ungroup()
+#   
+#   
+#   data %>%
+#     ggplot(aes(TrialN, evolvingS)) +
+#     geom_hline(yintercept = 1, linetype = "dashed") +
+#     geom_line(aes(group = SubjID, color = BlockOrder), show.legend = T, alpha = 0.2) +
+#     geom_smooth(aes(color = BlockOrder), method = "loess") +
+#     theme_minimal()
+# }
+# 
+# recalibrate_s <- function(S, alpha_s, choice) {
+#   # vector to store the evolving estimates of s
+#   s <- S
+#   #s[1] <- 1
+#   a <- choice
+#   
+#   l <- 1
+#   while (l < length(S)) {
+#     # s update verslons
+#     #s[l + 1] <- alpha_s[l] * S[l] * a[l] + (1 - alpha_s[l]) * s[l]
+#     #s[l + 1] <- (alpha_s / l) * S[l] * a[l] + (1 - (alpha_s / l)) * s[l]
+#     s[l + 1] <- s[l] + 1/l * (S[l] ^ a[l] - s[l]) # Sutton & Barto, page 37. Added cholce to S[l], such that no-experlenced blas estlmates back to 1 (l.e. nomlnal tlme)
+#     s[l + 1] <- s[l] + (1/l * (S[l] - s[l])) * a[l]
+#     s[l + 1] <- s[l] + (alpha_s/l * (S[l] - s[l])) * a[l]
+#     left <- ((1 - alpha_s) ^ l) * (s[1] ^ choice[1])
+#     right <- alpha_s * (1 - alpha_s) ^ (l - seq(l)) * (S[seq(l)] ^ a[seq(l)])
+#     right <- alpha_s * (1 - alpha_s) ^ (l - seq(l)) * ((S[seq(l)] * a[seq(l)]) + (dplyr::lag(s[seq(l)], default = 0)) * (1 - a[seq(l)])) # if trial isn't experienced, retain the i-1 s
+#     #s[l + 1] <-  left + sum(right)
+#     
+#     l <- l + 1
+#   }
+#   
+#   return(s)
+# }
+# 
+# generate_data_wth <- function(subjData, tempr = 0.5, alpha = 0.01, alpha_s = 0.2, gammaStart = 0.4) {
+#   # simple function meant to create different choice sequences as a function of fixed parameters
+#   # almost good enough to use in NLOPTR as the optimization function
+#   
+#   # relevant behavior elements
+#   o <- subjData$Offer
+#   h <- subjData$Handling + 2 # if they accept the handling, they experience the reward window
+#   t <- 20 - h # and the travel includes the 2s offer window from the next trial
+#   trial <- subjData$TrialN
+#   
+#   # iterate through possible parameters and get the LL
+#   # and then store them as variables
+#   # vectors are initialized by a single value, but they get updated
+#   s <- subjData$mS
+#   gamma <- rep(gammaStart, nrow(subjData))
+#   
+#   # vectors to store evolving variables
+#   a <- rep(0, nrow(subjData))
+#   tau <- rep(0, nrow(subjData))
+#   S <- s # experienced s, mainly for updating rule
+#   #s[1] <- 1
+#   
+#   # calculate gammas iterating over trials
+#   # latex versions: gamma[i]: \gamma_{t+1} = (1 - (1 - \alpha) ^ {\tau_t}) \dfrac{R_{t} A_{t}}{\tau_t} +  (1 - \alpha) ^ {\tau_t} \gamma_{t}
+#   # \tau_{t} = H_{t} ^ {s_{t}}  A_{t} + T_{t}
+#   # s_{t + 1} = (1 - \alpha)^t S_1 + \sum^{t}_{i = 1} \alpha(1 - \alpha)^{t - i} (S_t A_t + s_{t - 1}(1 - A_t))
+#   # P(A): P(A)_t = \dfrac{1}{1 + exp^{-(\beta[R_t - \gamma_tH_t^{s_t}])}}
+#   i <- 1
+#   while (i < nrow(subjData)) {
+#     # choose if the prospect's reward rate, non-linearly discounted as above > env. rate
+#     # in other words, is the local-focus on handling time being affected, or a global environmental rate? (or something in between?)
+#     a[i] <- ifelse(o[i] / (h[i] ^ s[i])  > gamma[i], 1, 0)
+#     
+#     # amount earned
+#     ao <- o[i] * a[i]
+#     
+#     # s update versions
+#     #s[i + 1] <- alpha_s[i] * S[i] * a[i] + (1 - alpha_s[i]) * s[i]
+#     #s[i + 1] <- (alpha_s / i) * S[i] * a[i] + (1 - (alpha_s / i)) * s[i]
+#     #s[i + 1] <- s[i] + 1/i * (S[i] ^ a[i] - s[i]) # Sutton & Barto, page 37. Added choice to S[i], such that no-experienced bias estimates back to 1 (i.e. nominal time)
+#     s[i + 1] <- s[i] + (1/i * (S[i] - s[i])) * a[i]
+#     #s[i + 1] <- s[i] + (alpha_s/i * (S[i] - s[i])) * a[i]
+#     #s[i + 1] <- s[i] + (alpha_s * (S[i] - s[i])) * a[i]
+#     left <- ((1 - alpha_s) ^ i) * s[1] ^ a[1]
+#     right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * (S[seq(i)] ^ a[seq(i)])
+#     right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * ((S[seq(i)] * a[seq(i)]) + (dplyr::lag(s[seq(i)], default = 1)) * (1 - a[seq(i)])) # if trial isn't experienced, retain the i-1 s
+#     #s[i + 1] <-  left + sum(right)
+#     
+#     # non-linear estimate of the elapsed time since the last choice
+#     tau[i] <- (h[i] ^ s[i] * a[i]) + t[i]
+#     
+#     # gamma is updated by how much weight is given to the recently experienced reward rate (i.e. left part of eq)
+#     gamma[i + 1] <- ((1 - (1 - alpha) ^ tau[i]) * (ao / tau[i])) + ((1 - alpha) ^ tau[i]) * gamma[i]
+#     
+#     i <- i + 1
+#   }
+#   
+#   # estimate the probability of acceptance based on the difference between the offer rate vs global rate
+#   # this is a rehash of the eq updating c[i] above
+#   w <- (trial / max(trial)) ^ alpha_s
+#   ms <- (S + s) / 2
+#   ms <- ((s * w) + (S * (1 - w)))
+#   
+#   p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ ms)))))
+#   p[p == 1] <- 0.999
+#   p[p == 0] <- 0.001
+#   
+#   # store results and return list
+#   out <- list()
+#   out$pAccept <- p
+#   out$rats <- gamma
+#   out$fit_c <- a
+#   out$evolvingS <- s
+#   out$mtrialS <- ms
+#   
+#   return(out)
+#   
+# } 
+# 
+# 
+# 
+# 
+# tempfits <- dataWth %>%
+#   plyr::dlply("SubjID", identity) %>%
+#   lapply(., generate_data_wth, alpha_s = 2, alpha = 0.001, tempr = 0.78)
+# 
+# plot_fittedS(tempfits)
+# plot_fittedmS(tempfits) #+ ylim(0.8, 1.2) 
+# recover_results_wth(tempfits, binary = F, matrix = F, order = T)
 
 
 
