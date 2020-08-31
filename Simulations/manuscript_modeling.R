@@ -499,7 +499,12 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     # latex versions: gamma[i]: \gamma_{t+1} = (1 - (1 - \alpha) ^ {\tau_t}) \dfrac{R_{t} A_{t}}{\tau_t} +  (1 - \alpha) ^ {\tau_t} \gamma_{t}
     # \tau_{t} = H_{t} ^ {s_{t}}  A_{t} + T_{t}
     # s_{t + 1} = (1 - \alpha)^t S_1 + \sum^{t}_{i = 1} \alpha(1 - \alpha)^{t - i} (S_t A_t + s_{t - 1}(1 - A_t))
+    # s_{t + 1} = s_t + A_t \left (\frac{1}{t}[S_t - s_t] \right)
+    # w_t = \left (\frac{t}{max(t))} \right ) ^\alpha 
+    # mS_t = (s_t w_t) + (S_t (1 - w_t))
     # P(A): P(A)_t = \dfrac{1}{1 + exp^{-(\beta[R_t - \gamma_tH_t^{s_t}])}}
+    # P(A): P(A)_t = \dfrac{1}{1 + exp^{-(\beta[R_t - \gamma_tH_t^{(s_t w_t) + (S_t (1 - w_t))}])}}
+    # P(A)_t = \dfrac{1}{1 + exp^{- \left (\beta \left [R_t - \gamma_tH_t^{(s_t w_t) + (S_t (1 - w_t))} \right] \right)}}
     i <- 1
     while (i < nrow(subjData)) {
       # choose if the prospect's reward rate, non-linearly discounted as above > env. rate
@@ -513,6 +518,7 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
       # s[i + 1] <- alpha_s[i] * S[i] * c[i] + (1 - alpha_s[i]) * s[i]
       # s[i + 1] <- (alpha_s / i) * S[i] * c[i] + (1 - (alpha_s / i)) * s[i]
       # s[i + 1] <- s[i] + 1/i * (S[i] ^ a[i] - s[i]) # Sutton & Barto, page 37. Added choice to S[i], such that no-experienced bias estimates back to 1 (i.e. nominal time)
+      #s[1] <- S[1] ^ a[1] # initialization: does it matter if the first estimate is 1 or the experience? Not really.
       s[i + 1] <- s[i] + (1/i * (S[i] - s[i])) * a[i]
       #s[l + 1] <- s[l] + (alpha_s/l * (S[l] - s[l])) * a[l]
       #left <- ((1 - alpha_s) ^ i) * s[1]
@@ -1629,6 +1635,9 @@ if (twOC) {
 
 
 save.image(paste("/restricted/projectnb/cd-lab/Claudio/Cost_studies/data_", Sys.Date(), "_", qualifier, ".RData", sep = ""))
+
+
+
 
 
 
