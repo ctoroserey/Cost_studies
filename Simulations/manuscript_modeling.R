@@ -518,7 +518,6 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
       # s[i + 1] <- alpha_s[i] * S[i] * c[i] + (1 - alpha_s[i]) * s[i]
       # s[i + 1] <- (alpha_s / i) * S[i] * c[i] + (1 - (alpha_s / i)) * s[i]
       # s[i + 1] <- s[i] + 1/i * (S[i] ^ a[i] - s[i]) # Sutton & Barto, page 37. Added choice to S[i], such that no-experienced bias estimates back to 1 (i.e. nominal time)
-      #s[1] <- S[1] ^ a[1] # initialization: does it matter if the first estimate is 1 or the experience? Not really.
       s[i + 1] <- s[i] + (1/i * (S[i] - s[i])) * a[i]
       #s[l + 1] <- s[l] + (alpha_s/l * (S[l] - s[l])) * a[l]
       #left <- ((1 - alpha_s) ^ i) * s[1]
@@ -539,6 +538,8 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     # this is a rehash of the eq updating c[i] above
     w <- (trial / max(trial)) ^ alpha_s
     ms <- ((s * w) + (S * (1 - w)))
+    #ms <- (s * alpha_s) + (S * (1 - alpha_s))
+
     p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ ms)))))
     p[p == 1] <- 0.999
     p[p == 0] <- 0.001
@@ -1207,7 +1208,7 @@ nSubjs_wth <- length(subjList_wth)
 setwd('../..')
 
 # what makes this run unique?
-qualifier <- "newUpdate_50space_experiencedTimes_newSintegration"
+qualifier <- "publishable_allModels"
 write(paste("Run description:", qualifier), stdout())
 
 # how big should the parameter space be?
@@ -1282,7 +1283,7 @@ write("Fitting within-subject data", stdout())
 
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                alpha = seq(0.001, 0.2, length.out = spaceSize),
-               alpha_s = seq(0.01, 0.5, length.out = spaceSize))
+               alpha_s = seq(0.001, 1, length.out = spaceSize))
 
 # fit per individual
 system.time(adaptiveOC_wth <- dataWth %>%
@@ -1635,9 +1636,6 @@ if (twOC) {
 
 
 save.image(paste("/restricted/projectnb/cd-lab/Claudio/Cost_studies/data_", Sys.Date(), "_", qualifier, ".RData", sep = ""))
-
-
-
 
 
 
