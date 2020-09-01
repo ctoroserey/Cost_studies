@@ -492,11 +492,13 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     a <- rep(0, nrow(subjData))
     tau <- rep(0, nrow(subjData))
     S <- s # experienced s, mainly for updating rule
+    w <- rep(0, nrow(subjData)) # weight given to estimte versus actual time
+    ms <- rep(0, nrow(subjData)) # used at the time of the decision
     #if (! "s" %in% colnames(params)) {s[1] <- 1}
 
     # calculate gammas iterating over trials
     # latex versions: gamma[i]: \gamma_{t+1} = (1 - (1 - \alpha) ^ {\tau_t}) \dfrac{R_{t} A_{t}}{\tau_t} +  (1 - \alpha) ^ {\tau_t} \gamma_{t}
-    # \tau_{t} = H_{t} ^ {s_{t}}  A_{t} + T_{t}
+    # \tau_{t} = H_{t} ^ {mS_{t}}  A_{t} + T_{t}
     # s_{t + 1} = (1 - \alpha)^t S_1 + \sum^{t}_{i = 1} \alpha(1 - \alpha)^{t - i} (S_t A_t + s_{t - 1}(1 - A_t))
     # s_{t + 1} = s_t + A_t \left (\frac{1}{t}[S_t - s_t] \right)
     # w_t = \left (\frac{t}{max(t))} \right ) ^\alpha 
@@ -506,26 +508,34 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     # P(A)_t = \dfrac{1}{1 + exp^{- \left (\beta \left [R_t - \gamma_tH_t^{(s_t w_t) + (S_t (1 - w_t))} \right] \right)}}
     i <- 1
     while (i < nrow(subjData)) {
+      # compute how much a participant cares about the integrated subjective time
+      w[i] <- (i / nrow(subjData)) ^ alpha_s
+      ms[i] <- ((s[i] * w[i]) + (S[i] * (1 - w[i])))
+      
       # choose if the prospect's reward rate, non-linearly discounted as above > env. rate
       # in other words, is the local-focus on handling time being affected, or a global environmental rate? (or something in between?)
-      a[i] <- ifelse(o[i] / (h[i] ^ s[i])  > gamma[i], 1, 0)
+      a[i] <- ifelse(o[i] / (h[i] ^ ms[i])  > gamma[i], 1, 0)
       
       # amount earned
-      ao <- o[i] * a[i]
+      ao <- a[i] * o[i]
       
       # s update versions
-      # s[i + 1] <- alpha_s[i] * S[i] * c[i] + (1 - alpha_s[i]) * s[i]
-      # s[i + 1] <- (alpha_s / i) * S[i] * c[i] + (1 - (alpha_s / i)) * s[i]
-      # s[i + 1] <- s[i] + 1/i * (S[i] ^ a[i] - s[i]) # Sutton & Barto, page 37. Added choice to S[i], such that no-experienced bias estimates back to 1 (i.e. nominal time)
-      s[i + 1] <- s[i] + (1/i * (S[i] - s[i])) * a[i]
-      #s[l + 1] <- s[l] + (alpha_s/l * (S[l] - s[l])) * a[l]
-      #left <- ((1 - alpha_s) ^ i) * s[1]
+      #s[i + 1] <- alpha_s[i] * S[i] * a[i] + (1 - alpha_s[i]) * s[i]
+      #s[i + 1] <- (alpha_s / i) * S[i] * a[i] + (1 - (alpha_s / i)) * s[i]
+      #s[i + 1] <- s[i] + 1/i * (S[i] ^ a[i] - s[i]) # Sutton & Barto, page 37. Added choice to S[i], such that no-experienced bias estimates back to 1 (i.e. nominal time)
+      #s[1] <- S[1] ^ a[1] # initialization: does it matter if the first estimate is 1 or the experience? Not really.
+      s[i + 1] <- s[i] + (a[i] * (1/i * (S[i] - s[i])))
+      #s[i + 1] <- s[i] + (1/an * (S[i] - s[i])) * a[i] # Joe's suggestion
+      #s[i + 1] <- s[i] + (((1/i) ^ alpha_s) * (S[i] - s[i])) * a[i]
+      #s[i + 1] <- s[i] + (alpha_s/i * (S[i] - s[i])) * a[i]
+      #s[i + 1] <- s[i] + (alpha_s * (S[i] - s[i])) * a[i]
+      #left <- ((1 - alpha_s) ^ i) * s[1] ^ a[1]
       #right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * (S[seq(i)] ^ a[seq(i)])
-      #right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * ((S[seq(i)] * a[seq(i)]) + (dplyr::lag(s[seq(i)], default = 0)) * (1 - a[seq(i)])) # if trial isn't experienced, retain the i-1 s
+      #right <- alpha_s * (1 - alpha_s) ^ (i - seq(i)) * ((S[seq(i)] * a[seq(i)]) + (dplyr::lag(s[seq(i)], default = 1)) * (1 - a[seq(i)])) # if trial isn't experienced, retain the i-1 s
       #s[i + 1] <-  left + sum(right)
       
       # non-linear estimate of the elapsed time since the last choice
-      tau[i] <- (h[i] ^ s[i] * a[i]) + t[i]
+      tau[i] <- (h[i] ^ ms[i] * a[i]) + t[i] # ms because this remains used as a global update, even if it's recent
       
       # gamma is updated by how much weight is given to the recently experienced reward rate (i.e. left part of eq)
       gamma[i + 1] <- ((1 - (1 - alpha) ^ tau[i]) * (ao / tau[i])) + ((1 - alpha) ^ tau[i]) * gamma[i]
@@ -535,8 +545,8 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     
     # estimate the probability of acceptance based on the difference between the offer rate vs global rate
     # this is a rehash of the eq updating c[i] above
-    w <- (trial / max(trial)) ^ alpha_s
-    ms <- ((s * w) + (S * (1 - w)))
+    #w <- (trial / max(trial)) ^ alpha_s
+    #ms <- ((s * w) + (S * (1 - w)))
     #ms <- (s * alpha_s) + (S * (1 - alpha_s))
 
     p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ ms)))))
@@ -560,6 +570,7 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
       out$params <- params[param, ]
       out$pAccept <- p
       out$evolvingS <- s
+      out$w <- w
       out$mtrialS <- ms
       
       #plot(s, type = "b")
@@ -901,6 +912,7 @@ recover_results_wth <- function(fitsList, binary = F, matrix = T, order = F) {
   if (binary) {
     # to get stochastic-less choices
     fits <- ifelse(fits > 0.5, 1, 0)
+    fits <- sapply(fits, function(p) {rbernoulli(1, p = p)})
   }
   data <- dataWth %>%
     mutate(fitChoice = fits) #rbinom(length(fits), 1, fits))
