@@ -163,7 +163,7 @@ optimize_model_cd <- function(subjData, params, simplify = F, gammaStart = 0) {
   
   # relevant behavior elements
   o <- subjData$Offer
-  h <- subjData$Handling
+  h <- subjData$Handling + 2
   t <- 20 - h
   c <- subjData$Choice
   a <- o * c # accepted offers
@@ -178,11 +178,10 @@ optimize_model_cd <- function(subjData, params, simplify = F, gammaStart = 0) {
   LLs <- sapply(seq(nrow(params)), function(i) {
     # isolate the parameters for this iteration
     # and then store them as variables
-    tempr <- params[i, 1]
-    alpha <- params[i, 2]
-    s <- params[i, 3]
+    tempr <- params[i, "tempr"]
+    alpha <- params[i, "alpha"]
     #tau <- (time - dplyr::lag(time, default = 0)) ^ s
-    tau <- lag((h ^ s * c) + t) # we dont expect cognitive to affect total time, just the handling time
+    tau <- lag((h * c) + t) # we dont expect cognitive to affect total time, just the handling time
     
     # update rule (inspired by Constantino and Daw, 2015)
     gamma <- rep(0, nrow(subjData))
@@ -227,7 +226,7 @@ optimize_model_cd <- function(subjData, params, simplify = F, gammaStart = 0) {
   # update rule (inspired by Constantino and Daw, 2015)
   gamma <- rep(0, nrow(subjData))
   #tau <- (time - dplyr::lag(time, default = 0)) ^ s[[1]]
-  tau <- lag((h ^ s[[1]] * c) + t)
+  tau <- lag((h * c) + t)
   
   # calculate gammas
   for (j in seq(nrow(subjData))) {
@@ -1204,7 +1203,7 @@ dataWth_coglogs <- data_frame(SubjID = files) %>%
 subjList_wth <- unique(dataWth$SubjID)
 nSubjs_wth <- length(subjList_wth)
 
-#########
+### MODELS
 setwd('../..')
 
 # what makes this run unique?
@@ -1219,12 +1218,11 @@ write(paste("n of cores =", detectCores()), stdout())
 
 ## which models to run?
 baseOC_nloptr <- F
-bOC <- F
-baseLogistic <- F # to test whether the brute search converges to a conventional logistic through glm()
+bOC <- T
+baseLogistic <- T # to test whether the brute search converges to a conventional logistic through glm()
 fwOC <- F
-dOC <- F
-twOC <- F
-recovery <- T
+dOC <- T
+constantinoC <- T
 
 
 ### ADAPTIVE MODELING
@@ -1305,26 +1303,13 @@ axis(side = 1, at = unique(adaptiveOC_wth_summary$alpha), labels = FALSE)
 # plot result recovery
 recover_results_wth(adaptiveOC_wth, binary = T, order = T)
 
-# more basic models
-# which experimental dataset?
-data <- dataBtw %>% 
-  filter(Cost != "Easy")
 
 
-## ORIGINAL OC NLOPTR
-if (baseOC_nloptr) {
-  print("Running base OC model on NLOPTR...")
-  
-  summaryOC <- data %>%
-    group_by(Cost, SubjID) %>%
-    do(optimizeOCModel(., simplify = T)) %>%
-    ungroup()
-}
-
+# MORE BASIC MODELS
 ## ORIGINAL OC computed using the dynamic model, showing that the adaptive version can be reduced to a single gamma fit
 # great correspondence with NLOPTR, just much slower since it surveys the whole parameter space
 if (bOC) {
-  print("Running base OC model through grid search...")
+  write("Running basic model", stdout())
   
   # model to be fit
   # make sure that you specify the inverse temperature
@@ -1337,7 +1322,7 @@ if (bOC) {
                  gamma = seq(0.25, 1.5, length.out = spaceSize))
   
   # fit per sub
-  system.time(baseOC <- dataBtw %>%
+  system.time(baseOC_btw <- dataBtw %>%
                 filter(Cost != "Easy") %>%
                 group_by(Cost, SubjID) %>%
                 plyr::dlply("SubjID", identity) %>%
@@ -1358,8 +1343,25 @@ if (bOC) {
   #               plyr::dlply("SubjID", identity) %>%
   #               mclapply(., optimize_model_adaptive, params, simplify = F, mc.cores = detectCores()))
   
-  baseOC_summary <- simplify_results(baseOC)
-  param_compare_plot(baseOC_summary, "gamma", meanRate = 0.7)
+  baseOC_btw_summary <- simplify_results(baseOC_btw)
+  #param_compare_plot(baseOC_summary, "gamma", meanRate = 0.7)
+
+}
+
+## basic logistic regression
+if (baseLogistic) {
+  
+  write("Running logistic regressions", stdout())
+  
+  baseLogistic_btw <- dataBtw %>%
+    filter(Cost != "Easy") %>%
+    plyr::dlply("SubjID", identity) %>%
+    lapply(function(data) {glm(Choice ~ Handling + Offer, data = data, family = "binomial")}) 
+  
+  
+  baseLogistic_wth <- dataWth %>%
+    plyr::dlply("SubjID", identity) %>%
+    lapply(function(data) {glm(Choice ~ Cost + Offer, data = data, family = "binomial")}) 
 }
 
 
@@ -1386,26 +1388,6 @@ if (fwOC) {
 }
 
 
-## BASIC LOGISTIC
-# the results mostly match what glm() outputs
-if (baseLogistic) {
-  print("Running a simple logistic (Handling + Reward) through brute search...")
-  # model to be fit
-  model_expr <- expr(intercept[[1]] + (betaRwd[[1]] * reward) + (betaHand[[1]] * handling))
-  
-  # create a list with possible starting values for model parameters
-  params <- list(intercept = seq(-1, 1, length.out = spaceSize), 
-                 betaRwd = seq(-5, 5, length.out = spaceSize),
-                 betaHand = seq(-5, 5, length.out = spaceSize))
-  
-  # fit to each subject
-  baseLogistic <- data %>%
-    group_by(Cost, SubjID) %>%
-    do(optimize_model(., params, model_expr, simplify = T)) %>%
-    ungroup()
-}
-
-
 ## Dundon, Garrett, et al (2020)
 # for a single subject, estimating the global gamma as usual is better than an evolving 
 # one using eq 3 on their paper for cost2.
@@ -1423,7 +1405,8 @@ if (baseLogistic) {
 ## Tracking the ongoing rate based on choices
 # to track dynamicOC without choice, remove the lag and choice from the model
 if (dOC) {
-  print("Running ongoing OC (based on choice history) using a grid search...")
+  
+  write("Running nominal Dundon, Garrett, et al. version", stdout())
   
   # model to be fit
   # make sure that you specify the inverse temperature
@@ -1432,64 +1415,57 @@ if (dOC) {
   
   # create a list with possible starting values for model parameters
   # parameter names must match model ones
-  params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
-                 alpha = seq(0.25, 2, length.out = spaceSize))
+  params <- list(tempr = seq(0, 2, length.out = spaceSize), 
+                 alpha = seq(0.001, 0.2, length.out = spaceSize))
   
   # fit to each subject
-  dynamicOC <- data %>%
+  dynamicOC_btw <- dataBtw %>%
     group_by(Cost, SubjID) %>%
+    do(optimize_model_static(., params, model_expr, simplify = T)) %>%
+    ungroup()
+  
+  dynamicOC_wth <- dataWth %>%
+    group_by(SubjID) %>%
     do(optimize_model_static(., params, model_expr, simplify = T)) %>%
     ungroup()
 }
 
 
 ## trial-wise updating of gamma
-if (twOC) {
-  print("Running trial-wise OC model through grid search...")
+if (constantinoC) {
   
-  ## vanilla C&W (slightly adapted for prey selection)
-  # create a list with possible starting values for model parameters
-  params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
-                 alpha = seq(0, 1, length.out = spaceSize))
+  write("Fitting the simple Constantino & Daw (2015) adaptive model")
   
-  # between subject exp
-  trialwiseOC_btw <- dataBtw %>%
+  # Between subjects
+  params <- list(tempr = seq(0, 2, length.out = spaceSize), 
+                 alpha = seq(0.001, 0.2, length.out = spaceSize),
+                 s = 1,
+                 alpha_s = 1) # in the between subjects version all S_costs are the same, so there is no update. Just enforcing that here to save on computation
+  
+  # fit the model to each individual
+  constantinoOC_btw <- dataBtw %>%
     filter(Cost != "Easy") %>%
-    group_by(Cost, SubjID) %>%
-    do(optimize_model_dyn(., params, simplify = T)) %>%
-    ungroup() %>%
-    distinct(SubjID, .keep_all = T)
+    plyr::dlply("SubjID", identity) %>%
+    mclapply(., optimize_model_adaptive, params, simplify = F, mc.cores = detectCores())
+  
+  # summarise
+  constantinoOC_btw_summary <- simplify_results(adaptiveOC_btw)
   
   
-  # within subject exp
-  trialwiseOC_wth <- dataWth %>% 
-    group_by(SubjID) %>%
-    do(optimize_model_dyn(., params, simplify = T)) %>%
-    ungroup() %>%
-    distinct(SubjID, .keep_all = T)
   
+  # Within subjects
+  params <- list(tempr = seq(0, 2, length.out = spaceSize), 
+                 alpha = seq(0.001, 0.2, length.out = spaceSize),
+                 s = 1,
+                 alpha_s = 1)
   
-  ## modified with non linear time
-  # create a list with possible starting values for model parameters
-  params <- list(tempr = seq(-1, 1, length.out = spaceSize), 
-                 alpha = seq(0.001, 1, length.out = spaceSize),
-                 s = seq(0, 2, length.out = spaceSize))
+  # fit per individual
+  constantinoOC_wth <- dataWth %>%
+    plyr::dlply("SubjID", identity) %>%
+    mclapply(., optimize_model_adaptive, params, simplify = F, mc.cores = detectCores())
   
-  # between subject exp
-  trialwiseOC_btw_us <- dataBtw %>%
-    filter(Cost != "Easy") %>%
-    group_by(Cost, SubjID) %>%
-    do(optimize_model_dyn_us(., params, simplify = T)) %>%
-    ungroup() %>%
-    distinct(SubjID, .keep_all = T)
-  
-  
-  # between subject exp
-  trialwiseOC_wth_us <- dataWth %>% 
-    group_by(SubjID) %>%
-    do(optimize_model_dyn_us(., params, simplify = T)) %>%
-    ungroup() %>%
-    distinct(SubjID, .keep_all = T)
+  # summarise
+  constantinoOC_wth_summary <- simplify_results(adaptiveOC_wth, exp = "wth")
   
 }
 
@@ -1636,6 +1612,8 @@ if (twOC) {
 
 
 save.image(paste("/restricted/projectnb/cd-lab/Claudio/Cost_studies/data_", Sys.Date(), "_", qualifier, ".RData", sep = ""))
+
+
 
 
 
