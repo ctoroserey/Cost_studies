@@ -1217,7 +1217,6 @@ write(paste("n of possibilities per parameter:", spaceSize), stdout())
 write(paste("n of cores =", detectCores()), stdout())
 
 ## which models to run?
-baseOC_nloptr <- F
 bOC <- T
 baseLogistic <- T # to test whether the brute search converges to a conventional logistic through glm()
 fwOC <- F
