@@ -1249,7 +1249,7 @@ constantinoC <- T
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                alpha = seq(0.001, 0.2, length.out = spaceSize),
                s = seq(0.5, 1.5, length.out = spaceSize),
-               alpha_s = 1) # in the between subjects version all S_costs are the same, so there is no update. Just enforcing that here to save on computation
+               alpha_s = 0) # in the between subjects version all S_costs are the same, so there is no update. Just enforcing that here to save on computation
 
 write("Fitting between-subject data", stdout())
 
@@ -1286,8 +1286,8 @@ if (! "mS" %in% colnames(dataWth)) {
     left_join(ss, by = "simpleCost")) 
 }
 
-# FIT WITHIN SUBJECTS
 
+# FIT WITHIN SUBJECTS
 write("Fitting within-subject data", stdout())
 
 params <- list(tempr = seq(0, 2, length.out = spaceSize), 
@@ -1451,7 +1451,7 @@ if (constantinoC) {
   params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                  alpha = seq(0.001, 0.2, length.out = spaceSize),
                  s = 1,
-                 alpha_s = 1) # in the between subjects version all S_costs are the same, so there is no update. Just enforcing that here to save on computation
+                 alpha_s = 0) # in the between subjects version all S_costs are the same, so there is no update. Just enforcing that here to save on computation
   
   # fit the model to each individual
   constantinoOC_btw <- dataBtw %>%
@@ -1468,7 +1468,7 @@ if (constantinoC) {
   params <- list(tempr = seq(0, 2, length.out = spaceSize), 
                  alpha = seq(0.001, 0.2, length.out = spaceSize),
                  s = 1,
-                 alpha_s = 1)
+                 alpha_s = 0)
   
   # fit per individual
   constantinoOC_wth <- dataWth %>%
