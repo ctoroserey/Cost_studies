@@ -767,9 +767,16 @@ generate_data_wth <- function(subjData, tempr = 0.5, alpha = 0.01, alpha_s = 0.2
 
 # reproduce main experimental plot findings using fitted model values
 # one for each experiment, since the plots are different
-recover_results_btw <- function(fitsList, binary = F) {
-  # extract fits
-  fits <- do.call(base::c, sapply(fitsList, "[", "pAccept"))
+recover_results_btw <- function(fitsList, binary = F, base = F) {
+  
+  # if fitting from a list of logistics
+  if (base) {
+    fits <-  do.call(base::c, lapply(fitsList, fitted))
+  } else {
+    # extract fits
+    fits <- do.call(base::c, sapply(fitsList, "[", "pAccept"))
+  }
+  
   if (binary) {
     # to get stochastic-less choices
     fits <- ifelse(fits > 0.5, 1, 0)
@@ -797,20 +804,26 @@ recover_results_btw <- function(fitsList, binary = F) {
           panel.grid.minor = element_blank(), 
           panel.background = element_blank(), 
           axis.line = element_line(colour = "black"),
-          text = element_text(size = 12))
+          text = element_text(size = 20))
   
 }
-recover_results_wth <- function(fitsList, binary = F, matrix = T, order = F) {
+recover_results_wth <- function(fitsList, binary = F, matrix = T, order = F, base = F) {
   # use model fits to reproduce observed behavioral plots
   # the reported pre-post results, including mixed effects, use half 1 and half 2 raw, but the results are pretty much conserved either way.
   # here the middle blocks are eliminated to denote prevent the uneven assignment of the middle blocks to bias stuff either way
   
-  # extract fits
-  fits <- do.call(c, sapply(fitsList, "[", "pAccept"))
+  # if fitting from a list of logistics
+  if (base) {
+    fits <- do.call(base::c, lapply(fitsList, fitted))
+  } else {
+    # extract fits
+    fits <- do.call(base::c, sapply(fitsList, "[", "pAccept"))
+  }
+  
   if (binary) {
     # to get stochastic-less choices
     fits <- ifelse(fits > 0.5, 1, 0)
-    fits <- do.call(c, sapply(fitsList, "[", "fit_c"))
+    #fits <- do.call(c, sapply(fitsList, "[", "fit_c"))
     #fits <- sapply(fits, function(p) {rbernoulli(1, p = p)})
   }
   data <- dataWth %>%
@@ -832,22 +845,22 @@ recover_results_wth <- function(fitsList, binary = F, matrix = T, order = F) {
     ungroup() %>%
     mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>% 
     ggplot(aes(Offer, propAccept, color = Cost)) +
-      geom_point(size = 3, show.legend = T) +
-      geom_line(size = 1, show.legend = F) +
-      scale_color_manual(values = colsWth) +
-      scale_fill_manual(values = colsWth) +
-      geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = T) +
-      scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
-      scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
-      labs(x = "Reward", y = "Proportion Accepted") +
-      {if (order) facet_wrap(vars(BlockOrder, Block)) else facet_wrap(vars(Block))} +
-      theme(legend.key = element_blank(),
-            legend.position = c(0.9, 0.25),
-            panel.grid.major = element_blank(), 
-            panel.grid.minor = element_blank(), 
-            panel.background = element_blank(), 
-            axis.line = element_line(colour = "black"),
-            text = element_text(size = 16))
+    geom_point(size = 3, show.legend = T) +
+    geom_line(size = 1, show.legend = F) +
+    scale_color_manual(values = colsWth) +
+    scale_fill_manual(values = colsWth) +
+    geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = T) +
+    scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
+    scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
+    labs(x = "Reward", y = "Proportion Accepted") +
+    {if (order) facet_wrap(vars(BlockOrder, Block)) else facet_wrap(vars(Block))} +
+    theme(legend.key = element_blank(),
+          legend.position = c(0.9, 0.25),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 20))
   
   print(plot)
   
@@ -1014,7 +1027,12 @@ plot_fittedS <- function(fitsList) {
     geom_hline(yintercept = 1, linetype = "dashed") +
     geom_line(aes(group = SubjID, color = BlockOrder), show.legend = T, alpha = 0.2) +
     geom_smooth(aes(color = BlockOrder), method = "loess") +
-    theme_minimal()
+    theme(legend.position = c(0.9, 0.7),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 20))
 }
 
 
@@ -1381,6 +1399,9 @@ if (constantinoC) {
 
 
 ## MODEL COMPARISONS
+# so far, this shows that the basic logistics tend to have the lowest AICs in both exps
+# However, while they can reproduce BTW results well, they don't get adaptation in the WTH exp
+# our model is the only one that can do both, with comparable AICs
 # focused on comparing nominal C&D (2015) and us
 # compare AICs
 par(mfrow = c(1, 2))
@@ -1392,17 +1413,55 @@ abline(0, 1)
 
 # result recovery
 # between
+recover_results_btw(baseLogistic_btw, base = T) | recover_results_btw(baseLogistic_btw, base = T, binary = T)
 recover_results_btw(constantinoOC_btw) | recover_results_btw(constantinoOC_btw, binary = T)
 recover_results_btw(adaptiveOC_btw) | recover_results_btw(adaptiveOC_btw, binary = T)
 
 # within
+recover_results_wth(baseLogistic_wth, base = T)
+recover_results_wth(baseLogistic_wth, base = T, order = T)
+recover_results_wth(baseLogistic_wth, base = T, binary = T)
 recover_results_wth(constantinoOC_wth) 
 recover_results_wth(constantinoOC_wth, order = T) 
 recover_results_wth(constantinoOC_wth, binary = T)
 recover_results_wth(adaptiveOC_wth) 
 recover_results_wth(adaptiveOC_wth, order = T) 
 recover_results_wth(adaptiveOC_wth, binary = T)
+
+# more generalized AIC plotting
+aic_btw <- tibble(SubjID = adaptiveOC_btw_summary$SubjID,
+                  Logis = sapply(baseLogistic_btw, "[[", "aic"),
+                  Constantino = (2 * constantinoOC_btw_summary$LL + 4),
+                  Ours = (2 * adaptiveOC_btw_summary$LL + 6))  %>%
+  gather(Model, "AIC", -SubjID) %>%
+  mutate(Model = factor(Model, levels = c("Logis", "Constantino", "Ours")))
+
+aic_wth <- tibble(SubjID = adaptiveOC_wth_summary$SubjID,
+                  Logis = sapply(baseLogistic_wth, "[[", "aic"),
+                  Constantino = (2 * constantinoOC_wth_summary$LL + 4),
+                  Ours = (2 * adaptiveOC_wth_summary$LL + 6))  %>%
+  gather(Model, "AIC", -SubjID) %>%
+  mutate(Model = factor(Model, levels = c("Logis", "Constantino", "Ours")))
+
+
+ggplot(aes(Model, AIC, group = as.character(SubjID)), data = aic_btw) +
+  geom_line(show.legend = F) +
+  geom_point(show.legend = F) +
+  theme_minimal()
+
+ggplot(aes(Model, AIC, group = as.character(SubjID)), data = aic_wth) +
+  geom_line(show.legend = F) +
+  geom_point(show.legend = F) +
+  theme_minimal()
+
+plot(adaptiveOC_btw_summary$LL, -1 * sapply(baseLogistic_btw, logLik))
+abline(0, 1)
+
+plot(adaptiveOC_wth_summary$LL, -1 * sapply(baseLogistic_wth, logLik))
+abline(0, 1)
+
 ### testing grounds
+
 
 # plot_fittedmS <- function(fitsList) {
 #   # extract fits
