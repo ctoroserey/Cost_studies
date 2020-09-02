@@ -156,109 +156,6 @@ optimize_model_static <- function(subjData, params, model, simplify = F) {
   return(out)
 }
 
-# variants of vanilla C&D
-optimize_model_cd <- function(subjData, params, simplify = F, gammaStart = 0) {
-  # get every combination of parameters
-  params <- expand.grid(params)
-  
-  # relevant behavior elements
-  o <- subjData$Offer
-  h <- subjData$Handling + 2
-  t <- 20 - h
-  c <- subjData$Choice
-  a <- o * c # accepted offers
-  time <- subjData$ExpTime
-  
-  # Prep list of results to be returned
-  out <- list()
-  out$percentQuit <- mean(c == 0) * 100
-  out$percentAccept <- mean(c == 1) * 100 
-  
-  # iterate through possible parameters and get the LL
-  LLs <- sapply(seq(nrow(params)), function(i) {
-    # isolate the parameters for this iteration
-    # and then store them as variables
-    tempr <- params[i, "tempr"]
-    alpha <- params[i, "alpha"]
-    #tau <- (time - dplyr::lag(time, default = 0)) ^ s
-    tau <- lag((h * c) + t) # we dont expect cognitive to affect total time, just the handling time
-    
-    # update rule (inspired by Constantino and Daw, 2015)
-    gamma <- rep(0, nrow(subjData))
-    
-    # calculate gammas
-    for (i in seq(nrow(subjData) - 1)) {
-      if (i == 1) {
-        gamma[i] <- gammaStart
-      } else {
-        
-        # delta <- (o[i] / h[i]) - gamma[i]
-        # gamma[i + 1] <- gamma[i] + (1 - (1 - alpha) ^ h[1]) * delta
-        #gamma[i] <- (((1 - alpha) ^ tau[i]) * (a[i - 1] / tau[i])) + (1 - (1 - alpha) ^ tau[i]) * gamma[i - 1]
-        gamma[i] <- ((1 - (1 - alpha) ^ tau[i]) * (a[i - 1] / tau[i])) + ((1 - alpha) ^ tau[i]) * gamma[i - 1] # switched version that means higher alpha = more learning
-      }
-    }
-    
-    # estimate the probability of acceptance per the model
-    p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ s)))))
-    p[p == 1] <- 0.999
-    p[p == 0] <- 0.001
-    
-    # get the likelihood of the observations based on the model
-    tempChoice <- rep(NA, length(c))
-    tempChoice[c == 1] <- log(p[c == 1])
-    tempChoice[c == 0] <- log(1 - p[c == 0]) # log of probability of choice 1 when choice 0 occurred
-    negLL <- -sum(tempChoice)
-  } 
-  )
-  
-  # chosen parameters  
-  out$LL <- min(LLs)
-  chosen_params <- params[which(LLs == out$LL), ]
-  lapply(seq_along(chosen_params), function(variable) {assign(colnames(chosen_params)[variable], chosen_params[variable], envir = .GlobalEnv)})
-  
-  # Summarize the outputs
-  out$LL0 <- -(log(0.5) * length(c))
-  out$Rsquared <- 1 - (out$LL / out$LL0) # pseudo r-squared, quantifying the proportion of deviance reduction vs chance
-  out$loglikSpace <- LLs # in case you want to examine the concavity of the likelihood space
-  
-  # get the optimized gamma to export the probability of acceptance
-  # update rule (inspired by Constantino and Daw, 2015)
-  gamma <- rep(0, nrow(subjData))
-  #tau <- (time - dplyr::lag(time, default = 0)) ^ s[[1]]
-  tau <- lag((h * c) + t)
-  
-  # calculate gammas
-  for (j in seq(nrow(subjData))) {
-    if (j == 1) {
-      gamma[j] <- gammaStart
-    } else {
-      #gamma[j] <- (((1 - alpha[[1]]) ^ tau[j]) * (a[j - 1] / tau[j])) + (1 - (1 - alpha[[1]]) ^ tau[j]) * gamma[j - 1]
-      gamma[j] <- ((1 - (1 - alpha[[1]]) ^ tau[j]) * (a[j - 1] / tau[j])) + ((1 - alpha[[1]]) ^ tau[j]) * gamma[j - 1]
-    } 
-  }
-  
-  out$rate <- gamma
-  out$probAccept <- 1 / (1 + exp(-(tempr[[1]] * (o - (gamma * h ^ s[[1]])))))
-  out$Params <- chosen_params
-  #out$predicted <- reward > out$subjOC
-  #out$predicted[out$predicted == TRUE] <- 1
-  #out$percentPredicted <- mean(out$predicted == choice) 
-  
-  # if doing this with dplyr::do(), return a simplified data.frame instead with the important parameters
-  if (simplify) {
-    out <- round(data.frame(out[-c(6, 7, 8)]), digits = 2)
-    colnames(out) <- c("percentQuit",
-                       "percentAccept",
-                       "LL",
-                       "LL0",
-                       "Rsq",
-                       colnames(chosen_params))
-  }
-  
-  return(out)
-}
-
 # visually compare the values for a given parameter result across costs
 param_compare_plot <- function(summary, param = "gamma", color = colsBtw, meanRate = 0.74) {
   plot <- ggplot(summary, aes_string("Cost", param, fill = "Cost")) +
@@ -716,12 +613,13 @@ plot_adaptive_fitsub <- function(id = "58", exp = "btw", showChoices = -0.6) {
     
     # get fits
     temp <- adaptiveOC_btw[[id]]
+    temp <- constantinoOC_btw[[id]]
     s <- as.numeric(temp$params["s"])
-    s
+    
     # plot
     ratePlot <- sub %>%
       mutate(Handling = Handling + 2,
-             trialRate = Offer / (Handling ^ s),
+             trialRate = Offer / (Handling ^ temp$mtrialS),
              g = temp$rate,
              fitChoice = ifelse(trialRate > g, -0.25, -5),
              newChoice = ifelse(Choice == 1, -0.5, -5),
@@ -761,7 +659,7 @@ plot_adaptive_fitsub <- function(id = "58", exp = "btw", showChoices = -0.6) {
     
     # plot
     ratePlot <- sub %>%
-      mutate(trialRate = Offer / (Handling ^ mS),
+      mutate(trialRate = Offer / (Handling ^ temp$mtrialS),
              g = temp$rate,
              fitChoice = ifelse(trialRate > g, -0.25, -5),
              newChoice = ifelse(Choice == 1, -0.5, -5),
@@ -912,7 +810,8 @@ recover_results_wth <- function(fitsList, binary = F, matrix = T, order = F) {
   if (binary) {
     # to get stochastic-less choices
     fits <- ifelse(fits > 0.5, 1, 0)
-    fits <- sapply(fits, function(p) {rbernoulli(1, p = p)})
+    fits <- do.call(c, sapply(fitsList, "[", "fit_c"))
+    #fits <- sapply(fits, function(p) {rbernoulli(1, p = p)})
   }
   data <- dataWth %>%
     mutate(fitChoice = fits) #rbinom(length(fits), 1, fits))
@@ -1460,7 +1359,7 @@ if (constantinoC) {
     mclapply(., optimize_model_adaptive, params, simplify = F, mc.cores = detectCores())
   
   # summarise
-  constantinoOC_btw_summary <- simplify_results(adaptiveOC_btw)
+  constantinoOC_btw_summary <- simplify_results(constantinoOC_btw)
   
   
   
@@ -1476,7 +1375,7 @@ if (constantinoC) {
     mclapply(., optimize_model_adaptive, params, simplify = F, mc.cores = detectCores())
   
   # summarise
-  constantinoOC_wth_summary <- simplify_results(adaptiveOC_wth, exp = "wth")
+  constantinoOC_wth_summary <- simplify_results(constantinoOC_wth, exp = "wth")
   
 }
 
