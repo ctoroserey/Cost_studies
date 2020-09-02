@@ -1379,6 +1379,29 @@ if (constantinoC) {
   
 }
 
+
+## MODEL COMPARISONS
+# focused on comparing nominal C&D (2015) and us
+# compare AICs
+par(mfrow = c(1, 2))
+plot((adaptiveOC_btw_summary$LL * 2 + 6), (constantinoOC_btw_summary$LL * 2 + 4), main = "Between-subjects", xlab = "Our AIC",ylab = "Constantino AIC")
+abline(0, 1)
+
+plot((adaptiveOC_wth_summary$LL * 2 + 6), (constantinoOC_wth_summary$LL * 2 + 4), main = "Within-subjects", xlab = "Our AIC",ylab = "Constantino AIC")
+abline(0, 1)
+
+# result recovery
+# between
+recover_results_btw(constantinoOC_btw) | recover_results_btw(constantinoOC_btw, binary = T)
+recover_results_btw(adaptiveOC_btw) | recover_results_btw(adaptiveOC_btw, binary = T)
+
+# within
+recover_results_wth(constantinoOC_wth) 
+recover_results_wth(constantinoOC_wth, order = T) 
+recover_results_wth(constantinoOC_wth, binary = T)
+recover_results_wth(adaptiveOC_wth) 
+recover_results_wth(adaptiveOC_wth, order = T) 
+recover_results_wth(adaptiveOC_wth, binary = T)
 ### testing grounds
 
 # plot_fittedmS <- function(fitsList) {
