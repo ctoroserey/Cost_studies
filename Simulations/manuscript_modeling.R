@@ -401,7 +401,6 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     # w_t = \left (\frac{t}{max(t))} \right ) ^\alpha 
     # mS_t = (s_t w_t) + (S_t (1 - w_t))
     # P(A): P(A)_t = \dfrac{1}{1 + exp^{-(\beta[R_t - \gamma_tH_t^{s_t}])}}
-    # P(A): P(A)_t = \dfrac{1}{1 + exp^{-(\beta[R_t - \gamma_tH_t^{(s_t w_t) + (S_t (1 - w_t))}])}}
     # P(A)_t = \dfrac{1}{1 + exp^{- \left (\beta \left [R_t - \gamma_tH_t^{(s_t w_t) + (S_t (1 - w_t))} \right] \right)}}
     i <- 1
     while (i < nrow(subjData)) {
@@ -447,8 +446,8 @@ optimize_model_adaptive <- function(subjData, params, simplify = F, gammaStart =
     #ms <- (s * alpha_s) + (S * (1 - alpha_s))
 
     p = 1 / (1 + exp(-(tempr * (o - (gamma * h ^ ms)))))
-    p[p == 1] <- 0.999
-    p[p == 0] <- 0.001
+    p[p == 1] <- 0.999 # or just leave it as 1
+    p[p < 0.001] <- 0.001 # otherwise, values under 0.0001 are biasing the likelihood too much
     
     # get the likelihood of the observations based on the model
     tempChoice <- rep(NA, length(obs_c))
