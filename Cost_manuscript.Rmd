@@ -937,7 +937,7 @@ optimalProp_cost <- temp %>%
 
   In this experiment, groups faced with different behavioral costs (physical effort, cognitive effort, or delay) chose their preferred strategy to maximize rewards in fully-disclosed foraging environments of variable richness. Environmental richness was dictated by the time it took to obtain a reward (the handling time) and the time between trials (the travel time). We hypothesized that participants would approximate reward-maximizing behavior by preferring higher rewards and shorter delays, but that changing the cost required to obtain rewards would uniformly increase or decrease this choice pattern. Specifically, we predicted that participants confronted with effortful demands would be more likely to accept trials than those faced with passive delay, regardless of handling time and reward amount.
   
-  We performed a mixed effects logistic regression to address the first hypothesis. Since participants in the effort groups were forced to travel when they failed to perform above threshold (see Methods), we distinguish between acceptances (entering the handling period) and completions (successfully obtaining a reward). Larger reward amounts significantly increased acceptance probabilities ($\beta$ = `r historyCoeffs_btw["Offer", "Estimate"]`, SE = `r historyCoeffs_btw["Offer", "Std. Error"]`, *p* `r report_p(historyCoeffs_btw["Offer", "Pr(>|z|)"])`), whereas longer delays decreased them ($\beta$ = `r historyCoeffs_btw["Handling", "Estimate"]`, SE = `r historyCoeffs_btw["Handling", "Std. Error"]`, *p* `r report_p(historyCoeffs_btw["Handling", "Pr(>|z|)"])`), in line with predictions. Two additional regressors showed that having missed out on consecutive rewards decreased the probability of acceptance ($\beta$ = `r historyCoeffs_btw["recentTravels", "Estimate"]`, SE = `r historyCoeffs_btw["recentTravels", "Std. Error"]`, *p* `r report_p(historyCoeffs_btw["recentOffers", "Pr(>|z|)"])`), and that participants became more selective when recent offer history was richer ($\beta$ = `r historyCoeffs_btw["recentOffers", "Estimate"]`, SE = `r historyCoeffs_btw["recentOffers", "Std. Error"]`, *p* `r report_p(historyCoeffs_btw["recentOffers", "Pr(>|z|)"])`). The reduction in acceptances from recent misses was driven by the wait group (removing this group from the model yielded a *p* > 0.1), likely because this group accepted the least amount of offers. Comparing likelihood fits among lengths of offer history (e.g. sum over 2 or 3 past trials) suggested that participants were influenced by the `r historyIndex_btw + 1` most recent rewards (AIC = `r AIC(historySize_btw[[historyIndex]])`), which matched the offer presentation rotation (see Methods). These results confirm the expected influence of time and offer magnitude on choice behavior, but also suggest that participants adapted to their recent experience.
+  We performed a mixed effects logistic regression to address the first hypothesis. Since participants in the effort groups were forced to travel when they failed to perform above threshold (see Methods), we distinguish between acceptances (entering the handling period) and completions (successfully obtaining a reward). Larger reward amounts significantly increased acceptance probabilities ($\beta$ = `r historyCoeffs_btw["Offer", "Estimate"]`, SE = `r historyCoeffs_btw["Offer", "Std. Error"]`, *p* `r report_p(historyCoeffs_btw["Offer", "Pr(>|z|)"])`), whereas longer delays decreased them ($\beta$ = `r historyCoeffs_btw["Handling", "Estimate"]`, SE = `r historyCoeffs_btw["Handling", "Std. Error"]`, *p* `r report_p(historyCoeffs_btw["Handling", "Pr(>|z|)"])`), in line with predictions. Two additional regressors showed that having missed out on consecutive rewards decreased the probability of acceptance ($\beta$ = `r historyCoeffs_btw["recentTravels", "Estimate"]`, SE = `r historyCoeffs_btw["recentTravels", "Std. Error"]`, *p* `r report_p(historyCoeffs_btw["recentOffers", "Pr(>|z|)"])`), and that participants became more selective when recent offer history was richer ($\beta$ = `r historyCoeffs_btw["recentOffers", "Estimate"]`, SE = `r historyCoeffs_btw["recentOffers", "Std. Error"]`, *p* `r report_p(historyCoeffs_btw["recentOffers", "Pr(>|z|)"])`). The reduction in acceptances from recent misses was driven by the wait group (removing this group from the model yielded a *p* > 0.1), likely because this group accepted the least amount of offers. Comparing likelihood fits among lengths of offer history (e.g. sum over 2 or 3 past trials) suggested that participants were influenced by the `r historyIndex_btw + 1` most recent rewards (AIC = `r AIC(historySize_btw[[historyIndex_btw]])`), which matched the offer presentation rotation (see Methods). These results confirm the expected influence of time and offer magnitude on choice behavior, but also suggest that participants adapted to their recent experience.
   
   **Maybe put this as an addendum to the mixed effects analysis of proportion of acceptances, after mixed models** . The foraging task was configured so that there was an optimal, reward-maximizing strategy (see Operationalization of Cost in Methods). Because of this, participants were told to consider their strategies carefully, as accepting everything would not maximize their gains. Figure 3 (right) shows that participants who over- or under-accepted earned the least (general linear model with quadratic term, F = `r round(summary(lmEarn)$fstatistic[1], digits = 2)`, Beta = `r round(summary(lmEarn)$coefficients[3,1], digits = 2)`, SE = `r round(summary(lmEarn)$coefficients[3, 2], digits = 2)`, R-squared = `r round(summary(lmEarn)$r.squared, digits = 2)`, *p* `r report_p(summary(lmEarn)$coefficients[3, 4])`). Two-sided, one-sample t-tests against the optimal proportion of acceptances (i.e. $\mu$ = 0 or 1) for each combination of cost type, handling time, and offer showed that participants significantly deviated from optimality in `r round(optimalProp)`% of combinations (*p* < 0.05, FDR corrected), with the percentage of deviations being lowest for the wait group (Wait = `r filter(optimalProp_cost, Cost == "Wait")[2]`%, physical = `r filter(optimalProp_cost, Cost == "Physical")[2]`%, Cognitive = `r filter(optimalProp_cost, Cost == "Cognitive")[2]`%, Easy = `r filter(optimalProp_cost, Cost == "Easy")[2]`%). Together, these results suggest that participants were adequately influenced by the rewarding statistics of the environment, even though they did not always perform optimally.
 
@@ -1916,7 +1916,7 @@ earnings_within <- dataWth %>%
 
 ```
 
-  Analyses from the previous experiment were repurposed to examine cost differences within individuals. A mixed-effects logistic regression once again showed that larger reward amounts significantly increased acceptance probabilities ($\beta$ = `r historyCoeffs_wth["Offer", "Estimate"]`, SE = `r historyCoeffs_wth["Offer", "Std. Error"]`, *p* `r report_p(historyCoeffs_wth["Offer", "Pr(>|z|)"])`), and that participants became more selective if they had recently observed large offers ($\beta$ = `r historyCoeffs_wth["recentOffers", "Estimate"]`, SE = `r historyCoeffs_wth["recentOffers", "Std. Error"]`, *p* `r report_p(historyCoeffs_wth["recentOffers", "Pr(>|z|)"])`). Model comparisons suggested that participants were influenced by the `r historyIndex_wth + 1` most recent rewards (AIC = `r AIC(historySize_wth[[historyIndex]])`. However, this time participants were unaffected by recent reward misses (*p* > 0.05).
+  Analyses from the previous experiment were repurposed to examine cost differences within individuals. A mixed-effects logistic regression once again showed that larger reward amounts significantly increased acceptance probabilities ($\beta$ = `r historyCoeffs_wth["Offer", "Estimate"]`, SE = `r historyCoeffs_wth["Offer", "Std. Error"]`, *p* `r report_p(historyCoeffs_wth["Offer", "Pr(>|z|)"])`), and that participants became more selective if they had recently observed large offers ($\beta$ = `r historyCoeffs_wth["recentOffers", "Estimate"]`, SE = `r historyCoeffs_wth["recentOffers", "Std. Error"]`, *p* `r report_p(historyCoeffs_wth["recentOffers", "Pr(>|z|)"])`). Model comparisons suggested that participants were influenced by the `r historyIndex_wth + 1` most recent rewards (AIC = `r AIC(historySize_wth[[historyIndex_wth]])`. However, this time participants were unaffected by recent reward misses (*p* > 0.05).
   As before, a linear model predicting earnings showed that participants who completed too few or too many trials earned the least, in line with the experimental design (Figure 8A; general linear model with quadratic term, F = `r round(summary(lmEarn)$fstatistic[1], digits = 2)`, Beta = `r round(summary(lmEarn)$coefficients[3,1], digits= 2)`, SE = `r round(summary(lmEarn)$coefficients[3, 2], digits = 2)`, R-squared = `r round(summary(lmEarn)$r.squared, digits = 2)`, *p* `r report_p(summary(lmEarn)$coefficients[3, 4])`). When assessing the optimality of acceptances for 4 and 8 cents (99% of 20 cent offers were accepted), chi-squared tests against the optimal rate of 50% showed that participants under-accepted physical effort trials (proportion accepted = `r round(summary_costvsreward["Physical", "probability"], digits = 2)`, $\chi^2$ = `r round(summary_costvsreward["Physical", "chisquared"], digits = 2)`, *p* `r report_p(summary_costvsreward["Physical", "pval"])`; all other *p* > 0.05). Despite this deviation, participants earned a similar monetary amount per cost on average (mean Cognitive = `r filter(earnings_within, Cost == "Cognitive")$mEarn`, SD = `r filter(earnings_within, Cost == "Cognitive")$sdEarn`; mean Wait-C = `r filter(earnings_within, Cost == "Wait-C")$mEarn`, SD = `r filter(earnings_within, Cost == "Wait-C")$sdEarn`; mean Physical = `r filter(earnings_within, Cost == "Physical")$mEarn`, SD = `r filter(earnings_within, Cost == "Physical")$sdEarn`; mean Wait-P = `r filter(earnings_within, Cost == "Wait-P")$mEarn`, SD = `r filter(earnings_within, Cost == "Wait-P")$sdEarn`). These results convey that participants in both experiments were similarly influenced by the characteristics of the environment, although participants in the present experiment gravitated more towards optimality (**caveat: the same percentage can be produced by many non-optimal combinations, including accepting half of each reward. So neither approach really gets at this too well.**).
   
 
@@ -2836,39 +2836,46 @@ The figure on the left shows the distribution of fitted gammas for each cost typ
 *We will cross-validate each subject's OC value using the first four blocks (two cognitive, two physical) for estimation, and the last two blocks (one of each effort type) choices for testing. The estimates will be used to predict acceptances in the testing sample, and the mean percent correctly predicted will be reported for each cost type. This will also provide information on the stability of each participant's choices (4.3.1.).*
 
 ``` {r WTH: 16.3.5., echo = FALSE, fig.width=5, fig.height=4, fig.align="center"}
-# subdivide data
-dataTrain <- dataWth %>%
-   filter(Block < 5)
+#####################
+### THROWS AN ERROR, COMMENTING TO TRY AND KNIT DOCUMENT
 
-dataTest <- dataWth %>%
-  filter(Block > 4)
-
-# estimate
-# per-cost, but consider the idea above
-OCs_validation <- list()
-temp <- dataTrain %>% filter(Cost == "Wait-C") %>% plyr::dlply("SubjID", identity)
-OCs_validation$`Wait-C` <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
-temp <- dataTrain %>% filter(Cost == "Wait-P") %>% plyr::dlply("SubjID", identity)
-OCs_validation$`Wait-P` <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
-temp <- dataTrain %>% filter(Cost == "Cognitive") %>% plyr::dlply("SubjID", identity)
-OCs_validation$Cognitive <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
-temp <- dataTrain %>% filter(Cost == "Physical") %>% plyr::dlply("SubjID", identity)
-OCs_validation$Physical <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
-
-# reshape data
-temp <- bind_rows(OCs_validation) %>% 
-  mutate(SubjID = subjList_wth) %>%
-  gather(Cost, gamma, `Wait-C`:Physical) %>%
-  left_join(dataTest, ., by = c("SubjID", "Cost")) %>% # assign OCs to each subject per cost type
-  mutate(prediction = Offer > Handling * gamma) %>%
-  # plyr::dlply("SubjID", identity)
-  group_by(SubjID, Cost) %>%
-  summarize(predicted = mean(Choice == prediction))
-
-# plot prediction %
-# qplot(Cost, predicted, geom = "boxplot", data = temp) + 
-#   ylim(0,1) +
-#   theme_classic()
+# # subdivide data
+# dataTrain <- dataWth %>%
+#    filter(Block < 5)
+# 
+# dataTest <- dataWth %>%
+#   filter(Block > 4)
+# 
+# # estimate
+# # per-cost, but consider the idea above
+# OCs_validation <- list()
+# temp <- dataTrain %>% filter(Cost == "Wait-C") %>% plyr::dlply("SubjID", identity)
+# OCs_validation$`Wait-C` <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
+# temp <- dataTrain %>% filter(Cost == "Wait-P") %>% plyr::dlply("SubjID", identity)
+# OCs_validation$`Wait-P` <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
+# temp <- dataTrain %>% filter(Cost == "Cognitive") %>% plyr::dlply("SubjID", identity)
+# OCs_validation$Cognitive <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
+# temp <- dataTrain %>% filter(Cost == "Physical") %>% plyr::dlply("SubjID", identity)
+# OCs_validation$Physical <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
+# 
+# ##############################
+# ### Threw an error!
+# # # reshape data
+# # temp <- bind_rows(OCs_validation) %>% 
+# #   mutate(SubjID = subjList_wth) %>%
+# #   gather(Cost, gamma, `Wait-C`:Physical) %>%
+# #   left_join(dataTest, ., by = c("SubjID", "Cost")) %>% # assign OCs to each subject per cost type
+# #   mutate(prediction = Offer > Handling * gamma) %>%
+# #   # plyr::dlply("SubjID", identity)
+# #   group_by(SubjID, Cost) %>%
+# #   summarize(predicted = mean(Choice == prediction))
+# ##############################
+# 
+# 
+# # plot prediction %
+# # qplot(Cost, predicted, geom = "boxplot", data = temp) + 
+# #   ylim(0,1) +
+# #   theme_classic()
 ```
 
 The figure above shows that each participant's estimated gamma successfully predicted choices in the last two blocks to a high degree (suspisiouly, considering the decrease in the acceptance rate as a function of time).  
