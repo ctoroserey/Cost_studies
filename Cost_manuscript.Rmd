@@ -1,12 +1,7 @@
 ---
-title: Apparent preferences for cognitive effort fade when multiple forms of effort and delay are interleaved in a foraging environment
-author: "Claudio Toro-Serey & Joseph T. McGuire"
-csl: apa.csl
-output:
-  pdf_document:
-    highlight: haddock
-    keep_tex: no
-  word_document: default #reference_docx: Style_reference_draft.docx
+title: Apparent preferences for cognitive effort fade when multiple forms of effort
+  and delay are interleaved in a foraging environment
+author: "Claudio Toro-Serey, Gary Kane, & Joseph T. McGuire"
 header-includes:
 - \usepackage{setspace}\doublespacing
 - \usepackage[left]{lineno}
@@ -14,7 +9,14 @@ header-includes:
 - \usepackage{float}
 - \newcommand{\beginsupplement}{ \setcounter{table}{0} \renewcommand{\thetable}{S\arabic{table}}
   \setcounter{figure}{0} \renewcommand{\thefigure}{S\arabic{figure}} }
-#bibliography: XXXX.bib
+output:
+  html_document:
+    df_print: paged
+  pdf_document:
+    highlight: haddock
+    keep_tex: no
+  word_document: default
+csl: apa.csl
 ---
 
 ```{r Global options, include = FALSE}
@@ -676,15 +678,6 @@ Corresponding authors: Claudio Toro-Serey (ctoro@bu.edu) & Joseph T. McGuire (jt
   In this study, we tested the hypothesis that preferences would vary depending on whether individuals face a single or multiple types of behavioral demands (i.e. cognitive effort, physical effort, and delay). We leveraged the ecological and computational richness of foraging paradigms to provide new insights on a number of open questions (Inzlicht, Shenhav, and Olivola, 2018). First, the existence of a well-defined optimal choice strategy in foraging designs helped us identify when demands boost the value of rewards (i.e. overharvesting poor offers). Second, increasing the level of exposure to types of demands across two experiments allowed us to asses whether their cost was intrinsic or relative. Finally, confronting participants with both mental and physical effort let us probe whether these preferences were domain general or task-specific, and in the case of the latter, isolate factors that influence preferences beyond the often-cited associative relationship between effort and outcome.
 
   We found mixed support for our pre-registered hypotheses, which are detailed in https://osf.io/2rsgm/. Confirming our predictions, we found that individuals could approximate optimality by preferring higher rewards and shorter delays, regardless of the richness of the environment or whether they faced a single or intermixed demands. When faced with a single type of demand, people in the cognitive effort group accepted more trials than optimal, whereas physical effort and wait groups under-accepted, partially matching our predictions and highlighting that cognitive effort can add value to outcomes. However, against our expectations, we found that a similar preference for cognitive effort disappeared over time as decision makers foraged for types of demands in addition to rewards. Computational modeling suggested that cognitive effort was valuable because it shortened the subjective elapsed time of trials, a perception that could be recalibrated as individuals experienced multiple forms of demands. The shortened time sensitivity of cognitive effort could be due to its constant recruitment of working memory, impeding estimations of the nominal time, or because of the discrete nature of the task (versus a continuous configuration of the physical and wait tasks). These results expand our understanding of the attractiveness of effort, bringing forth outcome-independent features that can be leveraged to motivate effort engagement in diverse everyday scenarios. 
-
-
-
-
-
-
-####-------######
-
-  Clinical: Deviations in the willingness to pursue effort can predict depression relapse (https://jamanetwork.com/journals/jamapsychiatry/article-abstract/2761562), and motivational factors affecting effort aversion can be heterogenous between depression and schizophrenia (https://www.researchgate.net/publication/337361164_Pathways_to_Motivational_Impairments_in_Psychopathology_Common_Versus_Unique_Elements_Across_Domains). Like, the aversion is due to focusing on different elements of the task.
 
 ## Methods
  
@@ -2925,7 +2918,7 @@ OCs_anova$ES[rbind(c(1,4),c(2,3),c(3,2),c(4,1))] <- NA
 
 ## Discussion
 
-  Understanding what drives the sporadic attractiveness of effortful avenues remains elusive. In this study, we...1) preferences for mental effort are stable when individuals face a single form of demand, but fade over time when other costs are also experienced; and 2) the phenomenon can be explained by a model in which preferences depend on how participants construe the amount of time a task takes, which could hypothetically be recalibrated when all tasks are interleaved.
+  Understanding what drives the sporadic attractiveness of effortful options remains elusive. In this study, we tested the hypothesis that such appeal could arise from being able to compare different means to achieve the same outcome. Using two foraging experiments that exposed individuals to a single or intermixed types of demands, we found 1) that preferences for mental effort are stable when individuals face a single form of demand, but fade over time when other costs are also experienced; and 2) the phenomenon can be explained by a model in which preferences depend on how participants construe the amount of time a task takes, which could hypothetically be recalibrated when all tasks are interleaved.
 
 - Make sure to note that we controlled for time as a confound for effort, as more effortful tasks normally take longer
 - What we think: subjective timing is shortened by the way we implemented cognitive effort. This can be recalibrated if many task types are experienced. Maybe the implementation allowed for counting. Alternatively, working memory engagement could produce timing issues (Buhi n Gershman). Also look at what Andrew Westbrook shared. Add this to a potential fatigue, although that would also mean that waiting would be accepted less over time in exp 1.
@@ -2933,3 +2926,4 @@ OCs_anova$ES[rbind(c(1,4),c(2,3),c(3,2),c(4,1))] <- NA
 - Deviations in the willingness to pursue effort can predict depression relapse (https://jamanetwork.com/journals/jamapsychiatry/article-abstract/2761562), and motivational factors affecting effort aversion can be heterogenous between depression and schizophrenia (https://www.researchgate.net/publication/337361164_Pathways_to_Motivational_Impairments_in_Psychopathology_Common_Versus_Unique_Elements_Across_Domains). Like, the aversion is due to focusing on different elements of the task.
 - Talk about future experiments: if this is subjective time, changing the pacing of the tasks should change the acceptance rates for cognitive effort
 - It's true that we didnt calibrate cog effort per subject. But instead we brought all subjects to the same level of performance, and we saw that as time progressed they became less likely to accept longer periods of effort. 
+- Clinical: Deviations in the willingness to pursue effort can predict depression relapse (https://jamanetwork.com/journals/jamapsychiatry/article-abstract/2761562), and motivational factors affecting effort aversion can be heterogenous between depression and schizophrenia (https://www.researchgate.net/publication/337361164_Pathways_to_Motivational_Impairments_in_Psychopathology_Common_Versus_Unique_Elements_Across_Domains). Like, the aversion is due to focusing on different elements of the task.
