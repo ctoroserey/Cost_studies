@@ -752,18 +752,37 @@ include_graphics("./Images/FIG2.png")
 
 ### **Computational Modeling of Foraging Behavior**
   
-  We performed model comparisons to identify qualities that transcended both experiments. An adequate model should meet seven criteria derived from the observed choice behavior: 1) show deviations from optimality that were not simply due to overharvesting 2) keep track of recent offer history; 3) experience a slight reduction of acceptances in effortful conditions; 4) persistently display higher acceptances for cognitive effort when faced with single behavioral costs; 4) initially match this preference for cognitive effort trials when foraging for demands and rewards; 5) display a disappearance of this preference as acceptances decreased to a common rate across costs; and 7) not be affected by block order effects. These conditions discarded a number of popular explanatory candidates, including.... (wikenheiser, C&D, Fawcett...). We therefore did not include these models into our comparison.
+  We performed model comparisons to identify qualities that explained both experiments. Based on the observed choice behavior, an adequate model had to meet seven criteria: 1) show deviations from optimality that were not simply due to overharvesting 2) keep track of recent offer history; 3) experience a slight reduction of acceptances in effortful conditions; 4) persistently display higher acceptances for cognitive effort when faced with single behavioral costs; 5) initially match this preference for cognitive effort trials when foraging for demands and rewards; 6) display a disappearance of this preference as acceptances decreased to a common rate across costs; and 7) not be affected by block order effects. These conditions discarded a number of popular explanatory candidates. For instance, differences in choice stability between experiments suggest that a demand's cost is not intrinsic, while differences between effort types rule out learned industriousness. Effort preferences due to boredom would not have shown the global acceptance decline and convergence in the within-subjects experiment, which also discards the possibility that all our participants were high on need for cognition (CITE). Even though fatigue could explain the decrease in effort acceptances across experiments, we would have expected tired participants to turn to wait trials over time in order to preserve earning rates. We also ruled out the sunk cost effects used to explain overharvesting (Wikenheiser2013; Sweiss2018), as participants expressed their choices as early as possible, resulting in occassional underharvesting.
   
-  We started by fitting a base model, in which a subjective OC was fit for each type of demand (see Operationalization of Cost). OC was computed as the product of a free parameter (gamma) and the handling time. Gamma can be interpreted as the subjective value of each second spent in an environment. If a trial's reward rate (i.e. offer amount divided by the handling time) fell below gamma, a participant was better off finding more profitable alternatives. In other words, individuals with higher gammas required higher rewards in order to accept a given offer. We used a softmax function to model each participant’s probability of completing a trial based on the difference between the delayed reward’s magnitude and the estimated OC for each cost type
+  (variability from Hayden could help..)
+  
+  We started by fitting a base model in which a subjective OC was fit for each type of demand (see Operationalization of Cost). OC was computed as the product of a free parameter (gamma) and the handling time. Gamma can be interpreted as the subjective value of each second spent in an environment. If a trial's reward rate (i.e. offer amount divided by the handling time) fell below gamma, a participant was better off finding more profitable alternatives. In other words, individuals with higher gammas required higher rewards in order to accept a given offer. We used a softmax function to model each participant’s probability of completing a trial based on the difference between the delayed reward’s magnitude and the estimated OC for each cost type
 
 
 $P(accept)_i = \dfrac {1} {1 + e^{-1/\beta(R_i - \gamma H_i)}}$
 
 
   Both gamma ($\gamma$) and the temperature parameter ($\beta$) of the softmax function were estimated independently for each participant, using a maximum likelihood (MLE) approach through the NLOPTR package (CITE **GARY INFO**). The gamma optimization search space was bound by extreme choice values. For example, someone with an extremely high OC would not accept even the most beneficial offers, and would reject a 20 cent offer when the handling time was 2 seconds (or 20/2). Conversely, a participant experiencing low opportunity costs would accept the non-beneficial offer of 4 cents for a 14 second delay (or 4/14). We cross-validated each subject’s OC value using the pre-midpoint data for estimation, and post-midpoint choices for testing. The estimates from the training sample were used to predict acceptances in the testing sample, and the mean percent correctly predicted was reported for each group. We then used a two-sided one-sample t-tests to compare each group's gammas to the average optimal earning rate (**0.74**, see Operationalization of Cost), allowing us to determine whether any demand boosted an offer's value. Finally, we determined which cost type produced the highest discounting by comparing gammas with an ANOVA (with condition as a factor), followed by post-hoc permutations (5000 iterations) comparing mean gammas per group. 
-  
 
-DIFFICULT TO MODEL: ALL COST ACCEPTANCES DECREASE AT LEAST A BIT. LEARNING SUBJECTIVE TIME DOESN'T DO THAT. IN FACT, IT STILL SEEMS AS IF THE EFFORT FATIGUE SEEN ON EXP 1 HAPPENS AGAIN, AND ALL COSTS DEFAULT TO THE COSTLIEST. THAT DOESN'T INVOLVE TIME NECESSARILY.
+
+$\gamma_{i+1} = (1 - (1 - \alpha) ^ {\tau_i}) \dfrac{R_{i} A_{i}}{\tau_i} +  (1 - \alpha) ^ {\tau_i} \gamma_{i}$
+
+
+$s_{i + 1} = s_i + A_i \left (\frac{1}{i}[S_i - s_i] \right)$
+
+
+$w_i = \left (\frac{i}{max(i)} \right ) ^\alpha$
+
+
+$mS_i = (s_i w_i) + (S_i (1 - w_i))$
+
+
+$\tau_{i} = H_{i} ^ {mS_{i}}  A_{i} + T_{i}$
+
+
+$P(A)_i = \dfrac{1}{1 + exp^{-(1 / \beta[R_i - \gamma_i H_i^{mS_i}])}}$
+
+
 
 ## Results
 
