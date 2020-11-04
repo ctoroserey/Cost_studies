@@ -1585,187 +1585,7 @@ include_graphics("./Images/FIG6.png")
 
 ```
 
-``` {r BTW: 16.3.3. OC modeling, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
-## fit the OC model
-summaryOC <- list()
-summaryOC$all <- dataBtw %>%
-                 group_by(Cost, SubjID) %>%
-                 do(optimizeOCModel(., simplify = T)) %>%
-                 ungroup()
 
-
-## plot
-summaryOC$plot <- ggplot(summaryOC$all, aes(Cost, Gamma, fill = Cost)) +
-  # geom_hline(yintercept = 0.64, alpha = 0.9, color = "gray20", size = 1) +
-  # geom_hline(yintercept = 0.7, alpha = 0.9, color = "gray40", size = 1) +
-  # geom_hline(yintercept = 0.9, alpha = 0.9, color = "gray60", size = 1) +
-  geom_hline(yintercept = 0.74, alpha = 0.9, size = 1, linetype = "dashed") + # mean of highest earning rates across blocks
-  #geom_dotplot(stackdir = 'center', binaxis = 'y', show.legend = F) +
-  geom_boxplot(show.legend = F) +
-  geom_jitter(width = 0.1, alpha = 0.5, show.legend = F, pch = 21, size = 3) +
-  ylim(0,1.5) +
-  labs(x = "") +
-  scale_fill_manual(values = colsBtw) +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        axis.line = element_line(colour = "black"),
-        text = element_text(size = 16))
-
-
-## one sample t against optimal strategy
-summaryOC$t.test <- summaryOC$all %>%
-  select(Cost, Gamma) %>%
-  plyr::dlply("Cost", identity) %>%
-  sapply(., function(data) {t.test(data$Gamma, mu = 0.74)})
-
-
-## descriptive stats
-summaryOC$descriptives <- summaryOC$all %>%
-  group_by(Cost) %>%
-  summarise(mGamma = round(mean(Gamma), digits = 2),
-            sdGamma = round(sd(Gamma), digits = 2))
-
-
-# summaryOC$all %>%
-#   ggplot(aes(Gamma, percentAccept, fill = Cost, size = temperature)) +
-#   geom_point(pch = 21)
-
-
-# # gamma parameter recovery tests
-# # test a single subject against their own choices
-# (subj <- sample(subjList_btw, 1))
-# subjData <- dataBtw %>% 
-#   filter(SubjID == subj) %>% 
-#   group_by(Cost, Handling, Offer) %>% 
-#   summarise(propAccept = mean(Choice)) %>%
-#   ungroup()
-# 
-# params <- filter(summaryOC$all, SubjID == subj) %>% 
-#   select(Gamma, temperature)
-# 
-# test_params(params,
-#             model = expr(params$Gamma * Handling), 
-#             subjData, 
-#             plot = T)
-
-
-# # test multiple values of gamma and plot the comparison
-# lowGamma <- 0
-# upperGamma <- 1.7
-# nGamma <- 6
-# testys <- lapply(seq(lowGamma, upperGamma, length.out = nGamma), test_params)
-# (testys <- do.call(rbind, testys))
-# testys %>%
-#   ggplot(aes(interaction(Offer, Handling), Choice, color = Gamma)) +
-#   geom_point(size = 3) +
-#   geom_line(aes(group = interaction(Handling, Gamma)), size = 1) +
-#   labs(x = "Offer.Handling", y = "Proportion Accepted") +
-#   facet_wrap(vars(Gamma), ncol = 2) +
-#   theme(legend.key = element_blank(),
-#         panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         panel.background = element_blank(),
-#         axis.line = element_line(colour = "black"),
-#         text = element_text(size = 16))
-
-```
-
-``` {r BTW: 16.3.5. OC comparisons, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
-# ANOVA
-OCanova <- list()
-OCanova$aov <- summary(aov(Gamma ~ Cost, data = summaryOC$all))
-Fval <- round(OCanova$aov[[1]]$`F value`[1], digits = 2) # doing separate variables because I can't easily use the `` in markdown.
-Pval <- OCanova$aov[[1]]$`Pr(>F)`[1]
-Rsquared_aov <- round(OCanova$aov[[1]]$`Sum Sq`[1] / sum(OCanova$aov[[1]]$`Sum Sq`), digits = 2)
-  
-# Post-hoc pairwise tests
-OCanova$perms <- summaryOC$all %>%
-  select(Cost, Gamma) %>%
-  plyr::dlply("Cost", identity) %>%
-  do.call(cbind, .) %>%
-  select_if(is.numeric) %>%
-  rename(Physical = Physical.Gamma,
-         Cognitive = Cognitive.Gamma,
-         Wait = Wait.Gamma,
-         Easy = Easy.Gamma) %>%
-  outer(., ., FUN = Vectorize(permute), simple = T)
-diag(OCanova$perms) <- 1
-
-OCanova$ES <- summaryOC$all %>%
-  select(Cost, Gamma) %>%
-  plyr::dlply("Cost", identity) %>%
-  do.call(cbind, .) %>%
-  select_if(is.numeric) %>%
-  rename(Physical = Physical.Gamma,
-         Cognitive = Cognitive.Gamma,
-         Wait = Wait.Gamma,
-         Easy = Easy.Gamma) %>%
-  outer(., ., FUN = Vectorize(cohenD)) %>%
-  abs()
-```
-
-``` {r BTW: 16.3.5. corrplot, echo = FALSE, fig.align = "center", fig.width = 5, fig.height = 5}
-# # plot all pairwise comparisons
-# corrplot(OCanova$ES,
-#          is.corr = F, 
-#          p.mat = OCanova$perms,
-#          type = "upper",
-#          insig = "p-value",
-#          sig.level = -1,
-#          na.label = "square",
-#          na.label.col = "grey",
-#          method = "color", 
-#          tl.col = "black", 
-#          tl.cex = 0.8,
-#          outline = T)
-```
-
-``` {r BTW: 16.3.4. OC cross-validation, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
-# Compute the OC for pre-midpoint
-summaryOC$pre <- dataBtw %>%
-                 filter(Half == "Half_1") %>%
-                 group_by(Cost, SubjID) %>%
-                 do(optimizeOCModel(., simplify = T)) %>%
-                 ungroup() %>%
-                 select(SubjID, Gamma)
-
-# let's add the gammas to the second half data and estimate prop predicted on the second half
-summaryOC$predicted <- dataBtw %>%
-                 filter(Half == "Half_2") %>%
-                 group_by(Cost, SubjID) %>%
-                 left_join(summaryOC$pre, by = "SubjID") %>%
-                 mutate(OC = Handling * Gamma,
-                        predicted = Offer > OC) %>% 
-                 summarise(percentPredicted = mean(predicted == Choice) * 100) %>%
-                 group_by(Cost) %>%
-                 summarise(mPredicted = round(mean(percentPredicted), digits = 2),
-                           sdPredicted = round(sd(percentPredicted), digits = 2))
-
-# # plot
-# (summaryOC$predictPlot <- ggplot(summaryOC$predicted, aes(Cost, percentPredicted, fill = Cost)) +
-#                             labs(x = "") +
-#                             geom_boxplot(show.legend = F) +
-#                             scale_fill_manual(values = colsBtw) +
-#                             labs(y = "Percent Predicted") +
-#                             ylim(0,100) +
-#                             theme(panel.grid.major = element_blank(),
-#                             panel.grid.minor = element_blank(),
-#                             panel.background = element_blank(),
-#                             axis.line = element_line(colour = "black"),
-#                             text = element_text(size = 16)))
-
-```
-
-  We then proceeded to estimate subjective OCs for each participant, which was produced by multiplying the handling time and a free parameter gamma (see Methods for details). Gamma reflected cost by indexing how much money per second a participant needed to accept a trial. For example, the aversion produced by a given cost could prompt participants to spend their time and effort in the most profitable offers, resulting in high gamma values. Conversely, low gamma values represented low selectivity when evaluating offers. The model predicted the probability of a choice by comparing the estimated OC against each offer amount, and was optimized to find the lowest value of gamma that significantly reduced the negative log likelihood. This single parameter model was able to explain a considerable degree of choice variance per individual (R-squared: mean = `r round(mean(summaryOC$all$Rsquared), digits = 2)`, SD = `r round(sd(summaryOC$all$Rsquared), digits = 2)`). The distribution of gamma values is shown on Figure 7, with the dashed line indicating the gamma value for a reward-maximizing decision maker (computed as the average of the optimal per-second earning rates across blocks, or 0.74; see Operationalization of Cost). Values higher than this baseline imply that a condition was costly, whereas lower values suggest that a condition boosted the value of an offer. Two-sided one-sample t-tests against this optimal magnitude resulted in significantly lower gamma values for the cognitive group (mean = `r filter(summaryOC$descriptives, Cost == "Cognitive")$mGamma`, SD = `r filter(summaryOC$descriptives, Cost == "Cognitive")$sdGamma`; T(20) = `r round(summaryOC$t.test["statistic", "Cognitive"][[1]], digits = 2)`, *p* `r report_p(summaryOC$t.test["p.value", "Cognitive"][[1]])`), and marginally higher values for the wait group (mean = `r filter(summaryOC$descriptives, Cost == "Wait")$mGamma`, SD = `r filter(summaryOC$descriptives, Cost == "Wait")$sdGamma`; T(20) = `r round(summaryOC$t.test["statistic", "Wait"][[1]], digits = 2)`, *p* `r report_p(summaryOC$t.test["p.value", "Wait"][[1]])`). Neither physical effort (mean = `r filter(summaryOC$descriptives, Cost == "Physical")$mGamma`, SD = `r filter(summaryOC$descriptives, Cost == "Physical")$sdGamma`) nor the easy condition (mean = `r filter(summaryOC$descriptives, Cost == "Easy")$mGamma`, SD = `r filter(summaryOC$descriptives, Cost == "Easy")$sdGamma`) produced significant differences (all *p* > 0.05). An analysis of variance showed significant differences among the cost groups (F(`r OCanova$aov[[1]]$Df[1]`, `r OCanova$aov[[1]]$Df[2]`) = `r Fval`, p = `r report_p(Pval)`, R-squared = `r Rsquared_aov`). Pairwise post-hoc permutations indicated that the mean gamma values for the cognitive group were significantly lower than for the wait (*p* `r report_p(OCanova$perms["Wait", "Cognitive"])`, Cohen's D = `r round(OCanova$ES["Wait", "Cognitive"], digits = 2)`) and physical effort (*p* `r report_p(OCanova$perms["Physical", "Cognitive"])`, Cohen's D = `r round(OCanova$ES["Physical", "Cognitive"], digits = 2)`), and marginally lower than the easy group (*p* `r report_p(OCanova$perms["Easy", "Cognitive"])`, Cohen's D = `r round(OCanova$ES["Easy", "Cognitive"], digits = 2)`). In addition, the easy group displayed significantly lower gamma values than the wait group (*p* `r report_p(OCanova$perms["Wait", "Easy"])`, Cohen's D = `r round(OCanova$ES["Wait", "Easy"], digits = 2)`). Finally, we cross-validated individual OCs by using the pre-midpoint data for estimation, and post-midpoint choices for testing. This procedure revealed high mean predictive accuracies for all individuals (mean accuracy for Cognitive = `r filter(summaryOC$predicted, Cost == "Cognitive")$mPredicted`%, SD = `r filter(summaryOC$predicted, Cost == "Cognitive")$sdPredicted`; mean Physical = `r filter(summaryOC$predicted, Cost == "Physical")$mPredicted`%, SD = `r filter(summaryOC$predicted, Cost == "Physical")$sdPredicted`; mean Wait = `r filter(summaryOC$predicted, Cost == "Wait")$mPredicted`%, SD = `r filter(summaryOC$predicted, Cost == "Wait")$sdPredicted`; mean Easy = `r filter(summaryOC$predicted, Cost == "Easy")$mPredicted`%, SD = `r filter(summaryOC$predicted, Cost == "Easy")$sdPredicted`), despite the reduction in acceptances produced by the effortful demands. 
-  
-```{r Gamma per cost group (Fig. 7), fig.align = "center", fig.height = 3, fig.width = 5, fig.cap = "Gamma values for each group. The dashed line indicates the average optimal earnings per second across blocks, and provides a reference for how costly (higher) or valuable (lower) each condition was. Wait and physical effort groups tended to perceive demands as costly, while the cognitive effort group seemed to value their task instead."}
-  
-summaryOC$plot
-
-```
-
-  Together, these findings suggest that 1) foraging paradigms can provide a reference point to evaluate how different demands modulate value; 2) a simple OC model can approximate people's behavior in such single-option, take it or leave it choices; and 3) when foraging in environments of equivalent richness, cognifitvely effortful demands can increase the attractiveness of offers rather than discount them (unlike other forms of cost). In the next experiment we explored whether this apparent value was inherent or malleable.
 
 
 ### **Within-subjects: Tests of whether decision makers integrate reward information**
@@ -2929,6 +2749,190 @@ OCs_anova$ES[rbind(c(1,4),c(2,3),c(3,2),c(4,1))] <- NA
 #          outline = T)
 ```
 
+
+### **Computational modeling of foraging behavior**
+
+``` {r BTW: 16.3.3. OC modeling, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
+## fit the OC model
+summaryOC <- list()
+summaryOC$all <- dataBtw %>%
+                 group_by(Cost, SubjID) %>%
+                 do(optimizeOCModel(., simplify = T)) %>%
+                 ungroup()
+
+
+## plot
+summaryOC$plot <- ggplot(summaryOC$all, aes(Cost, Gamma, fill = Cost)) +
+  # geom_hline(yintercept = 0.64, alpha = 0.9, color = "gray20", size = 1) +
+  # geom_hline(yintercept = 0.7, alpha = 0.9, color = "gray40", size = 1) +
+  # geom_hline(yintercept = 0.9, alpha = 0.9, color = "gray60", size = 1) +
+  geom_hline(yintercept = 0.74, alpha = 0.9, size = 1, linetype = "dashed") + # mean of highest earning rates across blocks
+  #geom_dotplot(stackdir = 'center', binaxis = 'y', show.legend = F) +
+  geom_boxplot(show.legend = F) +
+  geom_jitter(width = 0.1, alpha = 0.5, show.legend = F, pch = 21, size = 3) +
+  ylim(0,1.5) +
+  labs(x = "") +
+  scale_fill_manual(values = colsBtw) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        text = element_text(size = 16))
+
+
+## one sample t against optimal strategy
+summaryOC$t.test <- summaryOC$all %>%
+  select(Cost, Gamma) %>%
+  plyr::dlply("Cost", identity) %>%
+  sapply(., function(data) {t.test(data$Gamma, mu = 0.74)})
+
+
+## descriptive stats
+summaryOC$descriptives <- summaryOC$all %>%
+  group_by(Cost) %>%
+  summarise(mGamma = round(mean(Gamma), digits = 2),
+            sdGamma = round(sd(Gamma), digits = 2))
+
+
+# summaryOC$all %>%
+#   ggplot(aes(Gamma, percentAccept, fill = Cost, size = temperature)) +
+#   geom_point(pch = 21)
+
+
+# # gamma parameter recovery tests
+# # test a single subject against their own choices
+# (subj <- sample(subjList_btw, 1))
+# subjData <- dataBtw %>% 
+#   filter(SubjID == subj) %>% 
+#   group_by(Cost, Handling, Offer) %>% 
+#   summarise(propAccept = mean(Choice)) %>%
+#   ungroup()
+# 
+# params <- filter(summaryOC$all, SubjID == subj) %>% 
+#   select(Gamma, temperature)
+# 
+# test_params(params,
+#             model = expr(params$Gamma * Handling), 
+#             subjData, 
+#             plot = T)
+
+
+# # test multiple values of gamma and plot the comparison
+# lowGamma <- 0
+# upperGamma <- 1.7
+# nGamma <- 6
+# testys <- lapply(seq(lowGamma, upperGamma, length.out = nGamma), test_params)
+# (testys <- do.call(rbind, testys))
+# testys %>%
+#   ggplot(aes(interaction(Offer, Handling), Choice, color = Gamma)) +
+#   geom_point(size = 3) +
+#   geom_line(aes(group = interaction(Handling, Gamma)), size = 1) +
+#   labs(x = "Offer.Handling", y = "Proportion Accepted") +
+#   facet_wrap(vars(Gamma), ncol = 2) +
+#   theme(legend.key = element_blank(),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         panel.background = element_blank(),
+#         axis.line = element_line(colour = "black"),
+#         text = element_text(size = 16))
+
+```
+
+``` {r BTW: 16.3.5. OC comparisons, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
+# ANOVA
+OCanova <- list()
+OCanova$aov <- summary(aov(Gamma ~ Cost, data = summaryOC$all))
+Fval <- round(OCanova$aov[[1]]$`F value`[1], digits = 2) # doing separate variables because I can't easily use the `` in markdown.
+Pval <- OCanova$aov[[1]]$`Pr(>F)`[1]
+Rsquared_aov <- round(OCanova$aov[[1]]$`Sum Sq`[1] / sum(OCanova$aov[[1]]$`Sum Sq`), digits = 2)
+  
+# Post-hoc pairwise tests
+OCanova$perms <- summaryOC$all %>%
+  select(Cost, Gamma) %>%
+  plyr::dlply("Cost", identity) %>%
+  do.call(cbind, .) %>%
+  select_if(is.numeric) %>%
+  rename(Physical = Physical.Gamma,
+         Cognitive = Cognitive.Gamma,
+         Wait = Wait.Gamma,
+         Easy = Easy.Gamma) %>%
+  outer(., ., FUN = Vectorize(permute), simple = T)
+diag(OCanova$perms) <- 1
+
+OCanova$ES <- summaryOC$all %>%
+  select(Cost, Gamma) %>%
+  plyr::dlply("Cost", identity) %>%
+  do.call(cbind, .) %>%
+  select_if(is.numeric) %>%
+  rename(Physical = Physical.Gamma,
+         Cognitive = Cognitive.Gamma,
+         Wait = Wait.Gamma,
+         Easy = Easy.Gamma) %>%
+  outer(., ., FUN = Vectorize(cohenD)) %>%
+  abs()
+```
+
+``` {r BTW: 16.3.5. corrplot, echo = FALSE, fig.align = "center", fig.width = 5, fig.height = 5}
+# # plot all pairwise comparisons
+# corrplot(OCanova$ES,
+#          is.corr = F, 
+#          p.mat = OCanova$perms,
+#          type = "upper",
+#          insig = "p-value",
+#          sig.level = -1,
+#          na.label = "square",
+#          na.label.col = "grey",
+#          method = "color", 
+#          tl.col = "black", 
+#          tl.cex = 0.8,
+#          outline = T)
+```
+
+``` {r BTW: 16.3.4. OC cross-validation, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
+# Compute the OC for pre-midpoint
+summaryOC$pre <- dataBtw %>%
+                 filter(Half == "Half_1") %>%
+                 group_by(Cost, SubjID) %>%
+                 do(optimizeOCModel(., simplify = T)) %>%
+                 ungroup() %>%
+                 select(SubjID, Gamma)
+
+# let's add the gammas to the second half data and estimate prop predicted on the second half
+summaryOC$predicted <- dataBtw %>%
+                 filter(Half == "Half_2") %>%
+                 group_by(Cost, SubjID) %>%
+                 left_join(summaryOC$pre, by = "SubjID") %>%
+                 mutate(OC = Handling * Gamma,
+                        predicted = Offer > OC) %>% 
+                 summarise(percentPredicted = mean(predicted == Choice) * 100) %>%
+                 group_by(Cost) %>%
+                 summarise(mPredicted = round(mean(percentPredicted), digits = 2),
+                           sdPredicted = round(sd(percentPredicted), digits = 2))
+
+# # plot
+# (summaryOC$predictPlot <- ggplot(summaryOC$predicted, aes(Cost, percentPredicted, fill = Cost)) +
+#                             labs(x = "") +
+#                             geom_boxplot(show.legend = F) +
+#                             scale_fill_manual(values = colsBtw) +
+#                             labs(y = "Percent Predicted") +
+#                             ylim(0,100) +
+#                             theme(panel.grid.major = element_blank(),
+#                             panel.grid.minor = element_blank(),
+#                             panel.background = element_blank(),
+#                             axis.line = element_line(colour = "black"),
+#                             text = element_text(size = 16)))
+
+```
+
+  We then proceeded to estimate subjective OCs for each participant, which was produced by multiplying the handling time and a free parameter gamma (see Methods for details). Gamma reflected cost by indexing how much money per second a participant needed to accept a trial. For example, the aversion produced by a given cost could prompt participants to spend their time and effort in the most profitable offers, resulting in high gamma values. Conversely, low gamma values represented low selectivity when evaluating offers. The model predicted the probability of a choice by comparing the estimated OC against each offer amount, and was optimized to find the lowest value of gamma that significantly reduced the negative log likelihood. This single parameter model was able to explain a considerable degree of choice variance per individual (R-squared: mean = `r round(mean(summaryOC$all$Rsquared), digits = 2)`, SD = `r round(sd(summaryOC$all$Rsquared), digits = 2)`). The distribution of gamma values is shown on Figure 7, with the dashed line indicating the gamma value for a reward-maximizing decision maker (computed as the average of the optimal per-second earning rates across blocks, or 0.74; see Operationalization of Cost). Values higher than this baseline imply that a condition was costly, whereas lower values suggest that a condition boosted the value of an offer. Two-sided one-sample t-tests against this optimal magnitude resulted in significantly lower gamma values for the cognitive group (mean = `r filter(summaryOC$descriptives, Cost == "Cognitive")$mGamma`, SD = `r filter(summaryOC$descriptives, Cost == "Cognitive")$sdGamma`; T(20) = `r round(summaryOC$t.test["statistic", "Cognitive"][[1]], digits = 2)`, *p* `r report_p(summaryOC$t.test["p.value", "Cognitive"][[1]])`), and marginally higher values for the wait group (mean = `r filter(summaryOC$descriptives, Cost == "Wait")$mGamma`, SD = `r filter(summaryOC$descriptives, Cost == "Wait")$sdGamma`; T(20) = `r round(summaryOC$t.test["statistic", "Wait"][[1]], digits = 2)`, *p* `r report_p(summaryOC$t.test["p.value", "Wait"][[1]])`). Neither physical effort (mean = `r filter(summaryOC$descriptives, Cost == "Physical")$mGamma`, SD = `r filter(summaryOC$descriptives, Cost == "Physical")$sdGamma`) nor the easy condition (mean = `r filter(summaryOC$descriptives, Cost == "Easy")$mGamma`, SD = `r filter(summaryOC$descriptives, Cost == "Easy")$sdGamma`) produced significant differences (all *p* > 0.05). An analysis of variance showed significant differences among the cost groups (F(`r OCanova$aov[[1]]$Df[1]`, `r OCanova$aov[[1]]$Df[2]`) = `r Fval`, p = `r report_p(Pval)`, R-squared = `r Rsquared_aov`). Pairwise post-hoc permutations indicated that the mean gamma values for the cognitive group were significantly lower than for the wait (*p* `r report_p(OCanova$perms["Wait", "Cognitive"])`, Cohen's D = `r round(OCanova$ES["Wait", "Cognitive"], digits = 2)`) and physical effort (*p* `r report_p(OCanova$perms["Physical", "Cognitive"])`, Cohen's D = `r round(OCanova$ES["Physical", "Cognitive"], digits = 2)`), and marginally lower than the easy group (*p* `r report_p(OCanova$perms["Easy", "Cognitive"])`, Cohen's D = `r round(OCanova$ES["Easy", "Cognitive"], digits = 2)`). In addition, the easy group displayed significantly lower gamma values than the wait group (*p* `r report_p(OCanova$perms["Wait", "Easy"])`, Cohen's D = `r round(OCanova$ES["Wait", "Easy"], digits = 2)`). Finally, we cross-validated individual OCs by using the pre-midpoint data for estimation, and post-midpoint choices for testing. This procedure revealed high mean predictive accuracies for all individuals (mean accuracy for Cognitive = `r filter(summaryOC$predicted, Cost == "Cognitive")$mPredicted`%, SD = `r filter(summaryOC$predicted, Cost == "Cognitive")$sdPredicted`; mean Physical = `r filter(summaryOC$predicted, Cost == "Physical")$mPredicted`%, SD = `r filter(summaryOC$predicted, Cost == "Physical")$sdPredicted`; mean Wait = `r filter(summaryOC$predicted, Cost == "Wait")$mPredicted`%, SD = `r filter(summaryOC$predicted, Cost == "Wait")$sdPredicted`; mean Easy = `r filter(summaryOC$predicted, Cost == "Easy")$mPredicted`%, SD = `r filter(summaryOC$predicted, Cost == "Easy")$sdPredicted`), despite the reduction in acceptances produced by the effortful demands. 
+  
+```{r Gamma per cost group (Fig. 7), fig.align = "center", fig.height = 3, fig.width = 5, fig.cap = "Gamma values for each group. The dashed line indicates the average optimal earnings per second across blocks, and provides a reference for how costly (higher) or valuable (lower) each condition was. Wait and physical effort groups tended to perceive demands as costly, while the cognitive effort group seemed to value their task instead."}
+  
+summaryOC$plot
+
+```
+
+  Together, these findings suggest that 1) foraging paradigms can provide a reference point to evaluate how different demands modulate value; 2) a simple OC model can approximate people's behavior in such single-option, take it or leave it choices; and 3) when foraging in environments of equivalent richness, cognifitvely effortful demands can increase the attractiveness of offers rather than discount them (unlike other forms of cost). In the next experiment we explored whether this apparent value was inherent or malleable.
 ## Discussion
 
   Understanding the sporadic attractiveness of effortful options remains elusive. In this study, we tested the hypothesis that such appeal could arise from being able to compare different means to achieve the same outcome. Using two foraging experiments that exposed individuals to a single or intermixed types of demands, we found that 1) preferences for cognitive effort are stable when individuals face a single form of demand, but fade over time when other costs are also experienced; and 2) the phenomenon can be explained by a model in which preferences depend on how participants construe the amount of time a task takes, which could hypothetically be recalibrated when all tasks are interleaved.
