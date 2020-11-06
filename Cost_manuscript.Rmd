@@ -770,11 +770,28 @@ $\gamma_{i+1} = (1 - (1 - \alpha) ^ {\tau_i}) \dfrac{R_{i} A_{i}}{\tau_i} +  (1 
 
 where $A_i$ is an acceptance indicator (0 or 1), and $\tau_i$ the amount of time spent in the trial. Higher values of the learning rate $\alpha$ (ranging from 0 to 1) prioritized updating from the current trial’s earning rate, weighed by the amount of time experienced. This addition allowed for the tracking of recent history that was part of our criteria. 
 
-  We further parameterized this model to test the hypothesis that demands affected the perceived duration of the handling time differently. For instance, a sense of fast completion might have made the cognitive task attractive. Time sensitivity has been previously used to improve fits on classic hyperbolic models of delay discounting [Mckerchar2009]. Similar to that work, we added an exponential parameter $S$ to all instances of the handling time ($H_i$) handling time, with a value of $S$ associated with each type of demand. The values of $S$ could then be aggregated across demands as participants experienced them, according to the following formula [adapted from @Sutton2018]
+  We further parameterized this model to test the hypothesis that demands affected the perceived duration of the handling time differently, thus potentially improving their appeal (e.g. a sense of fast completion might have made the cognitive task attractive). Time sensitivity has been previously used to improve fits on classic hyperbolic models of delay discounting [Mckerchar2009]. Similar to that work, we added an exponential parameter $S$ to all instances of the handling time ($H_i$) handling time, with a value of $S$ associated with each type of demand. The values of $S$ could then be aggregated across demands as participants experienced them, according to the following formula [adapted from @Sutton2018]
   
   $s_{i + 1} = s_i + A_i \left (\frac{1}{i}[S_i - s_i] \right)$
 
-  in which the global value of $s$ was updated every time a decision maker engaged with a trial. We fitted the starting value of the a demand's parameter $S$, which was bounded between 0 and 2 (values lower and greater than 1 indicating slower and faster perceived time, respectively). Since participants in the between-subjects experienced a single demand, the value of $s$ was reduced to the initial fit of $S$. For the within-subjects experiment, we assumed that the fitted values of $S$ indexed the true time sensitivity produced by each demand. Therefore, for each individual in that experiment, we initialized $S$ for each demand as the median fitted value from the first experiment.
+  in which the global value of $s$ was updated every time a decision maker engaged with a trial. We fitted the starting value of the a demand's parameter $S$, which was bounded between 0 and 2 (values lower and greater than 1 indicating slower and faster perceived time, respectively). We assumed that each participant would incorporate t$s$ into their decisions at different rates
+  
+   $mS_i = (s_i w_i) + (S_i (1 - w_i))$
+
+  such that in every trial, the recalibrated estimate of how long the handling time feels ($s$) is balanced against the actual experience of subjective time produced by the incoming demand ($S$). The weight $w_i$ controls how early participants start integrating the reclalibrated time $s$ into their decisions, given by
+  
+ $w_i = \left (\frac{i}{max(i)} \right ) ^{\alpha_w}$
+ 
+ in which high values of $\alpha_w$ denoted that decision makers incorporated the recalibrated subjective time early on in the experiment. The balance between experienced and recalibrated handling time was then applied to models (1) and (2) 
+
+$\tau_{i} = H_{i} ^ {mS_{i}}  A_{i} + T_{i}$
+
+
+$P(A)_i = \dfrac{1}{1 + exp^{-(1 / \beta[R_i - \gamma_i H_i^{mS_i}])}}$
+
+  Since participants in the between-subjects experienced a single demand, the value of $s$ was reduced to the initial fit of $S$, without any need to fit $\alpha_w$. For the within-subjects experiment, we assumed that the fitted values of $S$ indexed the true time sensitivity produced by each demand. Therefore, for each individual in that experiment, we initialized $S$ for each demand as the median fitted value from the first experiment.
+  
+  All together, the expanded model probed 1) how fast or slow a given demand felt ($S$); 2) whether and how fast this time sensitivity was recalibrated based on experience of intermixed demands ($s$); and 3) whether this time sensitivity was used globally to update the estimated richness of the environment (i.e. high $\alpha$), or focally by affecting how the incoming trial feels ((i.e. low $\alpha$)) (**REWORD, BAD**).
  
   
 
@@ -783,16 +800,10 @@ where $A_i$ is an acceptance indicator (0 or 1), and $\tau_i$ the amount of time
 
 
 
-$w_i = \left (\frac{i}{max(i)} \right ) ^\alpha$
 
 
-$mS_i = (s_i w_i) + (S_i (1 - w_i))$
 
 
-$\tau_{i} = H_{i} ^ {mS_{i}}  A_{i} + T_{i}$
-
-
-$P(A)_i = \dfrac{1}{1 + exp^{-(1 / \beta[R_i - \gamma_i H_i^{mS_i}])}}$
 
 (noise in the estimation of environmental richness [@Cash-Padgett2020])
 
