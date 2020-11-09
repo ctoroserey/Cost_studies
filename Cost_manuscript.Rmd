@@ -752,37 +752,46 @@ include_graphics("./Images/FIG2.png")
 
 ### **Computational Modeling of Foraging Behavior**
   
-  We performed model comparisons to identify qualities that explained findings from both experiments. Based on the observed choice behavior, an adequate model had to meet seven criteria: 1) show deviations from optimality that were not simply due to overharvesting 2) keep track of recent offer history; 3) experience a slight reduction of acceptances in effortful conditions; 4) persistently display higher acceptances for cognitive effort when faced with single behavioral costs; 5) initially match this preference for cognitive effort trials when foraging for demands and rewards; 6) display a disappearance of this preference as acceptances decreased to a common rate across costs; and 7) not be affected by block order effects. These conditions discarded a number of popular explanatory candidates that were not modeled, such as learned industriousness, boredom, fatigue, or sunk cost effects. 
+  We performed model comparisons to identify qualities that explained findings from both experiments. Based on the observed choice behavior, an adequate model had to meet seven criteria: 1) show deviations from optimality that were not simply due to overharvesting 2) keep track of recent offer history; 3) experience a slight reduction of acceptances in effortful conditions; 4) persistently display higher acceptances for cognitive effort when faced with single behavioral costs; 5) initially match this preference for cognitive effort trials when foraging for demands and rewards; 6) display a disappearance of this preference as acceptances decreased to a common rate across costs; and 7) not be affected by block order effects. These conditions discarded a number of popular explanatory candidates that were not modeled, such as learned industriousness, boredom, fatigue, or sunk cost effects (see Discussion). 
   
   We started by fitting a base model derived from the normative predictions of the Marginal Value Theorem (MVT; Charnov, 1975), which states that a delayed reward should be accepted if its earning rate surpasses the opportunity cost (OC) of time incurred in obtaining it. This decision rule can be expressed as
 
-$R_i - \gamma H_i$
+$model_{base} = R_i - \gamma H_i$
 
-such that a trial’s reward $R_t$ should be accepted if it is bigger than the average amount one could earn per second in the environment $\gamma$ (gamma; the OC) during the handling time $H_t$. Individuals with higher gammas therefore required higher rewards in order to accept a given offer. We fit $\gamma$ for each subject and cost using a softmax function to predict the probability of accepting a given trial
+such that a trial’s reward $R_i$ should be accepted if it is larger than the average amount one could earn per second in the environment $\gamma$ (free parameter gamma; the OC) during the handling time $H_i$. Individuals with higher gammas therefore required higher rewards in order to accept a given offer. We fit this and other models using a softmax function to predict the probability of accepting a given trial
 
-$P(accept)_i = \dfrac {1} {1 + e^{-1/\beta(R_i - \gamma H_i)}}$
+$P(accept)_i = \dfrac {1} {1 + e^{-1/\beta(model_{base})}}$
 
-  Both gamma ($\gamma$) and the temperature parameter ($\beta$) of the softmax function were estimated independently for each participant, using a maximum likelihood (MLE) approach through the NLOPTR package (CITE **GARY INFO**). The gamma optimization search space was bound by extreme choice values. For example, someone with an extremely high OC would not accept even the most beneficial offers, and would reject a 20 cent offer when the handling time was 2 seconds (or 20/2). Conversely, a participant experiencing low opportunity costs would accept the non-beneficial offer of 4 cents for a 14 second delay (or 4/14). **We cross-validated each subject’s OC value using the pre-midpoint data for estimation, and post-midpoint choices for testing. The estimates from the training sample were used to predict acceptances in the testing sample, and the mean percent correctly predicted was reported for each group.** We then used a two-sided one-sample t-tests to compare each group's gammas to the average optimal earning rate (**0.74**, see Operationalization of Cost), allowing us to determine whether any demand boosted an offer's value. Finally, we determined which cost type produced the highest discounting by comparing gammas with an ANOVA (with condition as a factor), followed by post-hoc permutations (5000 iterations) comparing mean gammas per group. 
+  All free paremeters of the softmax function (in this case, $\gamma$ and the temperature parameter $\beta$) were estimated independently for each participant, using a maximum likelihood (MLE) approach through the NLOPTR package (CITE **GARY INFO**). The gamma optimization search space was bound by extreme choice values. For example, someone with an extremely high OC would not accept even the most beneficial offers, and would reject a 20 cent offer when the handling time was 2 seconds (or 20/2). Conversely, a participant experiencing low opportunity costs would accept the non-beneficial offer of 4 cents for a 14 second delay (or 4/14). **We cross-validated each subject’s OC value using the pre-midpoint data for estimation, and post-midpoint choices for testing. The estimates from the training sample were used to predict acceptances in the testing sample, and the mean percent correctly predicted was reported for each group.** We then used a two-sided one-sample t-tests to compare each group's gammas to the average optimal earning rate (**0.74**, see Operationalization of Cost), allowing us to determine whether any demand boosted an offer's value. Finally, we determined which cost type produced the highest discounting by comparing gammas with an ANOVA (with condition as a factor), followed by post-hoc permutations (5000 iterations) comparing mean gammas per group. 
 
-  This base model was not flexible enough to capture the gradual decision shifts in the within-subjects experiment. Therefore, we expanded this base formulation by allowing $\gamma$ to evolve over time, adapting a learning rule from Constantino & Daw (2015)
+  The base model suffered from two main shortcomings. First, it lacked the flexibility to capture the dynamics observed in the within-subjects experiment. Second, the parameter $\gamma$ could index either subjective OC or how long the handling time felt. Intuitively, being completely engaged in a task can make time transpire subjectively faster (CITE FLOW?), which might have made the cognitive task attractive. Time sensitivity has been previously used to improve fits on classic hyperbolic models of delay discounting [Mckerchar2009]. Therefore, we next expanded the base formulation to distinguish between these two features by modeling the perceived length of the handling time and the subjective OC separately. 
+  
+  We started with time sensitivity. Similar to Mckerchar et al. (2009), we added an exponential parameter $S$ to all instances of the handling time ($H_i$), with a value of $S$ associated with each type of demand.
+  
+  $model_{time} = R_i - \gamma H_i^{S}$
+  
+  The values of $S$ could then be aggregated across demands as participants experienced them, according to the following formula [adapted from @Sutton2018]
+  
+  $s_{i + 1} = s_i + A_i \left (\frac{1}{i}[S_i - s_i] \right)$
+
+  *then talk about C&D itself, so then they can be combined* in which the global value of $s$ was updated every time a decision maker completed a trial. We fitted the starting value of the a demand's parameter $S$, which was bounded between 0 and 2 (values lower and greater than 1 indicating slower and faster perceived time, respectively). We assumed that each participant would incorporate $s$ into their decisions at different rates
+  
+   $mS_i = (s_i w_i) + (S_i (1 - w_i))$
+
+  such that in every trial, the recalibrated length estimate of the handling time ($s$) is balanced against the actual experience of subjective time produced by the incoming demand ($S$). The weight $w_i$ controls how early participants start integrating the reclalibrated time $s$ into their decisions, given by
+  
+ $w_i = \left (\frac{i}{max(i)} \right ) ^{\alpha_w}$
+ 
+ in which high values of $\alpha_w$ denoted that decision makers incorporated the recalibrated subjective time early on in the experiment. The balance between experienced and recalibrated handling time was then applied to models (1) and (2) 
+
+
+  allowing $\gamma$ to evolve over time, adapting a learning rule from Constantino & Daw (2015)
 
 $\gamma_{i+1} = (1 - (1 - \alpha) ^ {\tau_i}) \dfrac{R_{i} A_{i}}{\tau_i} +  (1 - \alpha) ^ {\tau_i} \gamma_{i}$
 
 where $A_i$ is an acceptance indicator (0 or 1), and $\tau_i$ the amount of time spent in the trial. Higher values of the learning rate $\alpha$ (ranging from 0 to 1) prioritized updating from the current trial’s earning rate, weighed by the amount of time experienced. This addition allowed for the tracking of recent history that was part of our criteria. 
 
-  We further parameterized this model to test the hypothesis that demands affected the perceived duration of the handling time differently, thus potentially improving their appeal (e.g. a sense of fast completion might have made the cognitive task attractive). Time sensitivity has been previously used to improve fits on classic hyperbolic models of delay discounting [Mckerchar2009]. Similar to that work, we added an exponential parameter $S$ to all instances of the handling time ($H_i$) handling time, with a value of $S$ associated with each type of demand. The values of $S$ could then be aggregated across demands as participants experienced them, according to the following formula [adapted from @Sutton2018]
-  
-  $s_{i + 1} = s_i + A_i \left (\frac{1}{i}[S_i - s_i] \right)$
 
-  in which the global value of $s$ was updated every time a decision maker engaged with a trial. We fitted the starting value of the a demand's parameter $S$, which was bounded between 0 and 2 (values lower and greater than 1 indicating slower and faster perceived time, respectively). We assumed that each participant would incorporate t$s$ into their decisions at different rates
-  
-   $mS_i = (s_i w_i) + (S_i (1 - w_i))$
-
-  such that in every trial, the recalibrated estimate of how long the handling time feels ($s$) is balanced against the actual experience of subjective time produced by the incoming demand ($S$). The weight $w_i$ controls how early participants start integrating the reclalibrated time $s$ into their decisions, given by
-  
- $w_i = \left (\frac{i}{max(i)} \right ) ^{\alpha_w}$
- 
- in which high values of $\alpha_w$ denoted that decision makers incorporated the recalibrated subjective time early on in the experiment. The balance between experienced and recalibrated handling time was then applied to models (1) and (2) 
 
 $\tau_{i} = H_{i} ^ {mS_{i}}  A_{i} + T_{i}$
 
@@ -791,10 +800,10 @@ $P(A)_i = \dfrac{1}{1 + exp^{-(1 / \beta[R_i - \gamma_i H_i^{mS_i}])}}$
 
   Since participants in the between-subjects experienced a single demand, the value of $s$ was reduced to the initial fit of $S$, without any need to fit $\alpha_w$. For the within-subjects experiment, we assumed that the fitted values of $S$ indexed the true time sensitivity produced by each demand. Therefore, for each individual in that experiment, we initialized $S$ for each demand as the median fitted value from the first experiment.
   
-  All together, the expanded model probed 1) how fast or slow a given demand felt ($S$); 2) whether and how fast this time sensitivity was recalibrated based on experience of intermixed demands ($s$); and 3) whether this time sensitivity was used globally to update the estimated richness of the environment (i.e. high $\alpha$), or focally by affecting how the incoming trial feels ((i.e. low $\alpha$)) (**REWORD, BAD**).
+  All together, the expanded model probed 1) how fast or slow a given demand felt ($S$); 2) whether and how fast this time sensitivity was recalibrated based on experience of intermixed demands ($s$); and 3) whether this time sensitivity was used globally to update the estimated richness of the environment (i.e. high $\alpha$), or focally by affecting how the incoming trial feels (i.e. low $\alpha$) (**REWORD, BAD**).
  
   
-
+*the alternative way to frame this would be to 1) start with base model; 2) say how gmmma could either index OC or modulate time, so we'll model OC and time separately; 3) add all of time sensitivity; 4) add C&D OC, since S will modulate it too (otherwise it's awkward) this does not *
 
 
 
