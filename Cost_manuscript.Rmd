@@ -18,6 +18,8 @@ output:
   html_document:
     df_print: paged
 csl: apa.csl
+#subtitle: 'Abbreviated Title: Heterogeneity in the functional topography of mPFC'
+#bibliography: mPFC_paper.bib
 ---
 
 ```{r Global options, include = FALSE}
@@ -752,67 +754,87 @@ include_graphics("./Images/FIG2.png")
 
 ### **Computational Modeling of Foraging Behavior**
   
-  We performed model comparisons to identify qualities that explained findings from both experiments. Based on the observed choice behavior, an adequate model had to meet seven criteria: 1) show deviations from optimality that were not simply due to overharvesting 2) keep track of recent offer history; 3) experience a slight reduction of acceptances in effortful conditions; 4) persistently display higher acceptances for cognitive effort when faced with single behavioral costs; 5) initially match this preference for cognitive effort trials when foraging for demands and rewards; 6) display a disappearance of this preference as acceptances decreased to a common rate across costs; and 7) not be affected by block order effects. These conditions discarded a number of popular explanatory candidates that were not modeled, such as learned industriousness, boredom, fatigue, or sunk cost effects (see Discussion). 
+  We performed model comparisons to identify qualities that explained findings from both experiments. Based on the observed choice behavior, an adequate model had to meet seven criteria: 1) show deviations from optimality that were not simply due to overharvesting 2) keep track of recent offer history; 3) experience a slight reduction of acceptances in effortful conditions; 4) persistently display higher acceptances for cognitive effort when faced with single behavioral costs; 5) initially match this preference for cognitive effort trials when foraging for demands and rewards; 6) display a disappearance of this preference as acceptances decreased to a common rate across costs; and 7) not be affected by block order effects. These conditions discarded a number of popular explanatory candidates that were not modeled, such as learned industriousness, boredom, fatigue, sunk cost effects, or asymmetric learning of environmental richness (see Discussion). 
   
   We started by fitting a base model derived from the normative predictions of the Marginal Value Theorem (MVT; Charnov, 1975), which states that a delayed reward should be accepted if its earning rate surpasses the opportunity cost (OC) of time incurred in obtaining it. This decision rule can be expressed as
 
-$model_{base} = R_i - \gamma H_i$
+$$\begin{aligned}
+Model_{base} = R_i - \gamma H_i
+\end{aligned}$$
 
-such that a trial’s reward $R_i$ should be accepted if it is larger than the average amount one could earn per second in the environment $\gamma$ (free parameter gamma; the OC) during the handling time $H_i$. Individuals with higher gammas therefore required higher rewards in order to accept a given offer. We fit this and other models using a softmax function to predict the probability of accepting a given trial
+  such that a trial’s reward $R_i$ should be accepted if it is larger than the average amount one could earn per second in the environment $\gamma$ (gamma; the OC) during the handling time $H_i$. Individuals with higher gammas therefore required higher rewards in order to accept a given offer. We fit this and other models using a softmax function to predict the probability of accepting a given trial
 
-$P(accept)_i = \dfrac {1} {1 + e^{-1/\beta(model_{base})}}$
+$$\begin{aligned}
+P(accept)_i = \dfrac {1} {1 + e^{-1/\beta(Model_{base})}}
+\end{aligned}$$
 
-  All free paremeters of the softmax function (in this case, $\gamma$ and the temperature parameter $\beta$) were estimated independently for each participant, using a maximum likelihood (MLE) approach through the NLOPTR package (CITE **GARY INFO**). The gamma optimization search space was bound by extreme choice values. For example, someone with an extremely high OC would not accept even the most beneficial offers, and would reject a 20 cent offer when the handling time was 2 seconds (or 20/2). Conversely, a participant experiencing low opportunity costs would accept the non-beneficial offer of 4 cents for a 14 second delay (or 4/14). **We cross-validated each subject’s OC value using the pre-midpoint data for estimation, and post-midpoint choices for testing. The estimates from the training sample were used to predict acceptances in the testing sample, and the mean percent correctly predicted was reported for each group.** We then used a two-sided one-sample t-tests to compare each group's gammas to the average optimal earning rate (**0.74**, see Operationalization of Cost), allowing us to determine whether any demand boosted an offer's value. Finally, we determined which cost type produced the highest discounting by comparing gammas with an ANOVA (with condition as a factor), followed by post-hoc permutations (5000 iterations) comparing mean gammas per group. 
+  All free paremeters of the softmax function (in this case, $\gamma$ and the temperature parameter $\beta$) were estimated independently for each participant, using a maximum likelihood (MLE) approach through the NLOPTR package (CITE **GARY INFO**). The gamma optimization search space was bound by extreme choice values. For example, someone with an extremely high OC would not accept even the most beneficial offers, and would reject a 20 cent offer when the handling time was 2 seconds (or 20/2). Conversely, a participant experiencing low opportunity costs would accept the non-beneficial offer of 4 cents for a 14 second delay (or 4/14). **We cross-validated each subject’s OC value using the pre-midpoint data for estimation, and post-midpoint choices for testing. The estimates from the training sample were used to predict acceptances in the testing sample, and the mean percent correctly predicted was reported for each group.** We then used a two-sided one-sample t-tests to compare each group's gammas to the average optimal earning rate (**0.74**, see Operationalization of Cost), allowing us to determine whether any demand boosted an offer's value. Finally, we compared gammas with an ANOVA (with condition as a factor), followed by post-hoc permutations (5000 iterations) comparing mean gammas per group. 
 
-  The base model suffered from two main shortcomings. First, it lacked the flexibility to capture the dynamics observed in the within-subjects experiment. Second, the parameter $\gamma$ could index either subjective OC or how long the handling time felt. Intuitively, being completely engaged in a task can make time transpire subjectively faster (CITE FLOW?), which might have made the cognitive task attractive. Time sensitivity has been previously used to improve fits on classic hyperbolic models of delay discounting [Mckerchar2009]. Therefore, we next expanded the base formulation to distinguish between these two features by modeling the perceived length of the handling time and the subjective OC separately. 
-  
-  We started with time sensitivity. Similar to Mckerchar et al. (2009), we added an exponential parameter $S$ to all instances of the handling time ($H_i$), with a value of $S$ associated with each type of demand.
-  
-  $model_{time} = R_i - \gamma H_i^{S}$
-  
-  The values of $S$ could then be aggregated across demands as participants experienced them, according to the following formula [adapted from @Sutton2018]
-  
-  $s_{i + 1} = s_i + A_i \left (\frac{1}{i}[S_i - s_i] \right)$
+  The base formulation lacked the flexibility needed to capture the dynamics observed in the within-subjects experiment. We therefore tested a second model which allowed $\gamma$ to evolve over time, adapting a learning rule from Constantino & Daw (2015)
 
-  *then talk about C&D itself, so then they can be combined* in which the global value of $s$ was updated every time a decision maker completed a trial. We fitted the starting value of the a demand's parameter $S$, which was bounded between 0 and 2 (values lower and greater than 1 indicating slower and faster perceived time, respectively). We assumed that each participant would incorporate $s$ into their decisions at different rates
-  
-   $mS_i = (s_i w_i) + (S_i (1 - w_i))$
 
-  such that in every trial, the recalibrated length estimate of the handling time ($s$) is balanced against the actual experience of subjective time produced by the incoming demand ($S$). The weight $w_i$ controls how early participants start integrating the reclalibrated time $s$ into their decisions, given by
+$$\begin{aligned}
+\gamma_{i+1} = (1 - (1 - \alpha) ^ {\tau_i}) \dfrac{R_{i} A_{i}}{\tau_i} +  (1 - \alpha) ^ {\tau_i} \gamma_{i}
+\end{aligned}$$
+
+
+  where $A_i$ is an acceptance indicator (0 or 1), and $\tau_i$ the amount of time spent in the trial. Higher values of the learning rate $\alpha$ (ranging from 0 to 1) prioritized updating from the current trial’s earning rate (left side of the equation), weighed by the amount of time experienced in the past trial. This time was given by 
+
+$$\begin{aligned}
+\tau_{i} = H_{i}  A_{i} + T_{i}
+\end{aligned}$$
+
+  such that the handling time was counted only for accepted trials. These modifications allowed for the tracking of recent history that was part of our criteria, while mostly maintaining the same complexity (i.e. one free parameter) and structure of the base model
+
+
+$$\begin{aligned}
+Model_{adaptive} = R_i - \gamma_i H_i
+\end{aligned}$$
   
- $w_i = \left (\frac{i}{max(i)} \right ) ^{\alpha_w}$
+  
+  A final model considered the relationship between effortful engagement and the perceived length of time. Being immersed in a task can make time transpire subjectively faster [Csikszentmihalyi2004], which might have made the cognitive task attractive. Time sensitivity has been previously used to improve fits on classic hyperbolic models of delay discounting [Mckerchar2009]. It is possible that such subjective handling time was recalibrated in the within-subjects experiment, resulting in the observed convergance of acceptances across demands. We therefore added a time sensitivity parameter $S$ to the model, with a separate value associated with each type of demand. The values of $S_{demand}$ could then be recalibrated as participants experienced them, averaged according to the following formula [adapted from @Sutton2018]
+
+  
+$$\begin{aligned}
+s_{i + 1} = s_i + A_i \left (\frac{1}{i}[S_{demand} - s_i] \right)
+\end{aligned}$$
+
+
+  in which the global value of $s$ was updated every time an individual completed a trial. We fitted the initial value of $S_{demand}$, which was bounded between 0 and 2 (values lower and greater than 1 indicating slower and faster perceived time, respectively). Even though the value of $s$ was updated equally across individuals, we theorized that each participant would incorporate $s$ into their decisions at different rates. This intuition was given by a weighted sum
+  
+  
+$$\begin{aligned}
+mS_i = (s_i w_i) + (S_{demand} (1 - w_i))
+\end{aligned}$$
+
+
+  such that in every trial, the recalibrated length estimate of the handling time ($s$) was balanced against the actual experience of subjective time produced by the present demand ($S_{demand}$). The weight $w_i$ controlled how early participants started integrating the recalibrated time $s$ into their decisions, given by
+  
+  
+$$\begin{aligned}
+w_i = \left (\frac{i}{max(i)} \right ) ^{\alpha_w}
+\end{aligned}$$
  
- in which high values of $\alpha_w$ denoted that decision makers incorporated the recalibrated subjective time early on in the experiment. The balance between experienced and recalibrated handling time was then applied to models (1) and (2) 
-
-
-  allowing $\gamma$ to evolve over time, adapting a learning rule from Constantino & Daw (2015)
-
-$\gamma_{i+1} = (1 - (1 - \alpha) ^ {\tau_i}) \dfrac{R_{i} A_{i}}{\tau_i} +  (1 - \alpha) ^ {\tau_i} \gamma_{i}$
-
-where $A_i$ is an acceptance indicator (0 or 1), and $\tau_i$ the amount of time spent in the trial. Higher values of the learning rate $\alpha$ (ranging from 0 to 1) prioritized updating from the current trial’s earning rate, weighed by the amount of time experienced. This addition allowed for the tracking of recent history that was part of our criteria. 
-
-
-
-$\tau_{i} = H_{i} ^ {mS_{i}}  A_{i} + T_{i}$
-
-
-$P(A)_i = \dfrac{1}{1 + exp^{-(1 / \beta[R_i - \gamma_i H_i^{mS_i}])}}$
-
-  Since participants in the between-subjects experienced a single demand, the value of $s$ was reduced to the initial fit of $S$, without any need to fit $\alpha_w$. For the within-subjects experiment, we assumed that the fitted values of $S$ indexed the true time sensitivity produced by each demand. Therefore, for each individual in that experiment, we initialized $S$ for each demand as the median fitted value from the first experiment.
-  
-  All together, the expanded model probed 1) how fast or slow a given demand felt ($S$); 2) whether and how fast this time sensitivity was recalibrated based on experience of intermixed demands ($s$); and 3) whether this time sensitivity was used globally to update the estimated richness of the environment (i.e. high $\alpha$), or focally by affecting how the incoming trial feels (i.e. low $\alpha$) (**REWORD, BAD**).
  
+  in which high values of the free parmeter $\alpha_w$ denoted that decision makers incorporated the recalibrated subjective time early on in the experiment. Similar to McKerchar et al. (2009), the values of $mS_i$ exponentially modulated every instance of the handling time ($H_i$) from the adaptive model. In this way, subjective time perception produced by different demands could influence choice in two ways: retrospectively affecting the value of $\gamma$ through the perceived length of recent trials
+
+
+$$\begin{aligned}
+\tau_{i} = H_{i} ^ {mS_{i}}  A_{i} + T_{i}
+\end{aligned}$$
+
+and prospectively impacting the expected trial length at the time of a decision
+
+$$\begin{aligned}
+Model_{time} = R_i - \gamma_i H_i^{mS_i}
+\end{aligned}$$
+
+  This subjective time model was fitted differently across experiments, such that the fits from experiment 1 informed those of experiment 2. Since participants in the between-subjects experienced a single demand, the value of $s$ was reduced to the initial fit of $S_{demand}$, without any need to fit $\alpha_w$ (which was set to 1). For the within-subjects experiment, we assumed that the fitted values of $S_{demand}$ approximated the true time sensitivity produced by each demand. Therefore, for each individual in the within-subjects experiment, we set each value of $S_{demand}$ to be the median fitted value from the first experiment, and fitted $\alpha_w$ instead. In this way model complexities was fixed across experiments, even though different aspects of the model were emphasized.
   
-*the alternative way to frame this would be to 1) start with base model; 2) say how gmmma could either index OC or modulate time, so we'll model OC and time separately; 3) add all of time sensitivity; 4) add C&D OC, since S will modulate it too (otherwise it's awkward) this does not *
-
-
-
-
-
-
-
-
-
+  In summary, the free parameters from the subjective time model captured three features. First, how fast or slow a given demand felt ($S_{demand}$). Second, whether and how fast this time sensitivity was recalibrated based on the experience of intermixed demands ($\alpha_w$). Finally, whether this time sensitivity was used retrospectively (i.e. high $\alpha$), or prospectively (i.e. low $\alpha$).
+ 
+  In order to compare model fits, we used expectation maximization...(**Gary**)
+  
 
 (noise in the estimation of environmental richness [@Cash-Padgett2020])
 
@@ -2968,7 +2990,7 @@ OCs_anova$ES[rbind(c(1,4),c(2,3),c(3,2),c(4,1))] <- NA
 
   Understanding the sporadic attractiveness of effortful options remains elusive. In this study, we tested the hypothesis that such appeal could arise from being able to compare different means to achieve the same outcome. Using two foraging experiments that exposed individuals to a single or intermixed types of demands, we found that 1) preferences for cognitive effort are stable when individuals face a single form of demand, but fade over time when other costs are also experienced; and 2) the phenomenon can be explained by a model in which preferences depend on how participants construe the amount of time a task takes, which could hypothetically be recalibrated when all tasks are interleaved.
   
-  The observed choice dynamics defied a number of explanatory candidates. For instance, differences in choice stability between experiments suggest that a demand's cost is not intrinsic, while differences between effort types rule out learned industriousness. Effort preferences due to boredom would not have shown the global acceptance decline and convergence in the within-subjects experiment, which also discards the possibility that all our participants were high on need for cognition (CITE). Even though fatigue could explain the decrease in effort acceptances across experiments, we would have expected tired participants to turn to wait trials over time in order to preserve earning rates. We also ruled out the sunk cost effects used to explain overharvesting (Wikenheiser2013; Sweiss2018), as participants expressed their choices as early as possible, resulting in occassional underharvesting. Even though the reciprocal relationship between effort and outcome can often explain preferences for effort (Inzlicht2018), the observed differences in acceptances between effort types and the eventual convergence of rates in the within-subjects study cannot be explained by reward alone, as demands were rewarded at the same rate. Instead, we propose that features of the cognitive tasks added outcome-independent value to the offer. Subjective time sensitivity has been shown to play a role in temporal discounting, improving on classic hyperbolic fits (Mckelachar....)
+  The observed choice dynamics defied a number of explanatory candidates. For instance, differences in choice stability between experiments suggest that a demand's cost is not intrinsic, while differences between effort types rule out learned industriousness. Effort preferences due to boredom would not have shown the global acceptance decline and convergence in the within-subjects experiment, which also discards the possibility that all our participants were high on need for cognition (CITE). Even though fatigue could explain the decrease in effort acceptances across experiments, we would have expected tired participants to turn to wait trials over time in order to preserve earning rates. We also ruled out the sunk cost effects used to explain overharvesting (Wikenheiser2013; Sweiss2018), as participants expressed their choices as early as possible, resulting in occassional underharvesting. Even though the reciprocal relationship between effort and outcome can often explain preferences for effort (Inzlicht2018), the observed differences in acceptances between effort types and the eventual convergence of rates in the within-subjects study cannot be explained by reward alone, as demands were rewarded at the same rate. Instead, we propose that features of the cognitive tasks added outcome-independent value to the offer. Subjective time sensitivity has been shown to play a role in temporal discounting, improving on classic hyperbolic fits (Mckelachar....) *add that stability meant no need to model asymmetric learning across environmental richness from Neal*
   
 
 - Make sure to note that we controlled for time as a confound for effort, as more effortful tasks normally take longer
