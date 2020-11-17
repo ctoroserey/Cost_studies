@@ -972,12 +972,13 @@ recalibrate_s <- function(S, alpha_s, choice) {
     #s[l + 1] <- alpha_s[l] * S[l] * a[l] + (1 - alpha_s[l]) * s[l]
     #s[l + 1] <- (alpha_s / l) * S[l] * a[l] + (1 - (alpha_s / l)) * s[l]
     #s[l + 1] <- s[l] + 1/l * (S[l] ^ a[l] - s[l]) # Sutton & Barto, page 37. Added cholce to S[l], such that no-experlenced blas estlmates back to 1 (l.e. nomlnal tlme)
-    #s[l + 1] <- s[l] + (1/l * (S[l] - s[l])) * a[l]
+    s[l + 1] <- s[l] + (1/l * (S[l] - s[l])) * a[l]
+    s[l + 1] <- s[l] + a[l] * (((1 - l / length(S)) ^ alpha_s) * (S[l] - s[l]))
     #s[l + 1] <- s[l] + (alpha_s/l * (S[l] - s[l])) * a[l]
-    left <- ((1 - alpha_s) ^ l) * s[1] ^ choice[1]
-    right <- alpha_s * (1 - alpha_s) ^ (l - seq(l)) * (S[seq(l)] ^ a[seq(l)])
-    right <- alpha_s * (1 - alpha_s) ^ (l - seq(l)) * ((S[seq(l)] * a[seq(l)]) + (dplyr::lag(s[seq(l)], default = 0)) * (1 - a[seq(l)])) # if trial isn't experienced, retain the i-1 s
-    s[l + 1] <-  left + sum(right)
+    #left <- ((1 - alpha_s) ^ l) * s[1] ^ choice[1]
+    #right <- alpha_s * (1 - alpha_s) ^ (l - seq(l)) * (S[seq(l)] ^ a[seq(l)])
+    #right <- alpha_s * (1 - alpha_s) ^ (l - seq(l)) * ((S[seq(l)] * a[seq(l)]) + (dplyr::lag(s[seq(l)], default = 0)) * (1 - a[seq(l)])) # if trial isn't experienced, retain the i-1 s
+    #s[l + 1] <-  left + sum(right)
     
     l <- l + 1
   }
