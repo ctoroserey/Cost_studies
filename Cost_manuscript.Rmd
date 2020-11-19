@@ -2979,6 +2979,8 @@ OCs_anova$ES[rbind(c(1,4),c(2,3),c(3,2),c(4,1))] <- NA
   
   It is possible that the task-switching configuration of the cognitive tasks was not effortful, maybe due to our calibration. Unlike adjusting to people's physical capabilities, we trained participants in the cognitive tasks until they reached criterion. Attributes such as the efficacy or capacity to complete a task, or the diversity of its requirements, have been reported to promote engagement [ivan; eisenberger]. Even so, we believe our manipulations were successful in inducing feelings of effort. Hand grips are regularly used to probe physical effort [@Chong2017; @Hogan2018; @Prevost2010], and task switching has been shown to feel cognitively effortful by recruiting cognitive control [@Kool2010; @Shenhav2017]. Furthermore, we observed a steeper decrease in acceptances over time at longer handling times, a hallmark of effortful decisions [@Treadway2009]. Regardless, our focus here was not on the amount of effort exherted, but on what makes people pursue the task in spite of its toll.
   
+  The present findings provide theoretical advances as well as practical implementations. Talk clinical and practical. Practical could be motivating people to pursue challenges that produce desirable outcomes, like work, exercise etc.  Much of the literature on the value of effort has suggested that it can be triggered by careful reward schedules. This doesn't always do (Eisenberger, Inzlicht). There is also the idea that training in certain tasks will have generaliing effects, which are not always true (Kable). We highlight an outcome-independent feature that is phenomenologically common (time sensitivity), and potentially easy to implement. 
+  
 ### *Points to cover* 
 
 
@@ -2993,7 +2995,7 @@ OCs_anova$ES[rbind(c(1,4),c(2,3),c(3,2),c(4,1))] <- NA
  
   
   
-
+\newpage
 
 ## Figures
 
