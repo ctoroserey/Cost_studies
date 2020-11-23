@@ -7,84 +7,66 @@ setwd(dirname(dirname(rstudioapi::getActiveDocumentContext()$path)))
 
 library(data.table)
 library(foreach)
+library(rextras)
+library(zeallot)
+library(modelfitr)
+library(GaussExMax)
 
-reload = function(){
-  library(modelfitr)
-  detach("package:modelfitr", unload=T)
-  library(modelfitr)
-}
-reload()
-
+source('models_gk/load_data.R')
 source('models_gk/likelihoods.R')
 
 #########################
 ### Load Data
 #########################
 
-dir_btw = 'Cost2/data'
-f_btw = list.files(dir_btw, pattern=".csv", full.names=T)
-dat_btw = foreach(f = f_btw, .combine=rbind) %do% {
-  info = strsplit(basename(f), "_")[[1]]
-  data.table(sub=info[1], cond=info[2], date=info[3], fread(f))
-}
-dat_btw[, Travel := 16-Handling]
-
-# dir_wth = 'Cost3/data'
-# f_wth = list.files(dir_wth, pattern="main_log*.csv", full.names=T)
-# dat_wth = foreach(f = f_wth, .combine=rbind) %do% {
-#   info = strsplit(basename(f), "_")[[1]]
-#   data.table(sub=info[1], cond=info[2], date=info[3], fread(f))
-# }
+c(dat_btw, dat_wth) %<-% load_data()
 
 #########################
-### Fit time sensitivity model
+### Fit opportunity cost model
 #########################
 
 par_values = c(gamma = 1, beta = .1)
+par_names = c("gamma", "beta")
 
-reload()
 system.time(fits_btw <- dat_btw[,
                                 modelfitr::fit_model(
-                                  get_lik,
+                                  cost_lik,
                                   log(par_values),
                                   hessian=T,
+                                  package="optimx",
                                   method="nmkb",
                                   obj_args=list(
-                                    lfun=time_sensitivity_lik,
-                                    R_i=Offer,
-                                    H_i=Handling,
-                                    Choice=Choice,
+                                    dat=.SD,
+                                    par_names=par_names,
                                     log_par=T
                                   ),
                                   aic=T,
                                   bic=T,
                                   n_obs=.N,
-                                  return_df=T),
-                                .(sub, cond)
+                                  return_df=T,
+                                  verbose = T),
+                                .(sub, cond),
+                                .SDcols=names(dat_btw)
 ])
-fits_btw[, gamma := exp(gamma)]
-fits_btw[, beta := exp(beta)]
 
-fits_btw_melt = melt(fits_btw, measure.vars=c("gamma", "beta"), variable.name="par", value.name="val")
-ggplot(fits_btw_melt, aes(x=cond, y=val)) +
-  facet_wrap(~par, scales="free") +
-  geom_violin()
+### get model predictions for each subject and condition
 
-dat_btw[, predict_choice := get_lik(fits_btw[sub==sub[1] & cond==cond[1], c(gamma, beta)],
-                                    return_liks=T,
-                                    time_sensitivity_lik,
-                                    R_i=Offer,
-                                    H_i=Handling,
-                                    Choice=Choice),
-        .(sub, cond)]
+get_all_predictions(dat_btw, fits_btw, par_names, log_par=T)
 
-dat_btw[, predict_accept := ifelse(Choice==1, predict_choice, 1-predict_choice)]
 mean_dat_btw = dat_btw[, .(Choice = mean(Choice),
                            predict_accept = mean(predict_accept)),
                        .(sub, cond, Handling, Offer)]
 
-ggplot(mean_dat_btw, aes(x=Offer, y=Choice, color=cond, linetype=)) +
+ggplot(mean_dat_btw, aes(x=Offer, y=Choice, color=cond, fill=cond)) +
   facet_wrap(~Handling) +
   stat_summary(fun=mean, geom="point") +
-  stat_summary(fun.data=mean_se, geom="errorbar") +
-  stat_summary(aes(y=predict_accept), fun=mean, geom="line")
+  stat_summary(fun.data=mean_se, geom="errorbar", width=2) +
+  stat_summary(aes(y=predict_accept), fun=mean, geom="line") +
+  stat_summary(aes(y=predict_accept), fun.data=mean_se, geom="ribbon", color=NA, alpha=.2) +
+  scale_y_continuous("p(accept)", breaks=seq(0, 1, .2)) +
+  coord_cartesian(ylim=c(0,1)) +
+  ggtitle("Base opportunity cost") +
+  theme_abw() +
+  theme(plot.title = element_text(hjust=0.5))
+
+
