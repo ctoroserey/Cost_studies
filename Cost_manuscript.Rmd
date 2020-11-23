@@ -1222,7 +1222,7 @@ hrPlot_btw <- dataBtw %>%
 
 ``` {r BTW: 16.2.3. Mixed Effects Model, echo = FALSE, fig.align = "center", fig.width = 5, fig.height = 4, include = FALSE}
 # clean the data so the total acceptances and quits per subj x handling x reward are ready for modeling
-mixLogis_main <- list()
+mixLogis_main_btw <- list()
 mixData <- dataBtw %>%
   #filter(Choice < 2) %>% analysis performed on acceptances, not completions
   group_by(SubjID, Cost, Handling, Offer) %>%
@@ -1241,17 +1241,17 @@ mixData <- dataBtw %>%
 # so far, the best qualitative and AIC-based fit comes from random HR slopes + intercept per subject, plus random HR slopes per cost group:  (1 + Handling + Offer | SubjID) + (0 + Handling + Offer | Cost)
 # though that produces warnings too
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait"))
-mixLogis_main$Wait <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_main_btw$Wait <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Cognitive"))
-mixLogis_main$Cognitive <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_main_btw$Cognitive <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
-mixLogis_main$Physical <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_main_btw$Physical <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Easy"))
-mixLogis_main$Easy <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_main_btw$Easy <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
 
 # matrix of coefficients and pvalues
 rearrange <- c("Cognitive", "Easy", "Wait", "Physical") # to kinda match the order in Cost 3
-mixSummary_btw <- betaMatrix(mixLogis_main, rearrange = rearrange)
+mixSummary_btw <- betaMatrix(mixLogis_main_btw, rearrange = rearrange)
 diag(mixSummary_btw$Pvals) <- NA
 
 
@@ -1277,7 +1277,7 @@ col2 <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0"
 
 ``` {r BTW: 16.2.3. Mixed Effects Model plot rand intercepts, echo = FALSE, fig.align = "center", fig.width = 5, fig.height = 4}
 # # random intercepts for each subject, with cost group and overall acceptances
-# RI <- ranef(mixLogis_main$Wait)$SubjID[, 1]
+# RI <- ranef(mixLogis_main_btw$Wait)$SubjID[, 1]
 # RI <- dataBtw %>% 
 #   group_by(SubjID, Cost) %>% 
 #   summarise(pAccept = mean(Choice)) %>% 
@@ -1298,39 +1298,39 @@ col2 <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0"
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait"))
 
 ## model fitting
-mixLogis_compare <- list()
-mixLogis_compare$Base <- glmer(cbind(totalAccepted, totalQuits) ~ 1 + (1 | SubjID), family = "binomial", data = mixData) # intercept only
-mixLogis_compare$Cost <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + (1 | SubjID), family = "binomial", data = mixData)
-mixLogis_compare$Handling <- glmer(cbind(totalAccepted, totalQuits) ~ Handling + (1 | SubjID), family = "binomial", data = mixData)
-mixLogis_compare$Offer <- glmer(cbind(totalAccepted, totalQuits) ~ Offer + (1 | SubjID), family = "binomial", data = mixData)
-mixLogis_compare$HR <- glmer(cbind(totalAccepted, totalQuits) ~ Offer + Handling + (1 | SubjID), family = "binomial", data = mixData)
-mixLogis_compare$AllMain <- mixLogis_main$Wait
-mixLogis_compare$HR_interaction <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer * Handling + (1 | SubjID), family = "binomial", data = mixData)
-mixLogis_compare$Interaction <- glmer(cbind(totalAccepted, totalQuits) ~ (Cost + Handling + Offer)^2 + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_compare_btw <- list()
+mixLogis_compare_btw$Base <- glmer(cbind(totalAccepted, totalQuits) ~ 1 + (1 | SubjID), family = "binomial", data = mixData) # intercept only
+mixLogis_compare_btw$Cost <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_compare_btw$Handling <- glmer(cbind(totalAccepted, totalQuits) ~ Handling + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_compare_btw$Offer <- glmer(cbind(totalAccepted, totalQuits) ~ Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_compare_btw$HR <- glmer(cbind(totalAccepted, totalQuits) ~ Offer + Handling + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_compare_btw$AllMain <- mixLogis_main_btw$Wait
+mixLogis_compare_btw$HR_interaction <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer * Handling + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_compare_btw$Interaction <- glmer(cbind(totalAccepted, totalQuits) ~ (Cost + Handling + Offer)^2 + (1 | SubjID), family = "binomial", data = mixData)
 
 
 ## Model selection 
 # AIC/BIC
 ME_evals <- list()
-ME_evals$abicLogis_compare <- data.frame(Model = names(mixLogis_compare),
-                                AIC = sapply(mixLogis_compare, AIC),
-                                BIC = sapply(mixLogis_compare, BIC)) %>%
+ME_evals$abicLogis_compare <- data.frame(Model = names(mixLogis_compare_btw),
+                                AIC = sapply(mixLogis_compare_btw, AIC),
+                                BIC = sapply(mixLogis_compare_btw, BIC)) %>%
                                   mutate_at(vars(AIC:BIC), round)
   
 # analysis of deviance for models with similar AIC
-ME_evals$HRvMain <- anova(mixLogis_compare$HR, mixLogis_compare$AllMain)
-ME_evals$MainvHRint <- anova(mixLogis_compare$AllMain, mixLogis_compare$HR_interaction)
-ME_evals$MainvAllint <- anova(mixLogis_compare$AllMain, mixLogis_compare$Interaction)
+ME_evals$HRvMain <- anova(mixLogis_compare_btw$HR, mixLogis_compare_btw$AllMain)
+ME_evals$MainvHRint <- anova(mixLogis_compare_btw$AllMain, mixLogis_compare_btw$HR_interaction)
+ME_evals$MainvAllint <- anova(mixLogis_compare_btw$AllMain, mixLogis_compare_btw$Interaction)
 
 # effect size for the main model
-mixLogis_compare$AllMainRsq <- 1 - (deviance(mixLogis_compare$AllMain)/deviance(mixLogis_compare$Base)) # denominator is the null deviance
+mixLogis_compare_btw$AllMainRsq <- 1 - (deviance(mixLogis_compare_btw$AllMain)/deviance(mixLogis_compare_btw$Base)) # denominator is the null deviance
 ```
 
 ``` {r BTW: 16.2.4. Plot Deviance comparison, echo = FALSE, fig.align = "center", fig.width = 6,fig.height = 4}
 # plot AIC and BIC
 ABIC_plot_btw <- ME_evals$abicLogis_compare %>% 
   gather(Comparison, Value, AIC:BIC) %>%
-  mutate(Model = factor(Model, levels = names(mixLogis_compare))) %>%
+  mutate(Model = factor(Model, levels = names(mixLogis_compare_btw))) %>%
   ggplot(aes(Model, Value, fill = Comparison)) +
     geom_point(color = "black", pch = 21, size = 3) +
       theme(legend.position = c(0.8, 0.7),
@@ -1348,9 +1348,9 @@ ABIC_plot_btw <- ME_evals$abicLogis_compare %>%
 include_graphics("./Images/FIG4.png")
 ```
 
-  We next probed whether these results held uniformly across all parameter combinations. Figure 4A shows the mean proportion of acceptances (± SEM) per combination of handling time, reward, and cost, with optimal acceptance rates depicted by the gray circles. Qualitatively, the figure confirms two important predictions. First, participants adapted to the richness of the each timing block, gravitating towards optimality regardless of the cost they faced. Second, differences in cost were consistent across blocks, and acceptances were uniformly highest for the cognitive effort group. We tested these observations with a mixed-effects logistic regression, computing the probability of accepting an offer as a function of handling time, reward amount, and demand type (see Methods for details). As before, the model showed significant main effects of handling time (global intercept = `r round(fixef(mixLogis_main$Wait)["(Intercept)"], digits = 2)`, $\beta$ = `r round(fixef(mixLogis_main$Wait)["Handling"], digits = 2)`, SE = `r round(summary(mixLogis_main$Wait)[[10]]["Handling", "Std. Error"], digits = 2)`, *p* `r report_p(summary(mixLogis_main$Wait)[[10]]["Handling", "Pr(>|z|)"])`) and offer amount ($\beta$ = `r round(fixef(mixLogis_main$Wait)["Offer"], digits = 2)`, SE = `r round(summary(mixLogis_main$Wait)[[10]]["Offer", "Std. Error"], digits = 2)`, *p* `r report_p(summary(mixLogis_main$Wait)[[10]]["Offer", "Pr(>|z|)"])`). Comparisons among all conditions are shown on Figure 4B. The matrix of coefficients conveys that the cognitive effort group was significantly more likely to accept any offer than the physical ($\beta$ = `r round(mixSummary_btw$Betas["Physical", "Cognitive"], digits = 2)`, *p* `r report_p(mixSummary_btw$Pvals["Physical", "Cognitive"])`) and wait groups ($\beta$ = `r round(mixSummary_btw$Betas["Wait", "Cognitive"], digits = 2)`, *p* `r report_p(mixSummary_btw$Pvals["Wait", "Cognitive"])`), but not the easy group.
+  We next probed whether these results held uniformly across all parameter combinations. Figure 4A shows the mean proportion of acceptances (± SEM) per combination of handling time, reward, and cost, with optimal acceptance rates depicted by the gray circles. Qualitatively, the figure confirms two important predictions. First, participants adapted to the richness of the each timing block, gravitating towards optimality regardless of the cost they faced. Second, differences in cost were consistent across blocks, and acceptances were uniformly highest for the cognitive effort group. We tested these observations with a mixed-effects logistic regression, computing the probability of accepting an offer as a function of handling time, reward amount, and demand type (see Methods for details). As before, the model showed significant main effects of handling time (global intercept = `r round(fixef(mixLogis_main_btw$Wait)["(Intercept)"], digits = 2)`, $\beta$ = `r round(fixef(mixLogis_main_btw$Wait)["Handling"], digits = 2)`, SE = `r round(summary(mixLogis_main_btw$Wait)[[10]]["Handling", "Std. Error"], digits = 2)`, *p* `r report_p(summary(mixLogis_main_btw$Wait)[[10]]["Handling", "Pr(>|z|)"])`) and offer amount ($\beta$ = `r round(fixef(mixLogis_main_btw$Wait)["Offer"], digits = 2)`, SE = `r round(summary(mixLogis_main_btw$Wait)[[10]]["Offer", "Std. Error"], digits = 2)`, *p* `r report_p(summary(mixLogis_main_btw$Wait)[[10]]["Offer", "Pr(>|z|)"])`). Comparisons among all conditions are shown on Figure 4B. The matrix of coefficients conveys that the cognitive effort group was significantly more likely to accept any offer than the physical ($\beta$ = `r round(mixSummary_btw$Betas["Physical", "Cognitive"], digits = 2)`, *p* `r report_p(mixSummary_btw$Pvals["Physical", "Cognitive"])`) and wait groups ($\beta$ = `r round(mixSummary_btw$Betas["Wait", "Cognitive"], digits = 2)`, *p* `r report_p(mixSummary_btw$Pvals["Wait", "Cognitive"])`), but not the easy group.
   
-  These observations could not be better explained by simpler or more complex regression models. Figure 4C shows AIC and BIC values for models of increasing complexity, starting with an intercept-only configuration (see Methods for details). Here we focus on AIC, as both metrics yielded comparable results. As predicted, the a priori model with all main effects performed better than those relying on a single parameter (a priori model $R^2$ = `r round(mixLogis_compare$AllMainRsq, digits = 2)`), as well as the model with main effects for handling time and reward amount (AIC~a-priori~ = `r filter(ME_evals$abicLogis_compare, Model == "AllMain")$AIC`, AIC~handling/reward~ = `r filter(ME_evals$abicLogis_compare, Model == "HR")$AIC`, $\chi^2$(`r ME_evals$HRvMain[[7]][2]`) = `r round(ME_evals$HRvMain$Chisq[2], digits = 2)`, *p* `r report_p(ME_evals$HRvMain[[8]][2])`). However, against our expectations, the a priori model was outperformed by models that added an interaction between handling and reward (AIC~HR_interaction~ = `r filter(ME_evals$abicLogis_compare, Model == "HR_interaction")$AIC`, $\chi^2$(`r ME_evals$MainvHRint[[7]][2]`) = `r round(ME_evals$MainvHRint$Chisq[2], digits = 2)`, *p* `r report_p(ME_evals$MainvHRint[[8]][2])`) as well as one that considered all possible interactions (AIC~all_interactions~ = `r filter(ME_evals$abicLogis_compare, Model == "Interaction")$AIC`, $\chi^2$(`r ME_evals$MainvAllint[[7]][2]`) = `r round(ME_evals$MainvAllint$Chisq[2], digits = 2)`, *p* `r report_p(ME_evals$MainvAllint[[8]][2])`). These improvements were driven by the fact that differences in offer acceptances among costs were never present for 20 cents (all *p* values for interactions containing offer amount < 0.001). As the highest reward should always be accepted in prey foraging environments, we conclude that the most parsimonious explanation of choice behavior came from the a priori model containing all main effects. These results further support the hypotheses that handling and reward amounts were similarly integrated across groups, and that the absolute rate of acceptances was affected by the demand faced. However, they offer partial support for the hypothesis that effort would induce higher acceptance rates, which was only true for those confronted with cognitive effort.
+  These observations could not be better explained by simpler or more complex regression models. Figure 4C shows AIC and BIC values for models of increasing complexity, starting with an intercept-only configuration (see Methods for details). Here we focus on AIC, as both metrics yielded comparable results. As predicted, the a priori model with all main effects performed better than those relying on a single parameter (a priori model $R^2$ = `r round(mixLogis_compare_btw$AllMainRsq, digits = 2)`), as well as the model with main effects for handling time and reward amount (AIC~a-priori~ = `r filter(ME_evals$abicLogis_compare, Model == "AllMain")$AIC`, AIC~handling/reward~ = `r filter(ME_evals$abicLogis_compare, Model == "HR")$AIC`, $\chi^2$(`r ME_evals$HRvMain[[7]][2]`) = `r round(ME_evals$HRvMain$Chisq[2], digits = 2)`, *p* `r report_p(ME_evals$HRvMain[[8]][2])`). However, against our expectations, the a priori model was outperformed by models that added an interaction between handling and reward (AIC~HR_interaction~ = `r filter(ME_evals$abicLogis_compare, Model == "HR_interaction")$AIC`, $\chi^2$(`r ME_evals$MainvHRint[[7]][2]`) = `r round(ME_evals$MainvHRint$Chisq[2], digits = 2)`, *p* `r report_p(ME_evals$MainvHRint[[8]][2])`) as well as one that considered all possible interactions (AIC~all_interactions~ = `r filter(ME_evals$abicLogis_compare, Model == "Interaction")$AIC`, $\chi^2$(`r ME_evals$MainvAllint[[7]][2]`) = `r round(ME_evals$MainvAllint$Chisq[2], digits = 2)`, *p* `r report_p(ME_evals$MainvAllint[[8]][2])`). These improvements were driven by the fact that differences in offer acceptances among costs were never present for 20 cents (all *p* values for interactions containing offer amount < 0.001). As the highest reward should always be accepted in prey foraging environments, we conclude that the most parsimonious explanation of choice behavior came from the a priori model containing all main effects. These results further support the hypotheses that handling and reward amounts were similarly integrated across groups, and that the absolute rate of acceptances was affected by the demand faced. However, they offer partial support for the hypothesis that effort would induce higher acceptance rates, which was only true for those confronted with cognitive effort.
 
 ### **Between-subjects: Consistency and stability**
 
@@ -1570,7 +1570,7 @@ hrprepostPlot_btw <-dataBtw %>%
 ``` {r BTW: 16.3.2. mix pre/post separately, echo = FALSE, fig.align="center", fig.width = 5, fig.height = 4}
 ## compute the same mixed effects logistic for each half
 # mixed logistic for the first half
-mixLogis_pre <- list()
+mixLogis_pre_btw <- list()
 mixData <- dataBtw %>%
   filter(Half == "Half_1") %>%
   group_by(SubjID, Cost, Handling, Offer) %>%
@@ -1579,16 +1579,16 @@ mixData <- dataBtw %>%
             totalQuits = sum(Choice == 0),
             propAccepted = mean(Choice))
 
-mixLogis_pre$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_pre_btw$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait"))
-mixLogis_pre$Wait <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_pre_btw$Wait <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Easy"))
-mixLogis_pre$Easy <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_pre_btw$Easy <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Cognitive"))
-mixLogis_pre$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_pre_btw$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
 
 # mixed logistic for the second half
-mixLogis_post <- list()
+mixLogis_post_btw <- list()
 mixData <- dataBtw %>%
   filter(Half == "Half_2") %>%
   group_by(SubjID, Cost, Handling, Offer) %>%
@@ -1597,19 +1597,19 @@ mixData <- dataBtw %>%
             totalQuits = sum(Choice == 0),
             propAccepted = mean(Choice))
 
-mixLogis_post$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_post_btw$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait"))
-mixLogis_post$Wait <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_post_btw$Wait <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Easy"))
-mixLogis_post$Easy <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_post_btw$Easy <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Cognitive"))
-mixLogis_post$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_post_btw$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
 
 
 ## now produce a summary matrix
 # get the beta and pvalue matrices 
-betasPre <- betaMatrix(mixLogis_pre, rearrange = rearrange)
-betasPost <- betaMatrix(mixLogis_post, rearrange = rearrange)
+betasPre <- betaMatrix(mixLogis_pre_btw, rearrange = rearrange)
+betasPost <- betaMatrix(mixLogis_post_btw, rearrange = rearrange)
 
 # and combine them
 betaMat <- matrix(NA, nrow = nrow(betasPre$Betas), ncol = nrow(betasPre$Betas))
@@ -1842,11 +1842,11 @@ earnings_within <- dataWth %>%
 # both methods yield similar outputs, at least coefficients and pvalues
 # but the likelihoods will differ of course. The second one might be better in terms of computational needs.
 # method 1
-# mixLogis_main <- list()
-# mixLogis_main$Cog <- glmer(Choice ~ Cost + Offer + (1 | SubjID), family = "binomial", data = data)
+# mixLogis_main_wth <- list()
+# mixLogis_main_wth$Cog <- glmer(Choice ~ Cost + Offer + (1 | SubjID), family = "binomial", data = data)
 
 # mixed effects logistics, rotating the reference cost condition
-mixLogis_main <- list()
+mixLogis_main_wth <- list()
 mixData <- dataWth %>%
   group_by(SubjID, Cost, Offer) %>%
   summarize(totalChoices = length(Choice),
@@ -1854,13 +1854,13 @@ mixData <- dataWth %>%
             totalQuits = sum(Choice == 0),
             propAccepted = mean(Choice))
 
-mixLogis_main$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_main_wth$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-C"))
-mixLogis_main$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_main_wth$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-P"))
-mixLogis_main$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_main_wth$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
-mixLogis_main$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_main_wth$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 
 
 # plot proportion accepted per trial/offer combo
@@ -1896,7 +1896,7 @@ hrPlot_wth <- dataWth %>%
 ``` {r WTH: 16.2.1. mixed effects matrix, echo = FALSE, fig.align = "center", fig.width = 5,  fig.height = 4}
 # get summary of coeffs
 rearrange <- c("Cognitive", "Wait-C", "Wait-P", "Physical")
-mixSummary_wth <- betaMatrix(mixLogis_main, rearrange = rearrange)
+mixSummary_wth <- betaMatrix(mixLogis_main_wth, rearrange = rearrange)
 diag(mixSummary_wth$Pvals) <- NA
 
 # remove uninteresting comparisons
@@ -1928,24 +1928,24 @@ mixSummary_wth$Pvals[rbind(c(3, 1), c(4,2))] <- NA
 
 ``` {r WTH: 16.2.2. ME model comparison, echo = FALSE, fig.align="center", fig.width = 6, fig.height = 4}
 # fit ME logistic at increasing model complexities
-mixLogis_compare <- list()
-mixLogis_compare$Base <- glmer(cbind(totalAccepted, totalQuits) ~ 1 + (1 | SubjID), family = "binomial", data = mixData) # intercept only
-mixLogis_compare$Cost <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + (1 | SubjID), family = "binomial", data = mixData)
-mixLogis_compare$Reward <- glmer(cbind(totalAccepted, totalQuits) ~ Offer + (1 | SubjID), family = "binomial", data = mixData)
-mixLogis_compare$AllMain <- mixLogis_main$Cognitive
-mixLogis_compare$Interaction <- glmer(cbind(totalAccepted, totalQuits) ~ Cost * Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_compare_wth <- list()
+mixLogis_compare_wth$Base <- glmer(cbind(totalAccepted, totalQuits) ~ 1 + (1 | SubjID), family = "binomial", data = mixData) # intercept only
+mixLogis_compare_wth$Cost <- glmer(cbind(totalAccepted, totalQuits) ~ Cost + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_compare_wth$Reward <- glmer(cbind(totalAccepted, totalQuits) ~ Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_compare_wth$AllMain <- mixLogis_main_wth$Cognitive
+mixLogis_compare_wth$Interaction <- glmer(cbind(totalAccepted, totalQuits) ~ Cost * Offer + (1 | SubjID), family = "binomial", data = mixData)
 
 # Model selection 
-abicLogis_compare <- data.frame(Model = names(mixLogis_compare),
-                                AIC = sapply(mixLogis_compare, AIC),
-                                BIC = sapply(mixLogis_compare, BIC)) %>%
+abicLogis_compare <- data.frame(Model = names(mixLogis_compare_wth),
+                                AIC = sapply(mixLogis_compare_wth, AIC),
+                                BIC = sapply(mixLogis_compare_wth, BIC)) %>%
                                   mutate_at(vars(AIC:BIC), round)
 
 
 # plot 
-mixLogis_compare$plot <- abicLogis_compare %>% 
+mixLogis_compare_wth$plot <- abicLogis_compare %>% 
   gather(Comparison, Value, AIC:BIC) %>%
-  mutate(Model = factor(Model, levels = names(mixLogis_compare))) %>%
+  mutate(Model = factor(Model, levels = names(mixLogis_compare_wth))) %>%
   ggplot(aes(Model, Value, fill = Comparison)) +
     geom_point(color = "black", pch = 21, size = 3) +
     theme(legend.position = c(0.8, 0.8),
@@ -1957,10 +1957,10 @@ mixLogis_compare$plot <- abicLogis_compare %>%
       text = element_text(size = 16))
 
 # analysis of deviance
-mixLogis_compare$aod <- anova(mixLogis_compare$Reward, mixLogis_compare$AllMain, mixLogis_compare$Interaction)
+mixLogis_compare_wth$aod <- anova(mixLogis_compare_wth$Reward, mixLogis_compare_wth$AllMain, mixLogis_compare_wth$Interaction)
 
 # effect size
-mixLogis_compare$Rsq <- 1 - (deviance(mixLogis_compare$AllMain)/deviance(mixLogis_compare$Base)) # denominator is the null deviance
+mixLogis_compare_wth$Rsq <- 1 - (deviance(mixLogis_compare_wth$AllMain)/deviance(mixLogis_compare_wth$Base)) # denominator is the null deviance
 ```
 
 ```{r Earnings/prop completed/ME plots (Fig. 7), eval = !figsEnd, fig.width = 8, fig.height = 7, fig.align = "center", fig.cap = "A: Quadratic relationship between trial completions and total earnings. B: proportion of acceptances of each reward per cost condition. C: Matrix of mixed-effects coefficients showing comparisons among costs (while controlling for reward amount). Comparisons between effort and wait trials from different blocks are omitted, as these are not considered in our original predictions. Crosses mark non-significant comparisons. D: AIC and BIC values for models of increasing complexity (a priori = AllMain)."}
@@ -1968,7 +1968,7 @@ mixLogis_compare$Rsq <- 1 - (deviance(mixLogis_compare$AllMain)/deviance(mixLogi
 include_graphics("./Images/FIG8.png")
 ```
 
-  Next, we addressed the hypothesis that passive waiting trials would be less costly than effortful ones. Even though the reward acceptance pattern at 10 s handling was similar to the between-subjects experiment (Figure 7B), differences among cost conditions were less evident. Moreover, these differences contradicted our predictions, as cognitive effort remained the least costly among demands. A mixed effects logistic regression confirmed once again that increases in offer amount made acceptances significantly more likely (global intercept = `r round(fixef(mixLogis_main$Cognitive)["(Intercept)"], digits = 2)`, $\beta$ = `r round(fixef(mixLogis_main$Cognitive)["Offer"], digits = 2)`, SE = `r round(summary(mixLogis_main$Cognitive)[[10]]["Offer", "Std. Error"], digits = 2)`, *p* `r report_p(summary(mixLogis_main$Cognitive)[[10]]["Offer", "Pr(>|z|)"])`), but that the only significant difference was the higher likelihood to accept cognitive offers compared to physical ones (Figure 7C; $\beta$ = `r round(mixSummary_wth$Betas["Physical", "Cognitive"], digits = 2)`, *p* `r report_p(mixSummary_wth$Pvals["Physical", "Cognitive"])`). Model comparisons suggested that even though a model with all main effects explained a large portion of the variance ($R^2$ = `r round(mixLogis_compare$Rsq, digits = 2)`), there were similar AIC and BIC values for any model including reward amount (Figure 7D). An analysis of deviance among the three models showed that adding cost condition to reward amount significantly improved fit (AIC~reward~ = `r filter(abicLogis_compare, Model == "Reward")$AIC`, AIC~a-priori~ = `r filter(abicLogis_compare, Model == "AllMain")$AIC`, $\chi^2$(`r mixLogis_compare$aod[[7]][2]`) = `r round(mixLogis_compare$aod$Chisq[2], digits = 2)`, *p* `r report_p(mixLogis_compare$aod[[8]][2])`). However, probing the interaction between these features significantly improved fits from the main effects model (AIC~Interaction~ = `r filter(abicLogis_compare, Model == "Interaction")$AIC`, $\chi^2$(`r mixLogis_compare$aod[[7]][3]`) = `r round(mixLogis_compare$aod$Chisq[3], digits = 2)`, *p* `r report_p(mixLogis_compare$aod[[8]][3])`). (**discuss with Joe: the interaction flips results over, such that both waits > pysical effort = cognitive effort...as predicted originally? Can't wrap my head around that yet, so this conclusion is pending**). These initial results defied our predictions, suggesting that the availability of alternative demands erases preferences among demands (rather than inverting them).
+  Next, we addressed the hypothesis that passive waiting trials would be less costly than effortful ones. Even though the reward acceptance pattern at 10 s handling was similar to the between-subjects experiment (Figure 7B), differences among cost conditions were less evident. Moreover, these differences contradicted our predictions, as cognitive effort remained the least costly among demands. A mixed effects logistic regression confirmed once again that increases in offer amount made acceptances significantly more likely (global intercept = `r round(fixef(mixLogis_main_wth$Cognitive)["(Intercept)"], digits = 2)`, $\beta$ = `r round(fixef(mixLogis_main_wth$Cognitive)["Offer"], digits = 2)`, SE = `r round(summary(mixLogis_main_wth$Cognitive)[[10]]["Offer", "Std. Error"], digits = 2)`, *p* `r report_p(summary(mixLogis_main_wth$Cognitive)[[10]]["Offer", "Pr(>|z|)"])`), but that the only significant difference was the higher likelihood to accept cognitive offers compared to physical ones (Figure 7C; $\beta$ = `r round(mixSummary_wth$Betas["Physical", "Cognitive"], digits = 2)`, *p* `r report_p(mixSummary_wth$Pvals["Physical", "Cognitive"])`). Model comparisons suggested that even though a model with all main effects explained a large portion of the variance ($R^2$ = `r round(mixLogis_compare_wth$Rsq, digits = 2)`), there were similar AIC and BIC values for any model including reward amount (Figure 7D). An analysis of deviance among the three models showed that adding cost condition to reward amount significantly improved fit (AIC~reward~ = `r filter(abicLogis_compare, Model == "Reward")$AIC`, AIC~a-priori~ = `r filter(abicLogis_compare, Model == "AllMain")$AIC`, $\chi^2$(`r mixLogis_compare_wth$aod[[7]][2]`) = `r round(mixLogis_compare_wth$aod$Chisq[2], digits = 2)`, *p* `r report_p(mixLogis_compare_wth$aod[[8]][2])`). However, probing the interaction between these features significantly improved fits from the main effects model (AIC~Interaction~ = `r filter(abicLogis_compare, Model == "Interaction")$AIC`, $\chi^2$(`r mixLogis_compare_wth$aod[[7]][3]`) = `r round(mixLogis_compare_wth$aod$Chisq[3], digits = 2)`, *p* `r report_p(mixLogis_compare_wth$aod[[8]][3])`). (**discuss with Joe: the interaction flips results over, such that both waits > pysical effort = cognitive effort...as predicted originally? Can't wrap my head around that yet, so this conclusion is pending**). These initial results defied our predictions, suggesting that the availability of alternative demands erases preferences among demands (rather than inverting them).
 
 
 ### **Consistency and stability**
@@ -2413,7 +2413,7 @@ hrprepostPlot_wth <- dataWth %>%
 ``` {r WTH: 16.3.3. mix pre/post separately, echo = FALSE, fig.align="center", fig.width=5, fig.height=4}
 ## compute the same mixed effects logistic for each half
 # mixed logistic for the first half
-mixLogis_pre <- list()
+mixLogis_pre_wth <- list()
 mixData <- dataWth %>%
   filter(Half == "Half_1") %>%
   group_by(SubjID, Cost, Offer) %>%
@@ -2422,17 +2422,17 @@ mixData <- dataWth %>%
             totalQuits = sum(Choice == 0),
             propAccepted = mean(Choice))
 
-mixLogis_pre$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_pre_wth$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-C"))
-mixLogis_pre$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_pre_wth$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-P"))
-mixLogis_pre$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_pre_wth$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
-mixLogis_pre$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_pre_wth$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 
 
 # mixed logistic for the second half
-mixLogis_post <- list()
+mixLogis_post_wth <- list()
 mixData <- dataWth %>%
   filter(Half == "Half_2") %>%
   group_by(SubjID, Cost, Offer) %>%
@@ -2441,29 +2441,29 @@ mixData <- dataWth %>%
             totalQuits = sum(Choice == 0),
             propAccepted = mean(Choice))
 
-mixLogis_post$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_post_wth$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-C"))
-mixLogis_post$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_post_wth$`Wait-C` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-P"))
-mixLogis_post$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_post_wth$`Wait-P` <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Physical"))
-mixLogis_post$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
+mixLogis_post_wth$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 
 ## now produce a summary matrix
 # get the beta and pvalue matrices 
-betasPre <- betaMatrix(mixLogis_pre)
-betasPost <- betaMatrix(mixLogis_post)
+betasPre <- betaMatrix(mixLogis_pre_wth)
+betasPost <- betaMatrix(mixLogis_post_wth)
 
 # and combine them
 betaMat <- matrix(NA, nrow = nrow(betasPre$Betas), ncol = nrow(betasPre$Betas))
 betaMat[lower.tri(betaMat)] <- betasPre$Betas[lower.tri(betasPre$Betas)]
 betaMat[upper.tri(betaMat)] <- betasPost$Betas[upper.tri(betasPost$Betas)]
-dimnames(betaMat) <- list(names(mixLogis_pre), names(mixLogis_pre))
+dimnames(betaMat) <- list(names(mixLogis_pre_wth), names(mixLogis_pre_wth))
 
 pvalMat <- matrix(NA, nrow = nrow(betasPre$Pvals), ncol = nrow(betasPre$Pvals))
 pvalMat[lower.tri(pvalMat)] <- betasPre$Pvals[lower.tri(betasPre$Pvals)]
 pvalMat[upper.tri(pvalMat)] <- betasPost$Pvals[upper.tri(betasPost$Pvals)]
-dimnames(pvalMat) <- list(names(mixLogis_pre), names(mixLogis_pre))
+dimnames(pvalMat) <- list(names(mixLogis_pre_wth), names(mixLogis_pre_wth))
 
 # remove uninteresting comparisons 
 diag(betaMat) <- 0
