@@ -1156,7 +1156,8 @@ propFails <- dataBtw %>%
 # rwd <- c(4, 8, 20)
 # handling <- c(14, 10, 2) + 2 # add 2 to H and T to account for offer and reward disclosure windows
 # travel <- c(2, 6, 14) + 2
-# rwdRates <- sapply(3:1, function(thresh) {(sum(tail(rwd, n = thresh))) / ((handling * thresh) + (travel * 3))})
+# rwdRates <- sapply(3:1, function(thresh) {(sum(tail(rwd, n = thresh))) / ((handling * thresh) + (travel * 3))}) 
+# mean(apply(rwdRates, 1, max))
 # 
 # as_tibble(rwdRates) %>% 
 #   mutate(Handling = handling) %>%
@@ -2985,19 +2986,20 @@ OCs_anova$ES[rbind(c(1,4),c(2,3),c(3,2),c(4,1))] <- NA
   
   The present findings provide theoretical advances as well as practical implementations. Talk clinical and practical. Practical could be motivating people to pursue challenges that produce desirable outcomes, like work, exercise etc.  Much of the literature on the value of effort has suggested that it can be triggered by careful reward schedules. This doesn't always do (Eisenberger, Inzlicht). There is also the idea that training in certain tasks will have generalizing effects, which are not always true (Kable). We highlight an outcome-independent feature that is phenomenologically common (time sensitivity), and potentially easy to implement. 
   
-. 
   
 ### *Points to cover* 
 
 - Regardless, our focus here was not on the amount of effort exherted, but on what makes people pursue the task in spite of its toll.
 
-- Clinical:  Medicated patients in remission are more sensitive to effort than controls (and are not as motivated by rewards?), and this sensitivity is predictive of relapse [@Berwian2020]. Encouraging/increasing activities has been found to be a helpful treatment for depression [@Dimidjian2006]. Since depressed patients also show insensitivity to rewards [@Huys2013], identifying what makes effort appealing in its own right can help breach treatment-resistant cases. Our work suggests that subdividing a task can promote its pursual either by taxing working memory, counting, or simply distracting. Moreover, The concavity of value means that the motivating feeling of task completion would carry more weight as pieces rather than a big net amount (thaler). This should also hold practicality for everyday scenarios, like motivating exercise, work, etc.
+- Clinical: Te motivation to exert effort or wait for delays is a distinguishing factor among mental afflictions like depression and schizophrenia [@Barch2019]. Within the former, medicated patients in remission are more sensitive to effort than controls (and are not as motivated by rewards?), and this sensitivity is predictive of relapse [@Berwian2020]. Encouraging/increasing activities has been found to be a helpful treatment for depression [@Dimidjian2006]. Since depressed patients also show insensitivity to rewards [@Huys2013], identifying what makes effort appealing in its own right can help breach treatment-resistant cases. Our work suggests that subdividing a task can promote its pursual either by taxing working memory, counting, or simply distracting. Moreover, The concavity of value means that the motivating feeling of task completion would carry more weight as pieces rather than a big net amount (thaler). This should also hold practicality for everyday scenarios, like motivating exercise, work, etc.
 
 , and motivational factors affecting effort aversion can be heterogenous between depression and schizophrenia
 
 (https://link.springer.com/chapter/10.1007%2F978-3-030-27473-3_5). Like, the aversion is due to focusing on different elements of the task. Excessive aversion to delay and effort can manifest as impulsivity and apathy, respectively [1,10–12], fluctuations in which are hallmark symptoms of various mental illnesses and substance use disorders [13]. Our findings promote the idea that motivation to exhert effort can be boosted by chopping tasks into smaller digestible chunks that don't make them feel as long. Rather than telling them the final goal, keep them busy (this should be already a thing, I'm sure...). The concavity of value means that the motivating feeling of task completion would carry more weight as pieces rather than a big net amount (thaler). This should also hold practicality for everyday scenarios, like motivating exercise, work, etc.
 
 - do I even want to get into DA?
+
+- It's maybe relevant that waiting is goal oriented (you don't sit around for its own sake), but activities are pursued for their own appeal. *like, waiting is a goal oriented activity, but effort can be the goal itself.* in this sense it makes sense to study delays in terms of their modulation of the value of prospects, but we have unnecessarily adopted this view for ethe study of ffort, thinking of it mostly as a cost. Even if their discounting properties are similar, their resulting behavior can be contrasting (apathy vs impulsivity), and they're impacted differently by mental illness (adhd amygdala paper). Also, it's not just that we would rather to fill in empty periods of waiting, but how.
 
 
 
