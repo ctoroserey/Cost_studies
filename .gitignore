@@ -6,5 +6,7 @@
 Cost_manuscript.docx
 Cost_manuscript.tex
 Cost_manuscript.log
+*.docx
 
+# Added by GK
 .DS_Store
