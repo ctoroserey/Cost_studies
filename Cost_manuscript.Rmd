@@ -2994,12 +2994,14 @@ OCs_anova$ES[rbind(c(1,4),c(2,3),c(3,2),c(4,1))] <- NA
   . Talk clinical and practical. Practical could be motivating people to pursue challenges that produce desirable outcomes, like work, exercise etc.  Much of the literature on the value of effort has suggested that it can be triggered by tailored reward schedules. This doesn't always do (Eisenberger, Inzlicht). There is also the idea that training in certain tasks will have generalizing effects, which are not always true (Kable). We highlight an outcome-independent feature that is phenomenologically common (time sensitivity), and potentially easy to implement. 
 
 
- 
+- we have all felt the need to populate empty time 
 
 
 - It's maybe relevant that waiting is goal oriented (you don't sit around for its own sake), but activities are pursued for their own appeal. *like, waiting is a goal oriented activity, but effort can be the goal itself.* in this sense it makes sense to study delays in terms of their modulation of the value of prospects, but we have unnecessarily adopted this view for ethe study of ffort, thinking of it mostly as a cost. Even if their discounting properties are similar, their resulting behavior can be contrasting (apathy vs impulsivity), and they're impacted differently by mental illness (adhd amygdala paper). Also, it's not just that we would rather to fill in empty periods of waiting, but how.
 
+- it's maybe relevant that waiting is goal oriented (you don't sit around for its own sake), but activities are pursued for their own appeal. like, waiting is a goal oriented activity, but effort can be the goal itself. In this sense it makes sense to study delays in terms of their modulation of the value of prospects, but we have unnecessarily adopted this view for the study of effort, thinking of it mostly as a cost. Even if their discounting properties are similar, their resulting behavior can be contrasting (apathy vs impulsivity), and they're impacted differently by mental illness (adhd amygdala paper).
 
+- Theories enumerated by Eisenberger and Cameron (1996) focus on how people see their behavior to explain why tasks are intrinsically attractive. We, on the other hand, point to task-specific features that promote appeal, which are amenable to configuration in everyday decision contexts. In other words, self-explanatory motivation versus task-specific ones.
 
 
 
