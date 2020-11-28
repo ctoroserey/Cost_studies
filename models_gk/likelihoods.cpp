@@ -32,17 +32,6 @@ NumericVector cost_p_cpp(DataFrame dat,
   
   int n_trials = R_i.size();
   
-  NumericVector gvec(n_trials);
-  if (alpha > 0) {
-    gvec[0] = gamma;
-    for (int i=0; i<n_trials-1; i++) {
-      double tau = pow(H_i[i],s[i]) * C_i[i] + T_i[i];
-      gvec[i+1] = (1 - pow(1 - alpha, tau)) * ((R_i[i] * C_i[i]) / tau) + (pow(1 - alpha, tau) * gvec[i]);
-    }
-  } else {
-    gvec.fill(gamma);
-  }
-  
   IntegerVector trial_vec = seq_len(n_trials);
   NumericVector w_t = pow((n_trials - as<NumericVector>(trial_vec)) / n_trials, w_decay);
 
@@ -58,6 +47,17 @@ NumericVector cost_p_cpp(DataFrame dat,
   }
   if(!NumericVector::is_na(S)) {
     s = s * w_t + S * (1 - w_t);
+  }
+  
+  NumericVector gvec(n_trials);
+  if (alpha > 0) {
+    gvec[0] = gamma;
+    for (int i=0; i<n_trials-1; i++) {
+      double tau = pow(H_i[i],s[i]) * C_i[i] + T_i[i];
+      gvec[i+1] = (1 - pow(1 - alpha, tau)) * ((R_i[i] * C_i[i]) / tau) + pow(1 - alpha, tau) * gvec[i];
+    }
+  } else {
+    gvec.fill(gamma);
   }
 
   NumericVector p_accept = 1 / (1 + exp(-1/beta * (R_i - (gvec + cost) * vecpow(H_i, s))));

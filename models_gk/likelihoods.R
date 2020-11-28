@@ -1,6 +1,6 @@
 ### define likelihood functions
 
-# Rcpp::sourceCpp(file.path(dirname(sys.frame(1)$ofile), "likelihoods.cpp"))
+Rcpp::sourceCpp(file.path(dirname(sys.frame(1)$ofile), "likelihoods.cpp"))
 
 cost_p <- function(dat,
                    cost = 0,
@@ -18,16 +18,6 @@ cost_p <- function(dat,
   H_i = dat[, HandleTime]
   C_i = dat[, Choice]
   T_i = dat[, TravelTime]
-  if(is.na(gamma)) {
-    gamma = mean(dat[, RR])
-  }
-  
-  if (alpha > 0) {
-    for (i in 1:((length(R_i)) - 1)) {
-      tau <- H_i[i]^s[i] * C_i[i] + T_i[i]
-      gamma[i + 1] <- (1 - (1 - alpha)^tau) * ((R_i[i] * C_i[i]) / tau) + ((1 - alpha)^tau * gamma[i])
-    }
-  }
   
   w_t = ((n_trials - 1:n_trials) / n_trials) ^ w_decay
   
@@ -38,6 +28,19 @@ cost_p <- function(dat,
   
   if(!is.na(S)) {
     s = s * w_t + S * (1 - w_t)
+  }
+  
+  if(is.na(gamma)) {
+    gamma = mean(dat[, RR])
+  }
+  
+  if (alpha > 0) {
+    if (length(s) == 1) s = rep(s, length(R_i))
+    for (i in 1:((length(R_i)) - 1)) {
+      tau <- H_i[i]^s[i] * C_i[i] + T_i[i]
+      gamma[i + 1] <- (1 - (1 - alpha)^tau) * ((R_i[i] * C_i[i]) / tau) + (1 - alpha)^tau * gamma[i]
+      
+    }
   }
   
   p_accept <- 1 / (1 + exp(-1/beta * (R_i - (gamma + cost) * H_i^s)))
@@ -92,7 +95,7 @@ cost_p_old <- function(dat,
 
 
 log_transform_pars = function(par) {
-  par[!grepl("cost", names(par)) & names(par) != "C"] <- exp(par[!grepl("cost", names(par)) & names(par) != "B"])
+  par[!grepl("cost", names(par)) & names(par) != "C"] <- exp(par[!grepl("cost", names(par)) & names(par) != "C"])
   par
 }
 
@@ -140,7 +143,7 @@ cost_lik <- function(par, dat, par_names = NULL, fixed_pars=c(), log_par = F, mi
   par_to_remove = c(cost_par_index, s_par_index)
   if (length(par_to_remove) > 0) par = par[-par_to_remove]
   
-  liks <- do.call(cost_p, c(list(dat=dat), as.list(par), pass_through,return_pacc=return_pacc))
+  liks <- do.call(cost_p_cpp, c(list(dat=dat), as.list(par), pass_through,return_pacc=return_pacc))
   
   if (return_pacc){
     return(liks)
@@ -157,24 +160,29 @@ get_all_predictions = function(all_data, fits, par_names, within=F, return_mean=
   
   for (subj in unique(all_data[, Subject])) {
     
-    if(within) {
-      
-      all_data[Subject==subj, predict_accept := cost_lik(as.numeric.dt(fits[Subject==subj, par_names, with=F]),
-                                                         dat=.SD,
-                                                         return_pacc=T,
-                                                         ...)]
-    } else {
-      
-      for (cond in unique(dat_btw[, cond])) {
-        
-        all_data[Subject==subj & cond ==cond, predict_accept := cost_lik(as.numeric.dt(fits[Subject==subj & cond==cond, par_names, with=F]),
-                                                                         dat=.SD,
-                                                                         return_pacc=T,
-                                                                         ...)]
-        
-        
-      }
-    }
+    all_data[Subject==subj, predict_accept := cost_lik(as.numeric.dt(fits[Subject==subj, par_names, with=F]),
+                                                       dat=.SD,
+                                                       return_pacc=T,
+                                                       ...)]
+    
+    # if(within) {
+    # 
+    #   all_data[Subject==subj, predict_accept := cost_lik(as.numeric.dt(fits[Subject==subj, par_names, with=F]),
+    #                                                      dat=.SD,
+    #                                                      return_pacc=T,
+    #                                                      ...)]
+    # } else {
+    # 
+    #   for (cond in unique(dat_btw[, cond])) {
+    # 
+    #     all_data[Subject==subj & cond == cond, predict_accept := cost_lik(as.numeric.dt(fits[Subject==subj & cond==cond, par_names, with=F]),
+    #                                                                      dat=.SD,
+    #                                                                      return_pacc=T,
+    #                                                                      ...)]
+    # 
+    # 
+    #   }
+    # }
   }
   
   if (return_mean) {
@@ -194,7 +202,7 @@ get_all_predictions = function(all_data, fits, par_names, within=F, return_mean=
 get_exp_pars = function(fits, par_names) {
   fits_exp = copy(fits)
   for(p in par_names){
-    if (!grepl("gamma", p) & p != "big_g"){
+    if (!grepl("cost", p) & p != "C"){
       fits_exp[[p]] = exp(fits[[p]])
     }
   }
@@ -204,8 +212,10 @@ get_exp_pars = function(fits, par_names) {
 
 plot_btw = function(plot_data, title="") {
   cols = c("#78AB05","#D9541A","deepskyblue4", "darkgoldenrod2")
+  pdata = copy(plot_data)
+  pdata[, cond := factor(cond, levels=c("wait", "cogTask", "phys", "pheasy"), labels=c("Wait", "Cognitive", "Physical", "Physical-Easy"))]
   
-  pl = ggplot(plot_data, aes(x=Offer, y=Choice, color=cond, fill=cond)) +
+  pl = ggplot(pdata, aes(x=Offer, y=Choice, color=cond, fill=cond)) +
     facet_wrap(~Handling) +
     stat_summary(fun=mean, geom="point") +
     stat_summary(fun.data=mean_se, geom="errorbar", width=2)
@@ -234,7 +244,7 @@ plot_wth = function(plot_data, title="") {
   cols = c("#D9541A", "#78AB05", "dodgerblue4", "deepskyblue3")
   
   pdat = copy(plot_data)
-  pdat[, cond_block := factor(interaction(cond, BlockType), levels=c("cogTask.0", "phys.1", "wait.0", "phys.1"), labels=c("Cognitive", "Physical", "Wait-C", "Wait-P"))]
+  pdat[, cond_block := factor(interaction(cond, BlockType), levels=c("cogTask.0", "phys.1", "wait.0", "wait.1"), labels=c("Cognitive", "Physical", "Wait-C", "Wait-P"))]
 
   pl = ggplot(pdat, aes(x=Offer, y=Choice, color=cond_block, fill=cond_block)) +
     facet_grid(first~half) +
@@ -260,7 +270,7 @@ plot_wth = function(plot_data, title="") {
 }
 
 
-plot_params = function(fits, par_names, exp_par=F, within=F) {
+plot_params = function(fits, par_names, exp_par=F, within=F, title="") {
   
   if(exp_par) {
     fits = get_exp_pars(fits, par_names)
@@ -269,15 +279,20 @@ plot_params = function(fits, par_names, exp_par=F, within=F) {
   mfits = melt(fits, measure.vars=par_names, variable.name="par", value.name="val")
   
   if (within) {
-    ggplot(mfits, aes(x=par, y=val)) +
+    pl = ggplot(mfits, aes(x=par, y=val)) +
+      facet_wrap(~par, scales="free") +
       geom_violin() +
       xlab(NULL) +
-      theme_abw()
+      theme_abw() +
+      theme(axis.text.x = element_blank(),
+            axis.ticks.x = element_blank())
   } else {
-    ggplot(mfits, aes(x=cond, y=val)) +
+    pl = ggplot(mfits, aes(x=cond, y=val)) +
       facet_wrap(~par, scales="free") +
       geom_violin() +
       theme_abw()
   }
+  
+  pl + ggtitle(title) + theme(plot.title = element_text(hjust=0.5))
   
 }

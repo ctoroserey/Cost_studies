@@ -5,6 +5,8 @@
 # set wd
 setwd(dirname(dirname(rstudioapi::getActiveDocumentContext()$path)))
 
+load("models_gk/results/btw.Rdata")
+
 library(data.table)
 library(foreach)
 library(rextras)
@@ -14,131 +16,121 @@ library(GaussExMax)
 
 source('models_gk/load_data.R')
 source('models_gk/likelihoods.R')
+Rcpp::sourceCpp('models_gk/likelihoods.cpp')
+
 
 #########################
 ### Load Data
 #########################
 
 c(dat_btw, dat_wth) %<-% load_data_full()
-fit_cols = c("sub", "cond", "Offer", "Choice", "HandleTime", "TravelTime", "condCode")
 dat_btw[, Subject := sub]
 
 #########################
-### plot between subjects behavior
+### plot within subjects behavior
 #########################
 
 mean_sub_btw = dat_btw[, .(Choice = mean(Choice)), .(sub, cond, Handling, Offer)]
 plot_btw(mean_sub_btw)
 
 #########################
-### Fit super base model -- optimal values + decision noise
+### Define Models
 #########################
 
-par_names_base = c("beta")
-mus_base = c("beta" = 0.1)
-sigma_base = c(1)
+models = list()
 
-system.time(fits_btw_base <- dat_btw[, em(.SD,
-                                          log(mus_base),
-                                          sigma_base,
-                                          cost_lik,
-                                          lower = -100,
-                                          upper = 100,
-                                          package = "optim",
-                                          method = "Brent",
-                                          bic=TRUE,
-                                          ndata=.SD[, .N],
-                                          obj_args = list(
-                                            par_names=par_names_base,
-                                            log_par=T
-                                          ),
-                                          verbose = F,
-                                          return_ind_df=T),
-                                     .(cond)])
+models[["Base"]] = list(
+  par_names = "beta",
+  mus = c(beta = 1),
+  sigma = 10,
+  options = list(package="optim",
+                 method="Brent",
+                 lower=-100,
+                 upper=100)
+)
 
-fits_btw_base_predict = get_all_predictions(dat_btw, fits_btw_base, par_names_base, log_par=T, return_mean=T)
-plot_btw(fits_btw_base_predict, title="Base Model (MVT + Noise)")
-plot_params(fits_btw_base, par_names_base, exp_par=T)
+models[["Biased OC"]] = list(
+  par_names = c("cost", "beta"),
+  mus = c(cost=1, beta=1),
+  sigma = c(10, 10),
+  options = list(method="nlminb")
+)
 
+models[["Time Sensitivity"]] = list(
+  par_names = c("s", "beta"),
+  mus = c(s=1,  beta=1),
+  sigma = c(10, 10),
+  options = list(method="nlminb")
+)
 
-#########################
-### Fit base opportunity cost model
-#########################
+models[["Adaptive OC + Biased OC"]] = list(
+  par_names = c("gamma", "alpha", "cost", "beta"),
+  mus = c(gamma=0.55, alpha=.01, cost=1, beta=1),
+  sigma = c(10, 10, 10, 10),
+  options = list(method="nlminb")
+)
 
-par_names_oc = c("gamma", "beta")
-mus_oc = c("gamma" = 1, "beta" = .1)
-sigma_oc = c(1, 1)
-
-system.time(fits_btw_oc <- dat_btw[, em(.SD,
-                                        log(mus_oc),
-                                        sigma_oc,
-                                        cost_lik,
-                                        bic=TRUE,
-                                        ndata=.SD[, .N],
-                                        obj_args = list(
-                                          par_names=par_names_oc,
-                                          log_par=T
-                                        ),
-                                        perturb_start=0.1,
-                                        verbose=T,
-                                        parallel=T,
-                                        return_ind_df=T),
-                                   .(cond)])
-
-fits_btw_oc_predict = get_all_predictions(dat_btw, fits_btw_oc, par_names_oc, log_par=T, return_mean=T)
-plot_btw(fits_btw_oc_predict, title="Opportunity Cost")
-plot_params(fits_btw_oc, par_names_oc, exp_par=T)
-
+models[["Adaptive OC + Time Sensitivity"]] = list(
+  par_names = c("gamma", "alpha", "s", "beta"),
+  mus = c(gamma=0.55, alpha=.01, s=1, beta=1),
+  sigma = c(10, 10, 10, 10),
+  options = list(method="nlminb")
+)
 
 #########################
-### Fit time sensitivity model
+### Fit Models
 #########################
 
-par_names_ts = c("s", "beta")
-mus_ts = c("s" = 1, "beta" = .1)
-sigma_ts = c(1, 1)
+fits_btw = foreach(i=1:length(models)) %do% {
+  
+  cat("model =", names(models)[i], "\n\n")
+  
+  m = models[[i]]
+  
+  this_em <- do.call(em, c(list(dat=dat_btw,
+                                mus=log(m$mus),
+                                sigma=m$sigma,
+                                lik=cost_lik,
+                                bic=TRUE,
+                                ndata=dat_btw[, .N],
+                                obj_args=list(
+                                  par_names=m$par_names,
+                                  log_par=T
+                                ),
+                                perturb_start=0.1,
+                                emtol=.001,
+                                parallel=T,
+                                verbose=T),
+                           m$options)
+                     )
+  
+  this_em
+}
 
-system.time(fits_btw_ts <- dat_btw[, em(.SD,
-                                        log(mus_ts),
-                                        sigma_ts,
-                                        cost_lik,
-                                        bic=TRUE,
-                                        ndata=.SD[, .N],
-                                        obj_args = list(
-                                          par_names=par_names_ts,
-                                          log_par=T
-                                        ),
-                                        perturb_start=0.1,
-                                        verbose=T,
-                                        parallel=T,
-                                        return_ind_df=T),
-                                   .(cond)])
-
-fits_btw_ts_predict = get_all_predictions(dat_btw, fits_btw_ts, par_names_ts, log_par=T, return_mean=T)
-plot_btw(fits_btw_ts_predict, title="Time Sensitivity")
-plot_params(fits_btw_ts, par_names_ts, exp_par=T)
+names(fits_btw) = names(models)
 
 
 #########################
 ### Compare models
 #########################
 
-fits_btw_base[, model := "base"]
-fits_btw_oc[, model:= "oc"]
-fits_btw_ts[, model := "ts"]
-fits_all = rbind(fits_btw_base, fits_btw_oc, fits_btw_ts, fill=T)
-fits_bic = fits_all[, .(bic = bic[1]), .(model, cond)]
+fits_bic = melt(as.data.table(lapply(fits_btw, function(x) x$bic)), variable.name="model", value.name="bic")
 
 ggplot(fits_bic, aes(x=model, y=bic, group=0)) +
-  facet_wrap(~cond) +
   geom_point() +
   geom_line() +
-  theme_abw()
+  theme_abw(x_angle=45)
 
-ggplot(fits_bic, aes(x=model, y=bic, group=0)) +
-  stat_summary(fun=sum, geom="point") +
-  stat_summary(fun=sum, geom="line") +
-  theme_abw()
+
+#########################
+### Plot Model Predictions
+#########################
+
+model_to_plot = "Adaptive OC + Biased OC"
+
+params_dt = setDT(get_ind_df(fits_btw[[model_to_plot]]))
+predictions = get_all_predictions(dat_btw, params_dt, par_names=models[[model_to_plot]]$par_names, return_mean=T, log_par=T)
+plot_btw(predictions)
 
 #########################
 ### Save workspace
