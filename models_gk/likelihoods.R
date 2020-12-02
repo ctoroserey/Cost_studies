@@ -160,29 +160,29 @@ get_all_predictions = function(all_data, fits, par_names, within=F, return_mean=
   
   for (subj in unique(all_data[, Subject])) {
     
-    all_data[Subject==subj, predict_accept := cost_lik(as.numeric.dt(fits[Subject==subj, par_names, with=F]),
-                                                       dat=.SD,
-                                                       return_pacc=T,
-                                                       ...)]
+    # all_data[Subject==subj, predict_accept := cost_lik(as.numeric.dt(fits[Subject==subj, par_names, with=F]),
+    #                                                    dat=.SD,
+    #                                                    return_pacc=T,
+    #                                                    ...)]
     
-    # if(within) {
-    # 
-    #   all_data[Subject==subj, predict_accept := cost_lik(as.numeric.dt(fits[Subject==subj, par_names, with=F]),
-    #                                                      dat=.SD,
-    #                                                      return_pacc=T,
-    #                                                      ...)]
-    # } else {
-    # 
-    #   for (cond in unique(dat_btw[, cond])) {
-    # 
-    #     all_data[Subject==subj & cond == cond, predict_accept := cost_lik(as.numeric.dt(fits[Subject==subj & cond==cond, par_names, with=F]),
-    #                                                                      dat=.SD,
-    #                                                                      return_pacc=T,
-    #                                                                      ...)]
-    # 
-    # 
-    #   }
-    # }
+    if(within) {
+
+      all_data[Subject==subj, predict_accept := cost_lik(as.numeric.dt(fits[Subject==subj, par_names, with=F]),
+                                                         dat=.SD,
+                                                         return_pacc=T,
+                                                         ...)]
+    } else {
+
+      for (cond in unique(dat_btw[, cond])) {
+
+        all_data[Subject==subj & cond == cond, predict_accept := cost_lik(as.numeric.dt(fits[Subject==subj & cond==cond, par_names, with=F]),
+                                                                         dat=.SD,
+                                                                         return_pacc=T,
+                                                                         ...)]
+
+
+      }
+    }
   }
   
   if (return_mean) {
