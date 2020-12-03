@@ -797,12 +797,35 @@ $$\begin{aligned}
 Model_{adaptive} = R_i - \gamma_i H_i
 \end{aligned}$$
   
-  A third model considered the possibility that each type of demand biased the estimate of $\gamma$. Such bias would be stable if a single demand was experienced, but recalibrated into a global estimate as decision makers faced different types of demands. This dynamic could underlie the observed convergance of acceptances across demands. At each decision point, the bias produced by each demand ($c_{demand}$) was weighted against a global bias estimate $C$
+  A third model considered the possibility that each type of demand additively biased the estimate of $\gamma$. Such bias would be stable if a single demand was experienced, but recalibrated into a global estimate as decision makers faced different types of demands. The overall model took the following form
   
 $$\begin{aligned}
-mC_i = c_{demand} w_i + C (1 - w_i)
+Model_{biased} = R_i - (\gamma + mC_i) H_i
 \end{aligned}$$
   
+  where $\gamma$ was the mean total earning rate for the whole group (**ADD VALS**). At each decision point, $mC$ was the bias produced by each demand $c_{demand}$ weighted against a global bias estimate $C$
+  
+$$\begin{aligned}
+mC_i = C w_i + c_{demand} (1 - w_i)
+\end{aligned}$$
+  
+  with $w_i$ controlling how early participants started integrating the converging bias $C$ into their decisions. The value of this weight was given by
+  
+$$\begin{aligned}
+w_i = \left (\frac{i}{max(i)} \right ) ^{\alpha_w}
+\end{aligned}$$
+
+  where the section in parentheses was the proportion of the experiment completed so far (note that the organization of the experimental session was fully disclosed), with high values of the free parmeter $\alpha_w$ denoting a late integration of the global converging bias. 
+  
+  Since participants in the between-subjects experiment experienced a single type of demand, the values of $c_{demand}$ and $C$ where the same and $\alpha_w$ did not play a role. This resulted in just fitting parameters $c_{demand}$ and $\beta$. For the within-subjects group, we assumed that the resulting $c_{demand}$ values from the first experiment reflected the actual bias induced by each demand. We therefore fixed each value of $c_{demand}$ (i.e. $c_{cognitive}$, $c_{wait}$, and $c_{physical}$) to the mean of the between-subjects fits from each demand group, and fit the global bias $C$, the convergence rate $\alpha_w$, and temprature $\beta$. This dynamic allowed for the observed merging of acceptances across demands in the within-subjects experiment, while respecting the stability in the between-subjects study.
+
+
+
+
+
+
+
+#####
   
   We therefore added a time sensitivity parameter $S$ to the model, with a separate value associated with each type of demand. The values of $S_{demand}$ could then be recalibrated as participants experienced them, averaged according to the following formula [adapted from @Sutton2018]
 
