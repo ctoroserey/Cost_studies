@@ -825,7 +825,7 @@ include_graphics("./Images/FIG2.png")
   Model_{adaptive + biased} = R_i - (\gamma_i + mC_i) H_i
 \end{align}
  
-  *(LATER) We then used a two-sided one-sample t-tests to compare each group's gammas to the average optimal earning rate (0.61, see Operationalization of Cost), allowing us to determine whether any demand boosted an offer's value. Finally, we compared gammas with an ANOVA (with condition as a factor), followed by post-hoc permutations (5000 iterations) comparing mean gammas per group.* 
+  After fitting the parameters, we performed two-sided, one-sample t-tests to compare the biased opportunity costs from each between-subjects demand group to the mean optimal gamma (0.61, see Operationalization of Cost). This allowed us to determine whether any demand boosted an offer's value. Finally, we compared parameters with ANOVAs and post-hoc permutations between each group pairing (5000 iterations).
 
 
 ## Results
