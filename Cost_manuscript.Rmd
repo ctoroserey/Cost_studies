@@ -763,115 +763,70 @@ include_graphics("./Images/FIG2.png")
   
   We performed model comparisons to identify qualities that explained findings from both experiments. Based on the observed choice behavior, an adequate model had to meet seven criteria: 1) show deviations from optimality that were not simply due to overharvesting; 2) keep track of recent offer history; 3) experience a slight reduction of acceptances in effortful conditions in the between-subjects experiment; 4) persistently display higher acceptances for cognitive effort when faced with single behavioral costs; 5) initially match this preference for cognitive effort trials when foraging for demands and rewards; 6) display a disappearance of this preference as acceptances decreased to a common rate across costs; and 7) preference ranks should be robust to block order effects, but the magnitude of the differences should be lower for those who started with the physical effort block. These conditions discarded a number of popular explanatory candidates that were not modeled, such as learned industriousness, boredom, fatigue, sunk cost effects, or asymmetric learning of environmental richness (see Discussion). 
   
-  **GARY. All free paremeters of the softmax function (the temperature parameter $\beta$) were estimated independently for each participant, using a maximum likelihood (MLE) approach through the NLOPTR package. The gamma optimization search space was bound by extreme choice values. For example, someone with an extremely high OC would not accept even the most beneficial offers, and would reject a 20 cent offer when the handling time was 2 seconds (or 20/2). Conversely, a participant experiencing low opportunity costs would accept the non-beneficial offer of 4 cents for a 14 second delay (or 4/14). We cross-validated each subject’s OC value using the pre-midpoint data for estimation, and post-midpoint choices for testing. The estimates from the training sample were used to predict acceptances in the testing sample, and the mean percent correctly predicted was reported for each group.**
+  **GARY EXPLAINS FITTING PROCEDURE**
   
-  We started by fitting a base model derived from the normative predictions of the Marginal Value Theorem [MVT; @Charnov1976], which states that a delayed reward should be accepted if its earning rate surpasses the opportunity cost (OC) of time incurred in obtaining it. This decision rule can be expressed as
+  We began by fitting a base model derived from the normative predictions of the Marginal Value Theorem [MVT; @Charnov1976], which states that a delayed reward should be accepted if its earning rate surpasses the opportunity cost (OC) of time incurred in obtaining it (see Operationalization of Cost for details). This decision rule can be expressed as
 
-$$\begin{aligned}
-Model_{base} = R_i - \gamma H_i
-\end{aligned}$$
+\begin{align}
+  Model_{base} = R_i - \gamma H_i
+\end{align}
 
   such that a trial’s reward $R_i$ should be accepted if it is larger than the average amount one could earn per second in the environment $\gamma$ (gamma; the OC) during the handling time $H_i$, with high gammas promoting selectivity. We fit this and all subsequent models using a softmax function to predict the probability of accepting a given trial
 
-$$\begin{aligned}
-P(accept)_i = \dfrac {1} {1 + e^{-(1/\beta)(Model_{base})}}
-\end{aligned}$$
+\begin{align}
+  P(accept)_i = \dfrac {1} {1 + e^{-(1/\beta)(Model_{base})}}
+\end{align}
 
-  gamma in this base model was computed as an individual's empirical earning rate by the time of each offer, with the free temperature parameter $\beta$ indexing decision noise. However, this base formulation lacked the flexibility needed to capture the dynamics observed in the within-subjects experiment. We therefore tested a second model which allowed $\gamma$ to evolve over time, adapting a learning rule from @Constantino2015
+  gamma in this base model was computed as an individual's empirical earning rate by the time of each offer, with the free temperature parameter $\beta$ indexing decision noise. However, this base formulation lacked the flexibility needed to capture the dynamics observed in the within-subjects experiment. We therefore tested a second model that allowed $\gamma$ to evolve over time, adapting a learning rule from @Constantino2015
 
 
-$$\begin{aligned}
-\gamma_{i+1} = (1 - (1 - \alpha) ^ {\tau_i}) \dfrac{R_{i} A_{i}}{\tau_i} +  (1 - \alpha) ^ {\tau_i} \gamma_{i}
-\end{aligned}$$
+\begin{align}
+  \gamma_{i+1} = (1 - (1 - \alpha) ^ {\tau_i}) \dfrac{R_{i} A_{i}}{\tau_i} +  (1 - \alpha) ^ {\tau_i} \gamma_{i}
+\end{align}
 
 
   where $A_i$ is an acceptance indicator (0 or 1), and $\tau_i$ the amount of time spent in the trial. Higher values of the learning rate $\alpha$ (ranging from 0 to 1) prioritized updating from the current trial’s earning rate (left side of the equation), weighed by the amount of time experienced in the past trial. This time was given by 
 
-$$\begin{aligned}
-\tau_{i} = H_{i}  A_{i} + T_{i}
-\end{aligned}$$
+\begin{align}
+  \tau_{i} = H_{i}  A_{i} + T_{i}
+\end{align}
 
   such that the handling time was counted only for accepted trials. For this adaptive model, we fit the learning rate $\alpha$ and the initial value of $\gamma$ in addition to the temperature. These modifications allowed for the tracking of recent history that was part of our criteria, while maintaining the general structure of the base model
 
-$$\begin{aligned}
-Model_{adaptive} = R_i - \gamma_i H_i
-\end{aligned}$$
+\begin{align}
+  Model_{adaptive} = R_i - \gamma_i H_i
+\end{align}
   
   A third model considered the possibility that each type of demand additively biased the estimate of $\gamma$. Such bias would be stable if a single demand was experienced, but recalibrated into a global estimate as decision makers faced different types of demands. The overall model took the following form
   
-$$\begin{aligned}
-Model_{biased} = R_i - (\gamma + mC_i) H_i
-\end{aligned}$$
+\begin{align}
+  Model_{biased} = R_i - (\gamma + mC_i) H_i
+\end{align}
   
-  where $\gamma$ was the mean total earning rate for the whole group (**ADD VALS**). At each decision point, $mC$ was the bias produced by each demand $c_{demand}$ weighted against a global bias estimate $C$
+  where $\gamma$ was the mean total earning rate for the whole group (0.55). At each decision point, $mC$ was the bias produced by each demand $c_{demand}$ weighted against a global bias estimate $C$
   
-$$\begin{aligned}
-mC_i = C w_i + c_{demand} (1 - w_i)
-\end{aligned}$$
+\begin{align}
+  mC_i = C w_i + c_{demand} (1 - w_i)
+\end{align}
   
   with $w_i$ controlling how early participants started integrating the converging bias $C$ into their decisions. The value of this weight was given by
   
-$$\begin{aligned}
-w_i = \left (\frac{i}{max(i)} \right ) ^{\alpha_w}
-\end{aligned}$$
+\begin{align}
+  w_i = \left (\frac{i}{max(i)} \right ) ^{\alpha_w}
+\end{align}
 
   where the section in parentheses was the proportion of the experiment completed so far (note that the organization of the experimental session was fully disclosed), with high values of the free parmeter $\alpha_w$ denoting a late integration of the global converging bias. 
   
-  Since participants in the between-subjects experiment experienced a single type of demand, the values of $c_{demand}$ and $C$ where the same and $\alpha_w$ did not play a role. This resulted in just fitting parameters $c_{demand}$ and $\beta$. For the within-subjects group, we assumed that the resulting $c_{demand}$ values from the first experiment reflected the actual bias induced by each demand. We therefore fixed each value of $c_{demand}$ (i.e. $c_{cognitive}$, $c_{wait}$, and $c_{physical}$) to the mean of the between-subjects fits from each demand group, and fit the global bias $C$, the convergence rate $\alpha_w$, and temprature $\beta$. This dynamic allowed for the observed merging of acceptances across demands in the within-subjects experiment, while respecting the stability in the between-subjects study.
+  Since participants in the between-subjects experiment experienced a single type of demand, the values of $c_{demand}$ and $C$ where the same and $\alpha_w$ did not play a role. This resulted in just fitting parameters $c_{demand}$ and $\beta$ for that dataset. For the within-subjects group, we assumed that the resulting $c_{demand}$ values from the first experiment reflected the actual bias induced by each demand. We therefore fixed each value of $c_{demand}$ (i.e. $c_{cognitive}$, $c_{wait}$, and $c_{physical}$) to the mean of the fitted *a posteriori* distribution from each between-subjects demand group, and fit the global bias $C$, the convergence rate $\alpha_w$, and temprature $\beta$. This dynamic allowed for the observed merging of acceptances across demands in the within-subjects experiment, while respecting the stability in the between-subjects study.
 
-
-
-
-
-
-
-#####
+  A final model combined the main features from $model_{adaptive}$ and $model_{biased}$, such that $\gamma$ was estimated on each trial per Eq. 3, with demands imposing distinct and potentially converging biases as described in model 3. The form of this fourth model was
   
-  We therefore added a time sensitivity parameter $S$ to the model, with a separate value associated with each type of demand. The values of $S_{demand}$ could then be recalibrated as participants experienced them, averaged according to the following formula [adapted from @Sutton2018]
-
-  
-$$\begin{aligned}
-s_{i + 1} = s_i + A_i \left (\frac{1}{i}[S_{demand} - s_i] \right)
-\end{aligned}$$
-
-
-  in which the global value of $s$ was updated every time an individual completed a trial. We fitted the initial value of $S_{demand}$, which was bounded between 0 and 2 (values lower and greater than 1 indicating slower and faster perceived time, respectively). Even though the value of $s$ was updated equally across individuals, we theorized that each participant would incorporate $s$ into their decisions at different rates. This intuition was given by a weighted sum
-  
-  
-$$\begin{aligned}
-mS_i = s_i w_i + S_{demand} (1 - w_i)
-\end{aligned}$$
-
-
-  such that in every trial, the recalibrated length estimate of the handling time ($s$) was balanced against the actual experience of subjective time produced by the present demand ($S_{demand}$). The weight $w_i$ controlled how early participants started integrating the recalibrated time $s$ into their decisions, given by
-  
-  
-$$\begin{aligned}
-w_i = \left (\frac{i}{max(i)} \right ) ^{\alpha_w}
-\end{aligned}$$
- 
- 
-  in which high values of the free parmeter $\alpha_w$ denoted that decision makers incorporated the recalibrated subjective time early on in the experiment. Similar to @Mckerchar2009, the values of $mS_i$ exponentially modulated every instance of the handling time ($H_i$) from the adaptive model. In this way, subjective time perception produced by different demands could influence choice in two ways: retrospectively affecting the value of $\gamma$ through the perceived length of recent trials
-
-
-$$\begin{aligned}
-\tau_{i} = H_{i} ^ {mS_{i}}  A_{i} + T_{i}
-\end{aligned}$$
-
-and prospectively impacting the expected trial length at the time of a decision
-
-$$\begin{aligned}
-Model_{time} = R_i - \gamma_i H_i^{mS_i}
-\end{aligned}$$
-
-  This subjective time model was fitted differently across experiments, such that the fits from experiment 1 informed those of experiment 2. Since participants in the between-subjects experienced a single demand, the value of $s$ was reduced to the initial fit of $S_{demand}$, without any need to fit $\alpha_w$ (which was set to 1). For the within-subjects experiment, we assumed that the fitted values of $S_{demand}$ approximated the true time sensitivity produced by each demand. Therefore, for each individual in the within-subjects experiment, we set each value of $S_{demand}$ to be the median fitted value from the first experiment, and fitted $\alpha_w$ instead. In this way model complexities was fixed across experiments, even though different aspects of the model were emphasized.
-  
-  In summary, the free parameters from the subjective time model captured three features. First, how fast or slow a given demand felt ($S_{demand}$). Second, how early this time sensitivity was recalibrated and integrated into decisions based on the experience of intermixed demands ($\alpha_w$). Finally, whether this time sensitivity was used retrospectively (i.e. high $\alpha$), or prospectively (i.e. low $\alpha$). Note that every model could be reduced to the base formulation for values of $\alpha$ = 0, $\alpha_w$ = 1, and $S_{demand}$ = 1.
+\begin{align}
+  Model_{adaptive + biased} = R_i - (\gamma_i + mC_i) H_i
+\end{align}
  
   *(LATER) We then used a two-sided one-sample t-tests to compare each group's gammas to the average optimal earning rate (0.61, see Operationalization of Cost), allowing us to determine whether any demand boosted an offer's value. Finally, we compared gammas with an ANOVA (with condition as a factor), followed by post-hoc permutations (5000 iterations) comparing mean gammas per group.* 
-  
 
-(noise in the estimation of environmental richness [@Cash-Padgett2020])
 
 ## Results
 
