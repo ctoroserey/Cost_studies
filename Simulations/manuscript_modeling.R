@@ -1043,7 +1043,8 @@ colsWth <- c("#D9541A", "#78AB05", "dodgerblue4", "deepskyblue3")#"grey30", "gre
 lthick = 2 # line thickness for plots
 
 ######## LOAD DATA
-setwd("../Cost2/data")
+dir = rstudioapi::getActiveDocumentContext()$path
+setwd(file.path(dirname(dirname(dir)), "Cost2", "data"))
 files <- dir(pattern = '_log.csv')
 
 # load data
@@ -1084,7 +1085,7 @@ nSubjs_btw <- length(subjList_btw)
 
 # First looks at the new data
 # The RT is upper-bounded because a glitch in the code made one 10s last 14s
-setwd('../../Cost3/data/')
+setwd(file.path(dirname(dirname(dir)), "Cost3", "data"))
 files <- dir(pattern = 'main_log.csv')
 
 # load the data and remove extreme subjects
@@ -1133,7 +1134,7 @@ subjList_wth <- unique(dataWth$SubjID)
 nSubjs_wth <- length(subjList_wth)
 
 ### MODELS
-setwd('../..')
+setwd(dirname(dirname(dir)))
 
 # what makes this run unique?
 qualifier <- "publishable_allModels"
@@ -1601,9 +1602,7 @@ abline(0, 1)
 
 
 
-
-
-save.image(paste("/restricted/projectnb/cd-lab/Claudio/Cost_studies/data_", Sys.Date(), "_", qualifier, ".RData", sep = ""))
+save.image(paste(dirname(dir), "/data_", Sys.Date(), "_", qualifier, ".RData", sep = ""))
 
 
 
