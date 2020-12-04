@@ -2720,37 +2720,37 @@ include_graphics("./Images/FIG10.png")
 ```
 
 ``` {r OLD BTW and WTH: 16.3. OC comparisons btw, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
-# # ANOVA
-# OCanova <- list()
-# OCanova$aov <- summary(aov(Gamma ~ Cost, data = summaryOC_btw$all))
-# Fval <- round(OCanova$aov[[1]]$`F value`[1], digits = 2) # doing separate variables because I can't easily use the `` in markdown.
-# Pval <- OCanova$aov[[1]]$`Pr(>F)`[1]
-# Rsquared_aov <- round(OCanova$aov[[1]]$`Sum Sq`[1] / sum(OCanova$aov[[1]]$`Sum Sq`), digits = 2)
-#   
-# # Post-hoc pairwise tests
-# OCanova$perms <- summaryOC_btw$all %>%
-#   select(Cost, Gamma) %>%
-#   plyr::dlply("Cost", identity) %>%
-#   do.call(cbind, .) %>%
-#   select_if(is.numeric) %>%
-#   rename(Physical = Physical.Gamma,
-#          Cognitive = Cognitive.Gamma,
-#          Wait = Wait.Gamma,
-#          Easy = Easy.Gamma) %>%
-#   outer(., ., FUN = Vectorize(permute), simple = T)
-# diag(OCanova$perms) <- 1
-# 
-# OCanova$ES <- summaryOC_btw$all %>%
-#   select(Cost, Gamma) %>%
-#   plyr::dlply("Cost", identity) %>%
-#   do.call(cbind, .) %>%
-#   select_if(is.numeric) %>%
-#   rename(Physical = Physical.Gamma,
-#          Cognitive = Cognitive.Gamma,
-#          Wait = Wait.Gamma,
-#          Easy = Easy.Gamma) %>%
-#   outer(., ., FUN = Vectorize(cohenD)) %>%
-#   abs()
+# ANOVA
+OCanova <- list()
+OCanova$aov <- summary(aov(Gamma ~ Cost, data = summaryOC_btw$all))
+Fval <- round(OCanova$aov[[1]]$`F value`[1], digits = 2) # doing separate variables because I can't easily use the `` in markdown.
+Pval <- OCanova$aov[[1]]$`Pr(>F)`[1]
+Rsquared_aov <- round(OCanova$aov[[1]]$`Sum Sq`[1] / sum(OCanova$aov[[1]]$`Sum Sq`), digits = 2)
+
+# Post-hoc pairwise tests
+OCanova$perms <- summaryOC_btw$all %>%
+  select(Cost, Gamma) %>%
+  plyr::dlply("Cost", identity) %>%
+  do.call(cbind, .) %>%
+  select_if(is.numeric) %>%
+  rename(Physical = Physical.Gamma,
+         Cognitive = Cognitive.Gamma,
+         Wait = Wait.Gamma,
+         Easy = Easy.Gamma) %>%
+  outer(., ., FUN = Vectorize(permute), simple = T)
+diag(OCanova$perms) <- 1
+
+OCanova$ES <- summaryOC_btw$all %>%
+  select(Cost, Gamma) %>%
+  plyr::dlply("Cost", identity) %>%
+  do.call(cbind, .) %>%
+  select_if(is.numeric) %>%
+  rename(Physical = Physical.Gamma,
+         Cognitive = Cognitive.Gamma,
+         Wait = Wait.Gamma,
+         Easy = Easy.Gamma) %>%
+  outer(., ., FUN = Vectorize(cohenD)) %>%
+  abs()
 ```
 
 ``` {r OLD BTW and WTH: 16.3. corrplot btw, echo = FALSE, fig.align = "center", fig.width = 5, fig.height = 5}
@@ -2946,13 +2946,14 @@ include_graphics("./Images/FIG10.png")
 
 
 ``` {r BTW and WTH: 16.3. Model fits, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
-# the fitting of these models was performed by a separate script (modeling_gk_btw/wth)
+## the fitting of these models was performed by a separate script (modeling_gk_btw/wth)
 # here we load the results to economize computational power during knitting
 # load results from models
 #load("models_gk/results/btw.Rdata")
 #load("models_gk/results/wth.Rdata")
 load("models_gk/results/mod_results.Rdata")
 
+## BIC
 # keep relevant model results and combine into a single df with generalizable names (delete eventually)
 temp_btw <- fits_bic_btw[c(1, 3, 4, 6), ]
 temp_wth <- fits_bic_wth[c(1, 3, 13, 15), ]
@@ -2974,13 +2975,58 @@ bic_plot <- ggplot(data = modelComparison, aes(Model, BIC, group = Exp, color = 
         axis.line = element_line(colour = "black"),
         text = element_text(size = 22))
 
+## Model fit summaries
+# mean and sd of parameters from winning model (exp some? still confused)
+# parameter order for wth: gamma, alpha, C, w_decay, beta
+mFits_btw <- sapply(fits_btw$`Adaptive OC + Biased OC`, function(group) {apply(group$x, 1, mean)})
+sdFits_btw <- sapply(fits_btw$`Adaptive OC + Biased OC`, function(group) {apply(group$x, 1, sd)})
+
+mFits_wth <- fits_wth$`Adaptive OC + Adaptive Between Biased OC`$mus
+sdFits_wth <- diag(fits_wth$`Adaptive OC + Adaptive Between Biased OC`$sigma)
+
+## Compare
+# first, divide the group fits into a list of dataframes for each parameter
+t <- lapply(fits_btw$`Adaptive OC + Biased OC`, function(group) {melt(group$x, value.name = "Fit")})
+n <- names(fits_btw$`Adaptive OC + Biased OC`)
+reshaped <- mapply(cbind, t, "Group" = n, SIMPLIFY = F)
+aovShape_btw <- do.call(rbind, reshaped) %>% 
+                  filter(Group != "pheasy") %>%
+                  plyr::dlply("Var1", identity)
+rm(t, n)
+
+# then apply anovas
+aovBtw <- lapply(aovShape_btw, function(d) {summary(aov(Fit ~ Group, data = d))})
+
+## plot
+# BTW
+# select a parameter to plot
+param <- aovShape_btw$cost
+paramPlot <- ggplot(param, aes(Group, Fit, fill = Group)) +
+  # geom_hline(yintercept = 0.64, alpha = 0.9, color = "gray20", size = 1) +
+  # geom_hline(yintercept = 0.7, alpha = 0.9, color = "gray40", size = 1) +
+  # geom_hline(yintercept = 0.9, alpha = 0.9, color = "gray60", size = 1) +
+  geom_hline(yintercept = 0, alpha = 0.9, size = 1, linetype = "dashed") + # mean of highest earning rates across blocks
+  #geom_dotplot(stackdir = 'center', binaxis = 'y', show.legend = F) +
+  geom_boxplot(show.legend = F) +
+  geom_jitter(width = 0.1, alpha = 0.5, show.legend = F, pch = 21, size = 3) +
+  #ylim(0,1.5) +
+  labs(x = "") +
+  scale_fill_manual(values = colsBtw) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        text = element_text(size = 16))
+
 
 
 ```
 
-  We tested four models against a set of criteria derived from observed choice behavior (see Methods for details). The first one, a base formulation, probed the predictions of the Marginal Value Theorem (Charnov, 1975). The second one allowed the opportunity cost to gradually adapt using a reinforcement learning rule. The third model assumed that different demands imposed distinct cost biases on the perceived opportunity costs, and that these biases could be recalibrated with experience. A final model combined the adaptive features of the second and third formulations.
+  We tested four models against a set of criteria derived from observed choice behavior (see Methods for details). The first one, a base formulation, probed the predictions of the Marginal Value Theorem (Charnov, 1975). The second one allowed individuals to estimate the opportunity cost at different rates using a reinforcement learning rule. The third model assumed that different demands imposed distinct cost biases on the experienced opportunity costs, and that these biases could be recalibrated with experience. A final model combined the adaptive features of the second and third formulations.
   
+  The fourth model produced the lowest BIC in both experiments (Figure 10A. Between-subjects = $modelComparison[4, 3]$; Within-subjects = $modelComparison[8, 3]$). 
   
+  The fits of the model provided good qulitative resemblance to the observed choice behavior in both experiments (*Figure 10X*) 
   
 ```{r BIC (Fig. 10), eval = !figsEnd, fig.align = "center", fig.height = 3, fig.width = 5, fig.cap = "BIC values for four plausible models of choice behavior for both experiments. Note that the number of parameters fitted could change across experiments, affecting the possible BIC values. The winning model suggests that demands impose cost biases to the ongoing estmate of the opportunity cost, which converge if multiple types of demands are interleaved.  "}
   
