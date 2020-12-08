@@ -2304,65 +2304,7 @@ prepost_wth$cogtaskRTs <- dataWth_coglogs %>%
 ```
 
 ``` {r WTH: 16.3.3. Plot Pre/Post reward x handling, echo = FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
-# # first block
-# t1 <- data %>%
-#   group_by(SubjID) %>%
-#   mutate(Block = do.call(c, lapply(c(2, 4, 6), function(x) {rep(x / 2, sum(Block %in% c(x - 1, x)))}))) %>%
-#   #filter(Half == "Half_1", Offer < 20) %>%
-#   filter(Block == 1) %>%
-#   group_by(Cost, Offer) %>%
-#   summarise(propAccept = mean(Choice),
-#             SE = sd(Choice) / sqrt(nSubjs_wth)) %>%
-#   ungroup() %>%
-#   mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%
-#   ggplot(aes(Offer, propAccept, color = Cost)) +
-#     geom_point(size = 3, show.legend = F) +
-#     #geom_point(aes(y = Optimal), size = 3, pch = 21, color = "darkgrey") +
-#     geom_line(show.legend = F) +
-#     scale_color_manual(values = colsWth) +
-#     scale_fill_manual(values = colsWth) +
-#     geom_errorbar(aes(ymin=propAccept-SE, ymax=propAccept+SE), width=0.2, size=1, show.legend = T) +
-#     scale_y_continuous(limits = c(-0.1,1.1), breaks = c(0,0.5,1)) +
-#     scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
-#     labs(x = "Reward", y = "Proportion Accepted", title = "First Block") +
-#     theme(legend.key = element_blank(),
-#           legend.position = c(0.8, 0.25),
-#           panel.grid.major = element_blank(), 
-#           panel.grid.minor = element_blank(), 
-#           panel.background = element_blank(), 
-#           axis.line = element_line(colour = "black"),
-#           text = element_text(size = 16))
-# 
-# 
-# # last block
-# t3 <- data %>%
-#     group_by(SubjID) %>%
-#     mutate(Block = do.call(c, lapply(c(2, 4, 6), function(x) {rep(x / 2, sum(Block %in% c(x - 1, x)))}))) %>%
-#     #filter(Half == "Half_2", Offer < 20) %>%
-#     filter(Block == 3) %>%
-#     group_by(Cost, Offer) %>%
-#     summarise(propAccept = mean(Choice),
-#               SE = sd(Choice) / sqrt(nSubjs_wth)) %>%
-#     ungroup() %>%
-#     mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%
-#     ggplot(aes(Offer, propAccept, color = Cost)) +
-#       geom_point(size = 3, show.legend = F) +
-#       geom_line(show.legend = F) +
-#       scale_color_manual(values = colsWth) +
-#       scale_fill_manual(values = colsWth) +
-#       geom_errorbar(aes(ymin=propAccept-SE, ymax=propAccept+SE), width=0.2, size=1, show.legend = F) +
-#       scale_y_continuous(limits = c(-0.1,1.1), breaks = c(0,0.5,1)) +
-#       scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
-#       labs(x = "Reward", y = "", title = "Last Block") +
-#       theme(legend.position = c(0.1, 0.7),
-#             panel.grid.major = element_blank(), 
-#             panel.grid.minor = element_blank(), 
-#             panel.background = element_blank(), 
-#             axis.line = element_line(colour = "black"),
-#             text = element_text(size = 16))
-# 
-# grid.arrange(t1, t3, ncol = 2)
-
+# pre-post for everyone per reward x handling
 hrprepostPlot_wth <- dataWth %>%
   group_by(SubjID) %>%
   mutate(Block = case_when(
@@ -2397,6 +2339,38 @@ hrprepostPlot_wth <- dataWth %>%
           axis.line = element_line(colour = "black"),
           text = element_text(size = 16))
 
+# with block order
+blockOrder_wth <- dataWth %>%
+  group_by(SubjID) %>%
+  mutate(Block = case_when(
+    Block %in% c(1, 2) ~ 1,
+    Block %in% c(3, 4) ~ 2,
+    Block %in% c(5, 6) ~ 3
+  )) %>%
+  filter(Block != 2) %>%
+  mutate(Block = ifelse(Block == 1, "First Two Blocks", "Last Two Blocks")) %>%
+  group_by(Cost, BlockOrder, Block, Offer) %>%
+  summarise(propAccept = mean(Choice),
+            SE = sd(Choice) / sqrt(nSubjs_wth)) %>%
+  ungroup() %>%
+  mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>% 
+  ggplot(aes(Offer, propAccept, color = Cost)) +
+    geom_point(size = 3, show.legend = F) +
+    geom_line(size = 1, show.legend = F) +
+    scale_color_manual(values = colsWth) +
+    scale_fill_manual(values = colsWth) +
+    geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = F) +
+    scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
+    scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
+    labs(x = "Reward", y = "Proportion Accepted") +
+    facet_wrap(vars(BlockOrder, Block)) +
+    theme(legend.key = element_blank(),
+          legend.position = c(0.9, 0.25),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = 20))
 ```
 
 ``` {r WTH: 16.3.3. mix pre/post separately, echo = FALSE, fig.align="center", fig.width=5, fig.height=4}
@@ -2627,11 +2601,11 @@ pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
 (suppressWarnings(survPlot_wth) | suppressWarnings(RTplot_wth)) / (prepost_wth$scatterplot | prepost_wth$propBlocks)
 ```
 
-  However, against our predictions, participants accepted significantly fewer trials on the second half of the experiment, regardless of cost (paired permutations; Cognitive: mean~pre~ = `r filter(df_mean, Cost == "Cognitive")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Cognitive")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Cognitive")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Cognitive")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Cognitive"]])`, Cohen's D = `r round(prepost_wth$CohenD[["Cognitive"]], digits = 2)`; Physical: mean~pre~ = `r filter(df_mean, Cost == "Physical")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Physical")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Physical")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Physical")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Physical"]])`, Cohen's D = `r round(prepost_wth$CohenD[["Physical"]], digits = 2)`; Wait-C:  mean~pre~ = `r filter(df_mean, Cost == "Wait-C")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Wait-C")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Wait-C")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Wait-C")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Wait-C"]])`, Cohen's D = `r round(prepost_wth$CohenD[["Wait-C"]], digits = 2)`; Wait-P: mean~pre~ = `r filter(df_mean, Cost == "Wait-P")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Wait-P")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Wait-P")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Wait-P")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Wait-P"]])`, Cohen's D = `r round(prepost_wth$CohenD[["Wait-P"]], digits = 2)`; Figure 9). The reduction in acceptances was not driven by a performance decline, as the difference in acceptance rates was not significantly correlated with the proportion of forced travels across individuals (Pearson's r = `r round(corDiff, digits = 2)`, *p* > 0.05). Notably, the pattern of choices from the first half of the experiment resembled that from the matching handling/travel block from the between-subject experiment (Figure 4A). Mixed effects logistic regressions performed on each half separately confirmed that the relative preference for cognitive effort seen previously was preserved at the beginning of the experiment (Figure 9, right, lower triangle), but that it disappeared over time amid an overall decline in acceptance rates as participants gained experience with all three conditions (upper triangle). 
+  However, against our predictions, participants accepted significantly fewer trials on the second half of the experiment, regardless of cost (paired permutations; Cognitive: mean~pre~ = `r filter(df_mean, Cost == "Cognitive")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Cognitive")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Cognitive")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Cognitive")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Cognitive"]])`, Cohen's D = `r round(prepost_wth$CohenD[["Cognitive"]], digits = 2)`; Physical: mean~pre~ = `r filter(df_mean, Cost == "Physical")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Physical")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Physical")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Physical")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Physical"]])`, Cohen's D = `r round(prepost_wth$CohenD[["Physical"]], digits = 2)`; Wait-C:  mean~pre~ = `r filter(df_mean, Cost == "Wait-C")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Wait-C")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Wait-C")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Wait-C")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Wait-C"]])`, Cohen's D = `r round(prepost_wth$CohenD[["Wait-C"]], digits = 2)`; Wait-P: mean~pre~ = `r filter(df_mean, Cost == "Wait-P")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Wait-P")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Wait-P")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Wait-P")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Wait-P"]])`, Cohen's D = `r round(prepost_wth$CohenD[["Wait-P"]], digits = 2)`; Figure 9). The reduction in acceptances was not driven by a performance decline, as the difference in acceptance rates was not significantly correlated with the proportion of forced travels across individuals (Pearson's r = `r round(corDiff, digits = 2)`, *p* > 0.05). Notably, the pattern of choices from the first half of the experiment resembled that from the matching handling/travel block from the between-subject experiment (Figure 4A). Mixed effects logistic regressions performed on each half separately confirmed that the relative preference for cognitive effort seen previously was preserved at the beginning of the experiment (Figure 9, top-right, lower triangle), but that it disappeared over time amid an overall decline in acceptance rates as participants gained experience with all three conditions (upper triangle). This fading preference for cognitive effort was observed regardless of which block participants experienced first, even though its magnitude appeared to be reduced for those who experienced the physical block first (Figure 9, bottom)
   
   All together, our findings show that the stable preferences for cognitive effort observed during single-demand foraging slowly fade if alternative demands are introduced. This points towards task-specific and outcome-independent features from cognitive tasks that can be recalibrated by new experiences.
   
-```{r Prepost mixed effects plots (Fig. 9), eval = !figsEnd, fig.align = "center", fig.cap = "Acceptance rates over time. Left: Proportion accepted in the first two and last two blocks of the experiment. An initial preference for cognitive effort trials fades amid a global decrease in acceptance rates. Right: Mixed effects coefficient matrix for each half separately. The pattern from the first half resembles what was observed in the between-subjects experiment (Figure 4)."}
+```{r Prepost mixed effects plots (Fig. 9), eval = !figsEnd, fig.align = "center", fig.cap = "Acceptance rates over time. Top-Left: Proportion accepted in the first two and last two blocks of the experiment. An initial preference for cognitive effort trials fades amid a global decrease in acceptance rates. Top-Right: Mixed effects coefficient matrix for each half separately. The pattern from the first half resembles what was observed in the between-subjects experiment (Figure 4). Bottom: Block rder effects show attenuated differences for those who started with the physical configuration."}
 include_graphics("./Images/FIG9.png")
 
 ```
@@ -3137,7 +3111,7 @@ include_graphics("./Images/FIG10.png")
   
   These choice dynamics ruled out a number of common explanatory candidates. For instance, differences in choice stability between experiments suggested that a demand's cost is not intrinsic. In addition, the gradual choice convergence in the second experiment also discarded the effects of boredom, which would have accentuated the appeal of active tasks over time, or the possibility that our sample was mostly composed of demand seekers [@Cacioppo1996; @Sayali2019]. Even though fatigue could explain the decrease in effort acceptances across experiments, we would have expected tired participants to turn to wait trials over time in order to preserve earning rates. We also ruled out the sunk cost effects used to explain overharvesting [@Wikenheiser2013; @Sweis2018], as participants expressed their choices early and rarely quit during the handling time. Risk was also an unlikely factor, as task performance improved over time. Finally, the observed differences in acceptances between effort types could not be explained by reward alone [@Eisenberger1996], as demands were rewarded at the same rate. 
   
-  Traditional foraging models, in which a reward is weighed against the earnings foregone by pursuing it [@Charnov1975; @Constantino2015], were also not enough to explain our results. Instead, we computationally found that each type of demand distinctly biased the estimation of this opportunity cost, and that such biases could be gradually recalibrated over time as decision makers gained experienced with additional demands. In this way, waiting and performing physical effort promoted selectivity by adding to the opportunity cost, whereas engaging in cognitive effort boosted an offer's value by reducing it. This raises the question of how these biases arise. We hypothesize that demands altered the perceived duration of time. Immersive activities can subjectively speed up the passage of time [@Csikszentmihalyi2014], and this effect appears to scale with the amount of cognitive processing required by a task [@Wearden2016]. Moreover, adjusting for time sensitivity has been shown to improve fits for delay discounting models [@Mckerchar2009]. Therefore, even though participants knew the nominal handling times, cognitive effort might have become valuable by subjectively compressing them. In our experiments, shorter subjective handling times resulted in higher perceived earning rates, but it is also possible that individuals benefitted from a sense of fast completion. We speculate that this construal of elapsed time could then be adjusted with the experience of alternative demands, as participants learned how long the 10 seconds handling time felt. This could help explain why preferences for cognitive effort were smaller for within-subject participants who started with the physical block, as they had already formed an estimate of the handling time by the time they experienced a subjectively faster cognitive trial (**FIGURE**). The shorter time sensitivity produced by cognitive effort could be due to participants counting the number of sub-tasks during pursual (which was always less than the number of seconds in the handling time), or because taxing cognitive resources distracted individuals from estimating the passage of time [@Zakay1989]. These hypothesis will have to be experimentally probed in the future. 
+  Traditional foraging models, in which a reward is weighed against the earnings foregone by pursuing it [@Charnov1976; @Constantino2015], were also not enough to explain our results. Instead, we computationally found that each type of demand distinctly biased the estimation of this opportunity cost, and that such biases could be gradually recalibrated over time as decision makers gained experienced with additional demands. In this way, waiting and performing physical effort promoted selectivity by adding to the opportunity cost, whereas engaging in cognitive effort boosted an offer's value by reducing it. This raises the question of how these biases arise. We hypothesize that demands altered the perceived duration of time. Immersive activities can subjectively speed up the passage of time [@Csikszentmihalyi2014], and this effect appears to scale with the amount of cognitive processing required by a task [@Wearden2016]. Moreover, adjusting for time sensitivity has been shown to improve fits for delay discounting models [@Mckerchar2009]. Therefore, even though participants knew the nominal handling times, cognitive effort might have become valuable by subjectively compressing them. In our experiments, shorter subjective handling times resulted in higher perceived earning rates, but it is also possible that individuals benefitted from a sense of fast completion. We speculate that this construal of elapsed time could then be adjusted with the experience of alternative demands, as participants learned how long the 10 seconds handling time felt. This could help explain why preferences for cognitive effort were smaller for within-subject participants who started with the physical block, as they had already formed an estimate of the handling time by the time they experienced a subjectively faster cognitive trial (**FIGURE**). The shorter time sensitivity produced by cognitive effort could be due to participants counting the number of sub-tasks during pursual (which was always less than the number of seconds in the handling time), or because taxing cognitive resources distracted individuals from estimating the passage of time [@Zakay1989]. These hypothesis will have to be experimentally probed in the future. 
   
   Relying on foraging paradigms helped us to control for common shortfalls in the existing literature. For example, even though engaging with a demanding offer encompasses evaluating, pursuing, and receiving its outcome, investigations of the pursuit and receipt stages have been limited. Many studies have sought to isolate the evaluation stage by presenting individuals with offers that do not come into effect until the end of the experimental session (with delays spanning up to months), deliberately setting aside the question of how the ongoing experience of cost and outcome affects subsequent choices [@Kable2007; @Chong2016; @Massar2015; @Apps2015a]. However, discrepancies between expected and experienced value are well known [@Kahneman2006], and choosing immediate outcomes could be due to factors other than time preference, such as the risk of being unable to redeem the future rewards, or hoping to find better offers in the near future [@Fawcett2012; @Frederick2002; @Sozou1998]. We circumvented these pitfalls by providing participants with an opportunity to actively experience the demands they accepted, and gaving them full knowledge of the available options. Another challenge in comparing effort and delay is that increments in the required effort are often paired with a longer execution time. This issue is often avoided by comparing discounting functions, which yield points at which individuals faced with increasing costs become indifferent to large rewards [@Massar2015; @Prevost2010]. We eliminated this possibility by fixing the handling time for all demands, allowing us to probe people's preferences directly. Moreover, the between-subjects experiment, which resembled the traditional way costs are compared, provided a baseline of foraging behavior that contextualized the findings of the second experiment (a direct test of our hypothesis). Finally, the existence of optimal strategies helped us identify when demands could be attractive, a central motivation for this study. The apparent attractiveness of cognitive effort was reflected both by a higher proportion of acceptances at the expense of earnings, and by the fitted opportunity costs biases discussed above. Of note is that the optimality of the strategies induced by each demand depended on the richness of the block. This can help explain why the wait group earned the most despite having similar acceptance rates to the physical group, as the former was closer to optimality in the richest environment.
   
@@ -3147,7 +3121,7 @@ include_graphics("./Images/FIG10.png")
   
 ### Conclusion
 
-  In this study, we have examined the factors that motivate the preference of different demands, emphasizing how these can be molded by the decision maker's environment. Unlike existing theories that have focused on the role of incentives and retrospectives [@Eisenberger1996; @Inzlicht2018], our work highlights outcome-independent features that can motivate the pursual of effortful avenues, and which can be potentially manipulated in order to promote engagement in clinical and daily activities.
+  In this study, we have examined the factors that motivate the preference of different demands, emphasizing how these can be molded by the decision maker's environment. Unlike existing theories that have focused on the role of incentives and retrospective justifications [@Eisenberger1996; @Inzlicht2018], our work highlights outcome-independent and task-specific features that can motivate the pursual of effortful avenues, which can be potentially manipulated in order to promote engagement in clinical and daily activities.
   
 \newpage
 
@@ -3208,13 +3182,13 @@ include_graphics("./Images/FIG8.png")
 
 \newpage
   
-```{r New Prepost mixed effects plots (Fig. 9), eval = figsEnd, fig.align = "center", fig.cap = "Acceptance rates over time. Left: Proportion accepted in the first two and last two blocks of the experiment. An initial preference for cognitive effort trials fades amid a global decrease in acceptance rates. Right: Mixed effects coefficient matrix for each half separately. The pattern from the first half resembles what was observed in the between-subjects experiment (Figure 4)."}
-include_graphics("./Images/FIG10.png")
+```{r New Prepost mixed effects plots (Fig. 9), eval = figsEnd, fig.align = "center", fig.cap = "Acceptance rates over time. Top-Left: Proportion accepted in the first two and last two blocks of the experiment. An initial preference for cognitive effort trials fades amid a global decrease in acceptance rates. Top-Right: Mixed effects coefficient matrix for each half separately. The pattern from the first half resembles what was observed in the between-subjects experiment (Figure 4). Bottom: Block rder effects show attenuated differences for those who started with the physical configuration."}
+include_graphics("./Images/FIG9.png")
 ```
 
 \newpage
 
-```{r BIC and parameter comparison (Fig. 10), eval = !figsEnd, fig.align = "center", fig.height = 5, fig.width = 7, fig.cap = "A. BIC values for four plausible models of choice behavior for both experiments. Lower values indicate better fit. B. Differences in cost biases produced by each demand. Negative values suggest the cognitive group acted as if it perceived its demand as valuable. C. Parameter comparison portrays consistent foraging behavior across experiments."}
+```{r New BIC and parameter comparison (Fig. 10), eval = figsEnd, fig.align = "center", fig.height = 5, fig.width = 7, fig.cap = "A. BIC values for four plausible models of choice behavior for both experiments. Lower values indicate better fit. B. Differences in cost biases produced by each demand. Negative values suggest the cognitive group acted as if it perceived its demand as valuable. C. Parameter comparison portrays consistent foraging behavior across experiments."}
 
 include_graphics("./Images/FIG10.png")
 
