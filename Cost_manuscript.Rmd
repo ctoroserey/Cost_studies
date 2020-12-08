@@ -2720,37 +2720,37 @@ include_graphics("./Images/FIG10.png")
 ```
 
 ``` {r OLD BTW and WTH: 16.3. OC comparisons btw, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
-# ANOVA
-OCanova <- list()
-OCanova$aov <- summary(aov(Gamma ~ Cost, data = summaryOC_btw$all))
-Fval <- round(OCanova$aov[[1]]$`F value`[1], digits = 2) # doing separate variables because I can't easily use the `` in markdown.
-Pval <- OCanova$aov[[1]]$`Pr(>F)`[1]
-Rsquared_aov <- round(OCanova$aov[[1]]$`Sum Sq`[1] / sum(OCanova$aov[[1]]$`Sum Sq`), digits = 2)
-
-# Post-hoc pairwise tests
-OCanova$perms <- summaryOC_btw$all %>%
-  select(Cost, Gamma) %>%
-  plyr::dlply("Cost", identity) %>%
-  do.call(cbind, .) %>%
-  select_if(is.numeric) %>%
-  rename(Physical = Physical.Gamma,
-         Cognitive = Cognitive.Gamma,
-         Wait = Wait.Gamma,
-         Easy = Easy.Gamma) %>%
-  outer(., ., FUN = Vectorize(permute), simple = T)
-diag(OCanova$perms) <- 1
-
-OCanova$ES <- summaryOC_btw$all %>%
-  select(Cost, Gamma) %>%
-  plyr::dlply("Cost", identity) %>%
-  do.call(cbind, .) %>%
-  select_if(is.numeric) %>%
-  rename(Physical = Physical.Gamma,
-         Cognitive = Cognitive.Gamma,
-         Wait = Wait.Gamma,
-         Easy = Easy.Gamma) %>%
-  outer(., ., FUN = Vectorize(cohenD)) %>%
-  abs()
+# # ANOVA
+# OCanova <- list()
+# OCanova$aov <- summary(aov(Gamma ~ Cost, data = summaryOC_btw$all))
+# Fval <- round(OCanova$aov[[1]]$`F value`[1], digits = 2) # doing separate variables because I can't easily use the `` in markdown.
+# Pval <- OCanova$aov[[1]]$`Pr(>F)`[1]
+# Rsquared_aov <- round(OCanova$aov[[1]]$`Sum Sq`[1] / sum(OCanova$aov[[1]]$`Sum Sq`), digits = 2)
+# 
+# # Post-hoc pairwise tests
+# OCanova$perms <- summaryOC_btw$all %>%
+#   select(Cost, Gamma) %>%
+#   plyr::dlply("Cost", identity) %>%
+#   do.call(cbind, .) %>%
+#   select_if(is.numeric) %>%
+#   rename(Physical = Physical.Gamma,
+#          Cognitive = Cognitive.Gamma,
+#          Wait = Wait.Gamma,
+#          Easy = Easy.Gamma) %>%
+#   outer(., ., FUN = Vectorize(permute), simple = T)
+# diag(OCanova$perms) <- 1
+# 
+# OCanova$ES <- summaryOC_btw$all %>%
+#   select(Cost, Gamma) %>%
+#   plyr::dlply("Cost", identity) %>%
+#   do.call(cbind, .) %>%
+#   select_if(is.numeric) %>%
+#   rename(Physical = Physical.Gamma,
+#          Cognitive = Cognitive.Gamma,
+#          Wait = Wait.Gamma,
+#          Easy = Easy.Gamma) %>%
+#   outer(., ., FUN = Vectorize(cohenD)) %>%
+#   abs()
 ```
 
 ``` {r OLD BTW and WTH: 16.3. corrplot btw, echo = FALSE, fig.align = "center", fig.width = 5, fig.height = 5}
@@ -2984,8 +2984,8 @@ bicPlot <- ggplot(data = modelComparison, aes(Model, BIC, group = Exp, color = E
 mFits_btw <- sapply(fits_btw$`Adaptive OC + Biased OC`, function(group) {apply(group$x, 1, mean)})
 sdFits_btw <- sapply(fits_btw$`Adaptive OC + Biased OC`, function(group) {apply(group$x, 1, sd)})
 
-mFits_wth <- fits_wth$`Adaptive OC + Adaptive Between Biased OC`$mus
-sdFits_wth <- diag(fits_wth$`Adaptive OC + Adaptive Between Biased OC`$sigma)
+mFits_wth <- round(fits_wth$`Adaptive OC + Adaptive Between Biased OC`$mus, digits = 2)
+sdFits_wth <- round(diag(fits_wth$`Adaptive OC + Adaptive Between Biased OC`$sigma), digits = 2)
 
 
 ### Compare/analyze fits
@@ -3107,7 +3107,7 @@ allFitsPlot <- rbind(t1, t2) %>%
           axis.line = element_line(colour = "black"),
           text = element_text(size = 22))
 
-#(bicPlot + costPlot) / allFitsPlot
+
 
 
 
@@ -3116,27 +3116,17 @@ allFitsPlot <- rbind(t1, t2) %>%
 
   We tested four models against a set of criteria derived from observed choice behavior (see Methods for details). The first one, a base formulation, probed the predictions of the Marginal Value Theorem (Charnov, 1975). The second one allowed individuals to estimate the opportunity cost at different rates using a reinforcement learning rule. The third model assumed that different demands imposed distinct cost biases on the experienced opportunity costs, and that these biases could be recalibrated with experience. A final model combined the adaptive features of the second and third formulations.
   
-  The fourth model produced the lowest BIC in both experiments (Figure 10A. Between-subjects = $modelComparison[4, 3]$; Within-subjects = $modelComparison[8, 3]$). Figure 10B-C show the key parameter fits from both experiments. Among these, the learning rate of the opportunity cost ($\alpha$) and the bias imposed by each demand on its estimate ($C_{demand}$) were of particular interest. Analyses of variance showed significant differences only for $c_{demand}$ (F(`r aovBtw$cost[[1]]$Df[1]`, `r aovBtw$cost[[1]]$Df[1]`) = `r fitFvals["cost"]`, *p* `r report_p(fitPvals["cost"])`), with $\alpha$ being uniformly low for all groups. Pairwise post-hoc permutations confirmed that the cognitive group (mean = `r round(mFits_btw["cost", "cogTask"], digits = 2)`, SD = `r round(sdFits_btw["cost", "cogTask"], digits = 2)`) had lower biases than either wait (mean = `r round(mFits_btw["cost", "wait"], digits = 2)`, SD = `r round(sdFits_btw["cost", "wait"], digits = 2)`; *p* `r report_p(fitPerms["Cognitive", "Wait"])`; Cohen's D = `r fitES["Cognitive", "Wait"]`) or physical (mean = `r round(mFits_btw["cost", "phys"], digits = 2)`, SD = `r round(sdFits_btw["cost", "phys"], digits = 2)`; *p* `r report_p(fitPerms["Cognitive", "Physical"])`; Cohen's D = `r fitES["Cognitive", "Physical"]`) groups. These biases were significantly higher than zero for the wait group (t(`r fitOStest$tresults[[1]]$parameter`) = round(`r fitOStest$tresults[[1]]$statistic, digits = 2)`, *p* `r report_p(fitOStest$tresults[[1]]$p.value)`), and lower than zero for the cognitive group (t(`r fitOStest$tresults[[2]]$parameter`) = round(`r fitOStest$tresults[[2]]$statistic, digits = 2)`, *p* `r report_p(fitOStest$tresults[[2]]$p.value)`). This suggests that rather than reducing costs, cognitive tasks boosted the value of their concommitant offers. 
+  The fourth model produced the lowest BIC in both experiments (Figure 10A. Between-subjects = $modelComparison[4, 3]$; Within-subjects = $modelComparison[8, 3]$). Figure 10B-C show the key parameter fits from both experiments. Among these, the learning rate of the opportunity cost ($\alpha$) and the bias imposed by each demand on its estimate ($C_{demand}$) were of particular interest. Analyses of variance showed significant differences only for $c_{demand}$ (F(`r aovBtw$cost[[1]]$Df[1]`, `r aovBtw$cost[[1]]$Df[1]`) = `r fitFvals["cost"]`, *p* `r report_p(fitPvals["cost"])`), with $\alpha$ being uniformly low for all groups. Pairwise post-hoc permutations confirmed that the cognitive group (mean = `r round(mFits_btw["cost", "cogTask"], digits = 2)`, SD = `r round(sdFits_btw["cost", "cogTask"], digits = 2)`) had lower biases than either wait (mean = `r round(mFits_btw["cost", "wait"], digits = 2)`, SD = `r round(sdFits_btw["cost", "wait"], digits = 2)`; *p* `r report_p(fitPerms["Cognitive", "Wait"])`; Cohen's D = `r fitES["Cognitive", "Wait"]`) or physical (mean = `r round(mFits_btw["cost", "phys"], digits = 2)`, SD = `r round(sdFits_btw["cost", "phys"], digits = 2)`; *p* `r report_p(fitPerms["Cognitive", "Physical"])`; Cohen's D = `r fitES["Cognitive", "Physical"]`) groups. These biases were significantly higher than zero for the wait group (t(`r fitOStest$tresults[[1]]$parameter`) = round(`r round(fitOStest$tresults[[1]]$statistic, digits = 2)`, *p* `r report_p(fitOStest$tresults[[1]]$p.value)`), and lower than zero for the cognitive group (t(`r fitOStest$tresults[[2]]$parameter`) = round(`r round(fitOStest$tresults[[2]]$statistic, digits = 2)`, *p* `r report_p(fitOStest$tresults[[2]]$p.value)`). This suggests that rather than reducing costs, cognitive tasks boosted the value of their concommitant offers. 
   
-  The median values of $c_{demand}$ from each group were carried over to the within-subjects fitting, and were aggregated over time according to a weighted decay into a converging $C$ value (see Methods for details). 
+  The median values of $c_{demand}$ from each group were carried over to the within-subjects fitting, and were aggregated over time according to a weighted decay into a final $C$ value (see Methods for details). As can be seen on Figure 10C, parameter values were comparable across experiments, pointing to consisency in the way decision makers approached our foraging scenarios. In addition, values of $\alpha_w$ suggested that $c_{demand}$ estimates converged towards the second half of the experiment (mean = `r mFits_wth[4]`, SD = `r sdFits_wth[4]`), gradually reducing bias by the end of the experimental session (mean = `r mFits_wth[3]`, SD = `r sdFits_wth[3]`). Model fits also provided good qulitative resemblance to the observed choice behavior in both experiments, which can be found on **Supplemental Figure X** .
   
-  The fits of the model provided good qulitative resemblance to the observed choice behavior in both experiments (*Figure 10X*) 
+```{r BIC (Fig. 10), eval = !figsEnd, fig.align = "center", fig.height = 5, fig.width = 7, fig.cap = "A. BIC values for four plausible models of choice behavior for both experiments. B. Differences in cost biases produced by each demand. The cognitive group acted as if it perceived its demand as valuable. C. Parameter comparison across experiments."}
   
-```{r BIC (Fig. 10), eval = !figsEnd, fig.align = "center", fig.height = 3, fig.width = 5, fig.cap = "BIC values for four plausible models of choice behavior for both experiments. Note that the number of parameters fitted could change across experiments, affecting the possible BIC values. The winning model suggests that demands impose cost biases to the ongoing estmate of the opportunity cost, which converge if multiple types of demands are interleaved.  "}
-  
-bic_plot
+(bicPlot + costPlot) / allFitsPlot
 
 #In the first model, gamma reflected cost by indexing how much money per second a participant needed to accept a trial. For example, the aversion produced by a given cost could prompt an individual to spend their time and effort in the most profitable offers, resulting in a high gamma value. Conversely, low gamma values represented low selectivity when evaluating offers. Results from this model apply only to the between-subjects experiment, as this single parameterization was not flexible enough to account for the dynamics of experiment two. This model was able to explain a considerable degree of choice variance per individual ($R^2$: mean = `r round(mean(summaryOC_btw$all$Rsquared), digits = 2)`, SD = `r round(sd(summaryOC_btw$all$Rsquared), digits = 2)`). Figure 10 displays the distribution of fitted gammas, which were significantly different across groups (F(`r OCanova$aov[[1]]$Df[1]`, `r OCanova$aov[[1]]$Df[2]`) = `r Fval`, p = `r report_p(Pval)`, $R^2$ = `r Rsquared_aov`). Pairwise post-hoc permutations indicated that the mean gamma values for the cognitive group were significantly lower than for the wait (*p* `r report_p(OCanova$perms["Wait", "Cognitive"])`, Cohen's D = `r round(OCanova$ES["Wait", "Cognitive"], digits = 2)`) and physical effort (*p* `r report_p(OCanova$perms["Physical", "Cognitive"])`, Cohen's D = `r round(OCanova$ES["Physical", "Cognitive"], digits = 2)`), and marginally lower than the easy group (*p* `r report_p(OCanova$perms["Easy", "Cognitive"])`, Cohen's D = `r round(OCanova$ES["Easy", "Cognitive"], digits = 2)`). In addition, the easy group displayed significantly lower gamma values than the wait group (*p* `r report_p(OCanova$perms["Wait", "Easy"])`, Cohen's D = `r round(OCanova$ES["Wait", "Easy"], digits = 2)`). We cross-validated individual OCs by using the pre-midpoint data for estimation, and post-midpoint choices for testing. This procedure revealed high mean predictive accuracies for all individuals (mean accuracy for Cognitive = `r filter(summaryOC_btw$predicted, Cost == "Cognitive")$mPredicted`%, SD = `r filter(summaryOC_btw$predicted, Cost == "Cognitive")$sdPredicted`; mean Physical = `r filter(summaryOC_btw$predicted, Cost == "Physical")$mPredicted`%, SD = `r filter(summaryOC_btw$predicted, Cost == "Physical")$sdPredicted`; mean Wait = `r filter(summaryOC_btw$predicted, Cost == "Wait")$mPredicted`%, SD = `r filter(summaryOC_btw$predicted, Cost == "Wait")$sdPredicted`; mean Easy = `r filter(summaryOC_btw$predicted, Cost == "Easy")$mPredicted`%, SD = `r filter(summaryOC_btw$predicted, Cost == "Easy")$sdPredicted`), despite the reduction in acceptances produced by the effortful demands. We further interpreted these fitted values by comparing them to the optimal gamma (dashed line on Figure 10; see Operationalization of Cost). Two-sided one-sample t-tests against this optimal magnitude resulted in significantly lower gamma values for the cognitive group (mean = `r filter(summaryOC_btw$descriptives, Cost == "Cognitive")$mGamma`, SD = `r filter(summaryOC_btw$descriptives, Cost == "Cognitive")$sdGamma`; T(20) = `r round(summaryOC_btw$t.test["statistic", "Cognitive"][[1]], digits = 2)`, *p* `r report_p(summaryOC_btw$t.test["p.value", "Cognitive"][[1]])`), and marginally higher values for the wait group (mean = `r filter(summaryOC_btw$descriptives, Cost == "Wait")$mGamma`, SD = `r filter(summaryOC_btw$descriptives, Cost == "Wait")$sdGamma`; T(20) = `r round(summaryOC_btw$t.test["statistic", "Wait"][[1]], digits = 2)`, *p* `r report_p(summaryOC_btw$t.test["p.value", "Wait"][[1]])`). Neither physical effort (mean = `r filter(summaryOC_btw$descriptives, Cost == "Physical")$mGamma`, SD = `r filter(summaryOC_btw$descriptives, Cost == "Physical")$sdGamma`) nor the easy condition (mean = `r filter(summaryOC_btw$descriptives, Cost == "Easy")$mGamma`, SD = `r filter(summaryOC_btw$descriptives, Cost == "Easy")$sdGamma`) produced significant differences (all *p* > 0.05). These results suggest that the cognitive effort group acted as if they perceived the trials as attractive.
 
 ```
-
-  
-
-
-
-
-
-ial. For example, the aversion produced by a given cost could prompt an individual to spend their time and effort in the most profitable offers, resulting in a high gamma value. Conversely, low gamma values represented low selectivity when evaluating offers. Results from this model apply only to the between-subjects experiment, as this single parameterization was not flexible enough to account for the dynamics of experiment two. This model was able to explain a considerable degree of choice variance per individual ($R^2$: mean = `r round(mean(summaryOC_btw$all$Rsquared), digits = 2)`, SD = `r round(sd(summaryOC_btw$all$Rsquared), digits = 2)`). Figure 10 displays the distribution of fitted gammas, which were significantly different across groups (F(`r OCanova$aov[[1]]$Df[1]`, `r OCanova$aov[[1]]$Df[2]`) = `r Fval`, p = `r report_p(Pval)`, $R^2$ = `r Rsquared_aov`). Pairwise post-hoc permutations indicated that the mean gamma values for the cognitive group were significantly lower than for the wait (*p* `r report_p(OCanova$perms["Wait", "Cognitive"])`, Cohen's D = `r round(OCanova$ES["Wait", "Cognitive"], digits = 2)`) and physical effort (*p* `r report_p(OCanova$perms["Physical", "Cognitive"])`, Cohen's D = `r round(OCanova$ES["Physical", "Cognitive"], digits = 2)`), and marginally lower than the easy group (*p* `r report_p(OCanova$perms["Easy", "Cognitive"])`, Cohen's D = `r round(OCanova$ES["Easy", "Cognitive"], digits = 2)`). In addition, the easy group displayed significantly lower gamma values than the wait group (*p* `r report_p(OCanova$perms["Wait", "Easy"])`, Cohen's D = `r round(OCanova$ES["Wait", "Easy"], digits = 2)`). We cross-validated individual OCs by using the pre-midpoint data for estimation, and post-midpoint choices for testing. This procedure revealed high mean predictive accuracies for all individuals (mean accuracy for Cognitive = `r filter(summaryOC_btw$predicted, Cost == "Cognitive")$mPredicted`%, SD = `r filter(summaryOC_btw$predicted, Cost == "Cognitive")$sdPredicted`; mean Physical = `r filter(summaryOC_btw$predicted, Cost == "Physical")$mPredicted`%, SD = `r filter(summaryOC_btw$predicted, Cost == "Physical")$sdPredicted`; mean Wait = `r filter(summaryOC_btw$predicted, Cost == "Wait")$mPredicted`%, SD = `r filter(summaryOC_btw$predicted, Cost == "Wait")$sdPredicted`; mean Easy = `r filter(summaryOC_btw$predicted, Cost == "Easy")$mPredicted`%, SD = `r filter(summaryOC_btw$predicted, Cost == "Easy")$sdPredicted`), despite the reduction in acceptances produced by the effortful demands. We further interpreted these fitted values by comparing them to the optimal gamma (dashed line on Figure 10; see Operationalization of Cost). Two-sided one-sample t-tests against this optimal magnitude resulted in significantly lower gamma values for the cognitive group (mean = `r filter(summaryOC_btw$descriptives, Cost == "Cognitive")$mGamma`, SD = `r filter(summaryOC_btw$descriptives, Cost == "Cognitive")$sdGamma`; T(20) = `r round(summaryOC_btw$t.test["statistic", "Cognitive"][[1]], digits = 2)`, *p* `r report_p(summaryOC_btw$t.test["p.value", "Cognitive"][[1]])`), and marginally higher values for the wait group (mean = `r filter(summaryOC_btw$descriptives, Cost == "Wait")$mGamma`, SD = `r filter(summaryOC_btw$descriptives, Cost == "Wait")$sdGamma`; T(20) = `r round(summaryOC_btw$t.test["statistic", "Wait"][[1]], digits = 2)`, *p* `r report_p(summaryOC_btw$t.test["p.value", "Wait"][[1]])`). Neither physical effort (mean = `r filter(summaryOC_btw$descriptives, Cost == "Physical")$mGamma`, SD = `r filter(summaryOC_btw$descriptives, Cost == "Physical")$sdGamma`) nor the easy condition (mean = `r filter(summaryOC_btw$descriptives, Cost == "Easy")$mGamma`, SD = `r filter(summaryOC_btw$descriptives, Cost == "Easy")$sdGamma`) produced significant differences (all *p* > 0.05). These results suggest that the cognitive effort group acted as if they perceived the trials as attractive.
 
 
 ## Discussion
