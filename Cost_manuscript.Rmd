@@ -1,7 +1,7 @@
 ---
 title: Apparent preferences for cognitive effort fade when multiple forms of effort
   and delay are interleaved in a foraging environment
-author: "Claudio Toro-Serey^1^2, Gary Kane^1^2, & Joseph T. McGuire^1^2"
+author: "Claudio Toro-Serey^1,2^, Gary A. Kane^1,2^, & Joseph T. McGuire^1,2^"
 header-includes:
 - \usepackage{setspace}\doublespacing
 - \usepackage[left]{lineno}
@@ -769,7 +769,20 @@ include_graphics("./Images/FIG2.png")
   
   We performed model comparisons to identify qualities that explained findings from both experiments. Based on the observed choice behavior, an adequate model had to meet seven criteria: 1) show deviations from optimality that were not simply due to overharvesting; 2) keep track of recent offer history; 3) experience a slight reduction of acceptances in effortful conditions in the between-subjects experiment; 4) persistently display higher acceptances for cognitive effort when faced with single behavioral costs; 5) initially match this preference for cognitive effort trials when foraging for demands and rewards; 6) display a disappearance of this preference as acceptances decreased to a common rate across costs; and 7) preference ranks should be robust to block order effects, but the magnitude of the differences should be lower for those who started with the physical effort block. These conditions discarded a number of popular explanatory candidates that were not modeled, such as learned industriousness, boredom, fatigue, sunk cost effects, or asymmetric learning of environmental richness (see Discussion). 
   
-  **GARY EXPLAINS FITTING PROCEDURE**
+#### **Model Fitting and Model Comparison Procedures**
+
+  For each model, both population level and individual subject level parameters were fit simultaneously using an Expectation-Maximization algorithm (Huys et al., 2011). Briefly, it was assumed that, at the population level, each parameter was distributed according to a Gaussian distribution, defined by a mean and standard deviation; the individual subject parameters were drawn from this distribution. Accordingly, a point estimate for the individual subject parameters were found via maximum a posteriori (MAP) estimation using the population distribution for each parameter as the priors, and the variance in the individual subject parameter estimates were calculated by taking the inverse of the Hessian matrix at the MAP estimate. Next, the mean of the prior was updated by taking the weighted mean of individual subject estimates, and the variance of the prior was updated by taking the weighted variance across the parameter estimates of individual subjects. This process was repeated until the mean and variance of the prior for all parameters converged (a change of less than .1% across successive iterations). Full mathematical details of the algorithm can be found in Huys et al., 2011, and the algorithm was implemented using a custom written R package, GaussExMax, available on github (github.com/gkane26/GaussExMax).
+  
+  Model comparison was performed by calculating Bayes Information Criterion at the group level (integrated BIC or iBIC; Huys et al., 2011; Kane et al., 2019). iBIC penalizes the likelihood of the data given model parameters $p(d | model)$ for model flexibility (the number of parameters, $k$), and the size of the penalty depends on the number of observations $o$:
+  
+\begin{align}
+  iBIC = logp(d | model) + \frac{k}{2}log(o)
+\end{align}
+  
+  A Laplace approximation was used to find the log marginal likelihood, the likelihood of the data for each subject given the population level distribution over each parameter (Huys et al., 2011; Kane et al., 2019).
+  
+  
+#### **Model Definitions**
   
   We began by fitting a base model derived from the normative predictions of the Marginal Value Theorem [MVT; @Charnov1976], which states that a delayed reward should be accepted if its earning rate surpasses the opportunity cost (OC) of time incurred in obtaining it (see Operationalization of Cost for details). This decision rule can be expressed as
 
