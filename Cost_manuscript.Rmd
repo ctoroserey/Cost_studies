@@ -2349,23 +2349,17 @@ hrprepostPlot_wth <- dataWth %>%
   ungroup() %>%
   mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%
   ggplot(aes(Offer, propAccept, color = Cost)) +
-    geom_point(size = 3, show.legend = T) +
+    geom_point(size = 3, show.legend = F) +
     #geom_point(aes(y = Optimal), size = 3, pch = 21, color = "darkgrey") +
     geom_line(size = 1, show.legend = F) +
     scale_color_manual(values = colsWth) +
     scale_fill_manual(values = colsWth) +
-    geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = T) +
+    geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = F) +
     scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
     scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
-    labs(x = "Reward", y = "Proportion Accepted") +
+    labs(x = "Offer", y = "Proportion Accepted") +
     facet_wrap(vars(Block)) +
-    theme(legend.key = element_blank(),
-          legend.position = c(0.9, 0.25),
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(), 
-          panel.background = element_blank(), 
-          axis.line = element_line(colour = "black"),
-          text = element_text(size = 16))
+    theme_classic(base_size = 22)
 
 # with block order
 blockOrder_wth <- dataWth %>%
@@ -2390,15 +2384,9 @@ blockOrder_wth <- dataWth %>%
     geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 1, show.legend = F) +
     scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
     scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
-    labs(x = "Reward", y = "Proportion Accepted") +
-    facet_wrap(vars(BlockOrder, Block)) +
-    theme(legend.key = element_blank(),
-          legend.position = c(0.9, 0.25),
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(), 
-          panel.background = element_blank(), 
-          axis.line = element_line(colour = "black"),
-          text = element_text(size = 20))
+    labs(x = "Offer", y = "Proportion Accepted") +
+    facet_grid(BlockOrder ~ Block) +
+    theme_classic(base_size = 22)
 ```
 
 ``` {r WTH: 16.3.3. mix pre/post separately, echo = FALSE, fig.align="center", fig.width=5, fig.height=4}
@@ -2476,7 +2464,7 @@ pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
 #          col = col2(200))
 ```
 
-``` {r WTH: 16.3.3 temp plot, echo = FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
+``` {r WTH: 16.3.3 temp plots, echo = FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
 # cw <- dataWth %>%
 #   group_by(SubjID) %>%
 #   mutate(Block = case_when(
@@ -2493,7 +2481,7 @@ pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
 #   ungroup() %>%
 #   select(-c(`1`, `3`)) %>%
 #   spread(Cost, diff) %>%
-#   ggplot(aes(Cognitive, Wait-C, fill = as.character(Offer))) +
+#   ggplot(aes(Cognitive, `Wait-C`, fill = as.character(Offer))) +
 #     geom_point(pch = 21, color = "black", size = 3) +
 #     geom_hline(yintercept = 0) +
 #     geom_vline(xintercept = 0) +
@@ -2529,7 +2517,7 @@ pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
 #   ungroup() %>%
 #   select(-c(`1`, `3`)) %>%
 #   spread(Cost, diff) %>%
-#   ggplot(aes(Physical, Wait-P, fill = as.character(Offer))) +
+#   ggplot(aes(Physical, `Wait-P`, fill = as.character(Offer))) +
 #     geom_point(pch = 21, color = "black", size = 3, show.legend = F) +
 #     geom_hline(yintercept = 0) +
 #     geom_vline(xintercept = 0) +
@@ -2626,8 +2614,9 @@ pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
 
 ```{r Survival and prepost plots (Fig. 8), eval = !figsEnd, fig.width = 8, fig.height = 7, fig.align = "center", fig.cap = "Top: Survival curve (left), and distribution of quitting times over time (right). Bottom: Proportion accepted in the second half as a function of first half acceptances (left). Dashed lines indicate the mean for each cost. On the right, the proportion accepted every time participants experienced a given block type."}
 # plots generated in 16.3.1. and 16.3.3.
-historyPlot_wth <- (suppressWarnings(survPlot_wth) | suppressWarnings(RTplot_wth)) / (prepost_wth$scatterplot | prepost_wth$propBlocks)
-ggsave("./Images/FIG8_survival.png", historyPlot_wth, device = "png", height = 8, width = 10)
+#historyPlot_wth <- (suppressWarnings(survPlot_wth) | suppressWarnings(RTplot_wth)) / (prepost_wth$scatterplot | prepost_wth$propBlocks)
+#ggsave("./Images/FIG8_survival.png", historyPlot_wth, device = "png", height = 8, width = 10)
+include_graphics("./Images/FIG8_survival.png")
 ```
 
   However, against our predictions, participants accepted significantly fewer trials on the second half of the experiment, regardless of cost (paired permutations; Cognitive: mean~pre~ = `r filter(df_mean, Cost == "Cognitive")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Cognitive")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Cognitive")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Cognitive")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Cognitive"]])`, Cohen's D = `r round(prepost_wth$CohenD[["Cognitive"]], digits = 2)`; Physical: mean~pre~ = `r filter(df_mean, Cost == "Physical")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Physical")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Physical")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Physical")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Physical"]])`, Cohen's D = `r round(prepost_wth$CohenD[["Physical"]], digits = 2)`; Wait-C:  mean~pre~ = `r filter(df_mean, Cost == "Wait-C")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Wait-C")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Wait-C")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Wait-C")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Wait-C"]])`, Cohen's D = `r round(prepost_wth$CohenD[["Wait-C"]], digits = 2)`; Wait-P: mean~pre~ = `r filter(df_mean, Cost == "Wait-P")$propAccept_1`, SD~pre~ = `r filter(df_mean, Cost == "Wait-P")$sdAccept_1`, mean~post~ = `r filter(df_mean, Cost == "Wait-P")$propAccept_2`, SD~post~ = `r filter(df_mean, Cost == "Wait-P")$sdAccept_2`, *p* `r report_p(prepost_wth$Perms[["Wait-P"]])`, Cohen's D = `r round(prepost_wth$CohenD[["Wait-P"]], digits = 2)`; Figure 9). The reduction in acceptances was not driven by a performance decline, as the difference in acceptance rates was not significantly correlated with the proportion of forced travels across individuals (Pearson's r = `r round(corDiff, digits = 2)`, *p* > 0.05). Notably, the pattern of choices from the first half of the experiment resembled that from the matching handling/travel block from the between-subject experiment (Figure 4A). Mixed effects logistic regressions performed on each half separately confirmed that the relative preference for cognitive effort seen previously was preserved at the beginning of the experiment (Figure 9, top-right, lower triangle), but that it disappeared over time amid an overall decline in acceptance rates as participants gained experience with all three conditions (upper triangle). This fading preference for cognitive effort was observed regardless of which block participants experienced first, even though its magnitude appeared to be reduced for those who experienced the physical block first (Figure 9, bottom)
@@ -2635,6 +2624,8 @@ ggsave("./Images/FIG8_survival.png", historyPlot_wth, device = "png", height = 8
   All together, our findings show that the stable preferences for cognitive effort observed during single-demand foraging slowly fade if alternative demands are introduced. This points towards task-specific and outcome-independent features from cognitive tasks that can be recalibrated by new experiences.
   
 ```{r Prepost mixed effects plots (Fig. 9), eval = !figsEnd, fig.align = "center", fig.cap = "Acceptance rates over time. Top-Left: Proportion accepted in the first two and last two blocks of the experiment. An initial preference for cognitive effort trials fades amid a global decrease in acceptance rates. Top-Right: Mixed effects coefficient matrix for each half separately. The pattern from the first half resembles what was observed in the between-subjects experiment (Figure 4). Bottom: Block rder effects show attenuated differences for those who started with the physical configuration."}
+# hrprepostPlot_wth, blockOrder_wth
+# ggsave("./Images/prepostwth_2.png", hrprepostPlot_wth, device = "png", height = 4, width = 8)
 include_graphics("./Images/FIG9.png")
 
 ```
@@ -2975,6 +2966,7 @@ bicPlot <- ggplot(data = modelComparison, aes(Model, BIC, group = Exp, color = E
   scale_x_discrete(labels = c("Base", "Adaptive", "Biased", "A + B")) +
   theme(legend.position = c(0.8, 0.8),
         #axis.text.x = element_text(angle = 20, hjust = 1),
+        legend.key=element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
@@ -3120,9 +3112,10 @@ allFitsPlot <- rbind(t1, t2) %>%
 
 ```{r BIC and parameter comparison (Fig. 10), eval = !figsEnd, fig.align = "center", fig.height = 5, fig.width = 7, fig.cap = "A. BIC values for four plausible models of choice behavior for both experiments. Lower values indicate better fit. B. Differences in cost biases produced by each demand. Negative values suggest the cognitive group acted as if it perceived its demand as valuable. C. Parameter comparison portrays consistent foraging behavior across experiments."}
 
-include_graphics("./Images/FIG10.png")
+# modelPlot <- (bicPlot + costPlot) / allFitsPlot
+# ggsave("./Images/FIG10_model.png", modelPlot, device = "png", height = 8, width = 11)
+include_graphics("./Images/FIG10_model.png")
 
-#(bicPlot + costPlot) / allFitsPlot
 
 #In the first model, gamma reflected cost by indexing how much money per second a participant needed to accept a trial. For example, the aversion produced by a given cost could prompt an individual to spend their time and effort in the most profitable offers, resulting in a high gamma value. Conversely, low gamma values represented low selectivity when evaluating offers. Results from this model apply only to the between-subjects experiment, as this single parameterization was not flexible enough to account for the dynamics of experiment two. This model was able to explain a considerable degree of choice variance per individual ($R^2$: mean = `r round(mean(summaryOC_btw$all$Rsquared), digits = 2)`, SD = `r round(sd(summaryOC_btw$all$Rsquared), digits = 2)`). Figure 10 displays the distribution of fitted gammas, which were significantly different across groups (F(`r OCanova$aov[[1]]$Df[1]`, `r OCanova$aov[[1]]$Df[2]`) = `r Fval`, p = `r report_p(Pval)`, $R^2$ = `r Rsquared_aov`). Pairwise post-hoc permutations indicated that the mean gamma values for the cognitive group were significantly lower than for the wait (*p* `r report_p(OCanova$perms["Wait", "Cognitive"])`, Cohen's D = `r round(OCanova$ES["Wait", "Cognitive"], digits = 2)`) and physical effort (*p* `r report_p(OCanova$perms["Physical", "Cognitive"])`, Cohen's D = `r round(OCanova$ES["Physical", "Cognitive"], digits = 2)`), and marginally lower than the easy group (*p* `r report_p(OCanova$perms["Easy", "Cognitive"])`, Cohen's D = `r round(OCanova$ES["Easy", "Cognitive"], digits = 2)`). In addition, the easy group displayed significantly lower gamma values than the wait group (*p* `r report_p(OCanova$perms["Wait", "Easy"])`, Cohen's D = `r round(OCanova$ES["Wait", "Easy"], digits = 2)`). We cross-validated individual OCs by using the pre-midpoint data for estimation, and post-midpoint choices for testing. This procedure revealed high mean predictive accuracies for all individuals (mean accuracy for Cognitive = `r filter(summaryOC_btw$predicted, Cost == "Cognitive")$mPredicted`%, SD = `r filter(summaryOC_btw$predicted, Cost == "Cognitive")$sdPredicted`; mean Physical = `r filter(summaryOC_btw$predicted, Cost == "Physical")$mPredicted`%, SD = `r filter(summaryOC_btw$predicted, Cost == "Physical")$sdPredicted`; mean Wait = `r filter(summaryOC_btw$predicted, Cost == "Wait")$mPredicted`%, SD = `r filter(summaryOC_btw$predicted, Cost == "Wait")$sdPredicted`; mean Easy = `r filter(summaryOC_btw$predicted, Cost == "Easy")$mPredicted`%, SD = `r filter(summaryOC_btw$predicted, Cost == "Easy")$sdPredicted`), despite the reduction in acceptances produced by the effortful demands. We further interpreted these fitted values by comparing them to the optimal gamma (dashed line on Figure 10; see Operationalization of Cost). Two-sided one-sample t-tests against this optimal magnitude resulted in significantly lower gamma values for the cognitive group (mean = `r filter(summaryOC_btw$descriptives, Cost == "Cognitive")$mGamma`, SD = `r filter(summaryOC_btw$descriptives, Cost == "Cognitive")$sdGamma`; T(20) = `r round(summaryOC_btw$t.test["statistic", "Cognitive"][[1]], digits = 2)`, *p* `r report_p(summaryOC_btw$t.test["p.value", "Cognitive"][[1]])`), and marginally higher values for the wait group (mean = `r filter(summaryOC_btw$descriptives, Cost == "Wait")$mGamma`, SD = `r filter(summaryOC_btw$descriptives, Cost == "Wait")$sdGamma`; T(20) = `r round(summaryOC_btw$t.test["statistic", "Wait"][[1]], digits = 2)`, *p* `r report_p(summaryOC_btw$t.test["p.value", "Wait"][[1]])`). Neither physical effort (mean = `r filter(summaryOC_btw$descriptives, Cost == "Physical")$mGamma`, SD = `r filter(summaryOC_btw$descriptives, Cost == "Physical")$sdGamma`) nor the easy condition (mean = `r filter(summaryOC_btw$descriptives, Cost == "Easy")$mGamma`, SD = `r filter(summaryOC_btw$descriptives, Cost == "Easy")$sdGamma`) produced significant differences (all *p* > 0.05). These results suggest that the cognitive effort group acted as if they perceived the trials as attractive.
 
