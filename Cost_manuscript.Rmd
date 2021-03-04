@@ -10,6 +10,7 @@ header-includes:
 - \newcommand{\beginsupplement}{ \setcounter{table}{0} \renewcommand{\thetable}{S\arabic{table}}
   \setcounter{figure}{0} \renewcommand{\thefigure}{S\arabic{figure}} }
 - \usepackage{indentfirst}
+- \usepackage{fixltx2e}
 output:
   pdf_document:
     highlight: haddock
@@ -51,8 +52,8 @@ library(ggfortify)
 library(patchwork)
 library(data.table)
 
-## figures at the end of the manuscropt?
-figsEnd <- FALSE
+## figures at the end of the manuscript?
+figsEnd <- TRUE
 
 
 ## aesthetic options
@@ -727,7 +728,7 @@ include_graphics("./Images/FIG1_task_a.png")
   Foraging theory posits that accepting a delayed reward should depend on the opportunity cost (OC) of time incurred in obtaining it, given by the richness of the environment [@Charnov1976; @Stephens2019]. In this study, the richness of the environment was manipulated by the length of the handling and travel times, whereby shorter travel times produced richer environments. Since time combinations were fixed per block, we calculated each block’s optimal accept/reject strategy by computing all decision strategies according to the following equation:
   
 $$\begin{aligned} 
-\dfrac {\sum p_i R_i} {Time_{offer} + (\sum p_i H + Time_{reward}) + 3T},p \in \{0, 1\}
+g(*) = \dfrac {\sum p_i R_i} { 3\text{Time}_\text{offer} + (\sum p_i H + \text{Time}_\text{reward}) + 3T},p \in \{0, 1\}
 \end{aligned}$$
   
   where *R* and *p* are the reward and acceptance probability of offer i, respectively, *H* is the handling time for the block, $Time_{offer/reward}$ are the windows when offers and rewards were disclosed, and *T* its associated travel time. This gave us the total reward per second attainable in each block as a function of the acceptance threshold (i.e. the lowest amount accepted). Figure 2 shows possible earnings per second for each choice strategy, as well as the lowest amount participants should accept in order to maximize their rewards (circled dots). For example, a participant in a 10 s handling block should accept 8-cent and 20-cent rewards (and reject 4-cent rewards) to maximize their reward rate. Note that accepting every offer was often detrimental to participant earnings. Significant deviations from the optimal strategy can be understood as reflecting changes in subjective OC. This approach allowed us to test if certain demands boosted the value of offers, expressed as a subjective OC that fell below the optimal rate.
@@ -789,13 +790,13 @@ include_graphics("./Images/FIG1_task_b.png")
   We began by fitting a base model derived from the normative predictions of the Marginal Value Theorem [MVT; @Charnov1976], which states that a delayed reward should be accepted if its earning rate surpasses the opportunity cost (OC) of time incurred in obtaining it (see Operationalization of Cost for details). This decision rule can be expressed as
 
 \begin{align}
-  Model_{base} = R_i - \gamma H_i
+  \text{Model}_\text{base} = R_i - \gamma H_i
 \end{align}
 
 such that a trial’s reward $R_i$ should be accepted if it is larger than the average amount one could earn per second in the environment $\gamma$ (gamma; the OC) during the handling time $H_i$, with high gammas promoting selectivity. We fit this and all subsequent models using a softmax function to predict the probability of accepting a given trial
 
 \begin{align}
-  P(accept)_i = \dfrac {1} {1 + e^{-(1/\beta)(Model_{base})}}
+  P(\text{accept})_i = \dfrac {1} {1 + e^{-(1/\beta)(\text{Model}_\text{base})}}
 \end{align}
 
 gamma in this base model was computed as an individual's empirical earning rate by the time of each offer, with the free temperature parameter $\beta$ indexing decision noise. However, this base formulation lacked the flexibility needed to capture the dynamics observed in the within-subjects experiment. We therefore tested a second model that allowed $\gamma$ to evolve over time, adapting a learning rule from @Constantino2015
@@ -815,13 +816,13 @@ where $A_i$ is an acceptance indicator (0 or 1), and $\tau_i$ the amount of time
 such that the handling time was counted only for accepted trials. For this adaptive model, we fit the learning rate $\alpha$ and the initial value of $\gamma$ in addition to the temperature. These modifications allowed for the tracking of recent history that was part of our criteria, while maintaining the general structure of the base model
 
 \begin{align}
-  Model_{adaptive} = R_i - \gamma_i H_i
+  \text{Model}_\text{adaptive} = R_i - \gamma_i H_i
 \end{align}
   
   A third model considered the possibility that each type of demand additively biased the estimate of $\gamma$. Such cost bias would be stable if a single demand was experienced, but recalibrated into a global estimate as decision makers faced different types of demands. The overall model took the following form
   
 \begin{align}
-  Model_{biased} = R_i - (\gamma + mC_i) H_i
+  \text{Model}_\text{biased} = R_i - (\gamma + mC_i) H_i
 \end{align}
   
 where $\gamma$ was the mean total earning rate for the whole group (0.55). Negative values of $mC_i$ would therefore suggest a boost in offer value produced by a demand. At each decision point, $mC$ was the cost bias produced by each demand $c_{demand}$ weighted against a global bias estimate $C$
@@ -843,7 +844,7 @@ where the section in parentheses was the proportion of the experiment completed 
   A final model combined the main features from $model_{adaptive}$ and $model_{biased}$, such that $\gamma$ was estimated on each trial per Eq. 3, with demands imposing distinct and potentially converging biases as described in model 3. The form of this fourth model was
   
 \begin{align}
-  Model_{adaptive + biased} = R_i - (\gamma_i + mC_i) H_i
+  \text{Model}_\text{adaptive + biased} = R_i - (\gamma_i + mC_i) H_i
 \end{align}
  
   After fitting the parameters, we performed two-sided, one-sample t-tests to compare the biased opportunity costs from each between-subjects demand group **to the mean optimal gamma** (0.61, see Operationalization of Cost). This allowed us to determine whether any demand boosted an offer's value. Finally, we compared parameters with ANOVAs and post-hoc permutations between each group pairing (5000 iterations).
@@ -968,58 +969,58 @@ earnFitplot_btw <- ggplot(data = temp, aes(pComplete, Earnings)) +
 ### **Between-subjects: Comparisons among the four delay and effort conditions**
 
 ``` {r BTW: 16.1.4. Optimality (move to acceptance comparison eventually), echo = FALSE}
-# in order
-# clean data, 
-# calculate each individual's prop. accept,
-# calculate t.tests with optimality as null mean,
-# correct pvalues with FDR
-temp <- dataBtw %>%
-  filter(Choice < 2) %>%
-  group_by(SubjID, Handling, Offer, Cost) %>%
-  summarise(pAccept = mean(Choice)) %>%
-  mutate(optimal = case_when(
-          (Handling == 10 & Offer < 8) ~ 0,
-          (Handling == 14 & Offer < 20) ~ 0,
-          TRUE ~ 1
-        )) %>% 
-  group_by(Handling, Offer, Cost) %>%
-  summarise(meanAccept = mean(pAccept),
-            sdAccept = sd(pAccept),
-            optimal = unique(optimal),
-            pvals = tryCatch(t.test(pAccept, mu = unique(optimal))$p.value, error = function(e) {1})) %>%
-  mutate(FDR = p.adjust(pvals, method = "BY"),
-         significant = FDR < 0.05)
-
-
-# proportion of significant ones
-# eventually find a way to plot this (or just place it further down)
-# alternative per block: temp %>% group_by(Handling) %>% summarise(prop = mean(significant, na.rm = T))
-optimalProp <- mean(temp$significant, na.rm = T) * 100
-
-# proportion accepted per cost condition
-optimalProp_cost <- temp %>% 
-  group_by(Cost) %>% 
-  summarise(propDeviations = round(mean(significant) * 100))
-
-
-# ## if you want to replicate the cost 3 method
-# # this says that all but easy deviated from optimality in the observed direction
+# # in order
+# # clean data, 
+# # calculate each individual's prop. accept,
+# # calculate t.tests with optimality as null mean,
+# # correct pvalues with FDR
 # temp <- dataBtw %>%
-#   group_by(Cost) %>%
-#   filter(Offer < 20, Handling == 10) %>%
-#   summarize(propAccept = mean(Choice),
-#             accept = sum(Choice),
-#             quit = sum(Choice == 0))
+#   filter(Choice < 2) %>%
+#   group_by(SubjID, Handling, Offer, Cost) %>%
+#   summarise(pAccept = mean(Choice)) %>%
+#   mutate(optimal = case_when(
+#           (Handling == 10 & Offer < 8) ~ 0,
+#           (Handling == 14 & Offer < 20) ~ 0,
+#           TRUE ~ 1
+#         )) %>% 
+#   group_by(Handling, Offer, Cost) %>%
+#   summarise(meanAccept = mean(pAccept),
+#             sdAccept = sd(pAccept),
+#             optimal = unique(optimal),
+#             pvals = tryCatch(t.test(pAccept, mu = unique(optimal))$p.value, error = function(e) {1})) %>%
+#   mutate(FDR = p.adjust(pvals, method = "BY"),
+#          significant = FDR < 0.05)
 # 
-# temp2 <- apply(temp, 1, function(row) {prop.test(as.numeric(row[3]), sum(as.numeric(row[3:4])), p = 0.5, conf.level = 0.95)})
-#   
-#   
-# # store stats in a dataframe
-# news <- data.frame(probability = sapply(temp2, "[[", "estimate"),
-#                                    chisquared = sapply(temp2, "[[", "statistic"),
-#                                    confint = t(sapply(temp2, "[[", "conf.int")),
-#                                    pval = sapply(temp2, "[[", "p.value"))
-# rownames(news) <- temp$Cost
+# 
+# # proportion of significant ones
+# # eventually find a way to plot this (or just place it further down)
+# # alternative per block: temp %>% group_by(Handling) %>% summarise(prop = mean(significant, na.rm = T))
+# optimalProp <- mean(temp$significant, na.rm = T) * 100
+# 
+# # proportion accepted per cost condition
+# optimalProp_cost <- temp %>% 
+#   group_by(Cost) %>% 
+#   summarise(propDeviations = round(mean(significant) * 100))
+
+
+## if you want to replicate the cost 3 method
+# this says that all but easy deviated from optimality in the observed direction
+temp <- dataBtw %>%
+  group_by(Cost) %>%
+  filter(Offer < 20) %>%
+  summarize(propAccept = mean(Choice),
+            accept = sum(Choice),
+            quit = sum(Choice == 0))
+
+temp2 <- apply(temp, 1, function(row) {prop.test(as.numeric(row[3]), sum(as.numeric(row[3:4])), p = 0.5, conf.level = 0.95)})
+
+
+# store stats in a dataframe
+optimalProp_cost <- data.frame(probability = sapply(temp2, "[[", "estimate"),
+                                   chisquared = sapply(temp2, "[[", "statistic"),
+                                   confint = t(sapply(temp2, "[[", "conf.int")),
+                                   pval = sapply(temp2, "[[", "p.value"))
+rownames(optimalProp_cost) <- temp$Cost
 
 
 ```
@@ -1141,7 +1142,7 @@ include_graphics("./Images/FIG3_props.png")
 
   The next set of analyses examined the hypothesis that effort group would uniformly accept more trials. Figure 3 (left) shows that the cognitive effort group consistently accepted more offers, which resulted in lower earnings (middle). One-way ANOVAs showed that differences among groups were significant both for overall acceptance rates (F(`r propAov[[1]]$Df[1]`, `r propAov[[1]]$Df[2]`) = `r round(propAov[[1]][1, 4], digits = 2)`, *p* `r report_p(propAov[[1]][1, 5])`), and total earnings (F(`r earnAov[[1]]$Df[1]`, `r earnAov[[1]]$Df[2]`) = `r round(earnAov[[1]][1, 4], digits = 2)`, *p* `r report_p(earnAov[[1]][1, 5])`). Post-hoc permutations (5000 iterations) comparing mean acceptance rates between every pair of costs confirmed that acceptance rates of the cognitive effort group (mean = `r filter(overallSumms, Cost == "Cognitive")$mProp`, SD = `r filter(overallSumms, Cost == "Cognitive")$sdProp`) were higher than those of the physical (mean = `r filter(overallSumms, Cost == "Physical")$mProp`, SD = `r filter(overallSumms, Cost == "Physical")$sdProp`; *p* `r report_p(filter(propTests, contrast == "Physical < Cognitive")$permPval)`, Cohen's D = `r filter(propTests, contrast == "Physical < Cognitive")$cohenD`) and wait groups (mean = `r filter(overallSumms, Cost == "Wait")$mProp`, SD = `r filter(overallSumms, Cost == "Wait")$sdProp`; *p* `r report_p(filter(propTests, contrast == "Cognitive > Wait")$permPval)`, Cohen's D = `r filter(propTests, contrast == "Cognitive > Wait")$cohenD`). It also showed that those faced with the easy task accepted more than those in the wait group, although responses from the easy group were more variable (mean Easy = `r filter(overallSumms, Cost == "Easy")$mProp`, SD = `r filter(overallSumms, Cost == "Easy")$sdProp`; *p* `r report_p(filter(propTests, contrast == "Wait < Easy")$permPval)`, Cohen's D = `r filter(propTests, contrast == "Wait < Easy")$cohenD`) (all other *p* > 0.05). The higher acceptance rates produced by the cognitive effort group resulted in significantly lower earnings (mean = `r filter(overallSumms, Cost == "Cognitive")$mEarn`, SD = `r filter(overallSumms, Cost == "Cognitive")$sdEarn`) than both physical (mean = `r filter(overallSumms, Cost == "Physical")$mEarn`, SD = `r filter(overallSumms, Cost == "Physical")$sdEarn`; *p* `r report_p(filter(earnTests, contrast == "Physical > Cognitive")$permPval)`, Cohen's D = `r filter(earnTests, contrast == "Physical > Cognitive")$cohenD`) and wait groups (mean = `r filter(overallSumms, Cost == "Wait")$mEarn`, SD = `r filter(overallSumms, Cost == "Wait")$sdEarn`; *p* `r report_p(filter(earnTests, contrast == "Cognitive < Wait")$permPval)`, Cohen's D = `r filter(earnTests, contrast == "Cognitive < Wait")$cohenD`). In addition, we found that the wait group earned more than the physical (*p* `r report_p(filter(earnTests, contrast == "Physical < Wait")$permPval)`, Cohen's D = `r filter(earnTests, contrast == "Physical < Wait")$cohenD`) and easy groups (mean Easy = `r filter(overallSumms, Cost == "Easy")$mEarn`, SD = `r filter(overallSumms, Cost == "Easy")$sdEarn`; *p* `r report_p(filter(earnTests, contrast == "Wait > Easy")$permPval)`, Cohen's D = `r filter(earnTests, contrast == "Wait > Easy")$cohenD`). The percentage of forced travels for cognitive effort was `r round(propFails[2, 2] * 100, digits = 2)`% across participants, and 0% for either physical or easy conditions, making performance an unlikely explanation for the observed differences in choice.
   
-  We next examined the optimality of these decisions. The foraging task was configured so that there was a single reward-maximizing strategy per block type (see Operationalization of Cost in Methods), and participants were warned that accepting everything would not maximize their gains. Accordingly, participants who over- or under-accepted earned the least (Figure 3, right; general linear model with quadratic term, F = `r round(summary(lmEarn)$fstatistic[1], digits = 2)`, Beta = `r round(summary(lmEarn)$coefficients[3,1], digits = 2)`, SE = `r round(summary(lmEarn)$coefficients[3, 2], digits = 2)`, $R^2$ = `r round(summary(lmEarn)$r.squared, digits = 2)`, *p* `r report_p(summary(lmEarn)$coefficients[3, 4])`). Two-sided, one-sample t-tests against the optimal proportion of acceptances (i.e. $\mu$ = 0 or 1) for each combination of cost type, handling time, and offer showed that participants significantly deviated from optimality in `r round(optimalProp)`% of combinations (*p* < 0.05, FDR corrected), with the percentage of deviations being lowest for the wait group (Wait = `r filter(optimalProp_cost, Cost == "Wait")[2]`%, physical = `r filter(optimalProp_cost, Cost == "Physical")[2]`%, Cognitive = `r filter(optimalProp_cost, Cost == "Cognitive")[2]`%, Easy = `r filter(optimalProp_cost, Cost == "Easy")[2]`%). Together, these findings show that even though participants did not always perform optimally, they adequately integrated the statistics of the environment as they tracked their recent experience. Further, they suggest that cognitive effort can boost the value of an offer, as reflected by higher acceptances at the expense of earnings.
+  We next examined the optimality of these decisions. The foraging task was configured so that there was a single reward-maximizing strategy per block type (see Operationalization of Cost in Methods), and participants were warned that accepting everything would not maximize their gains. Accordingly, participants who over- or under-accepted earned the least (Figure 3, right; general linear model with quadratic term, F = `r round(summary(lmEarn)$fstatistic[1], digits = 2)`, Beta = `r round(summary(lmEarn)$coefficients[3,1], digits = 2)`, SE = `r round(summary(lmEarn)$coefficients[3, 2], digits = 2)`, $R^2$ = `r round(summary(lmEarn)$r.squared, digits = 2)`, *p* `r report_p(summary(lmEarn)$coefficients[3, 4])`). We performed group-level chi-squared tests of proportions to examine whether each cost biased decision makers to under- or over-accept 4 and 8 cent offers, which together should have been accepted 50% of the time. We found a significant over-acceptance of these trials by the cognitive effort group (proportion accepted = `r round(optimalProp_cost["Cognitive", "probability"], digits = 2)`%; $\chi^2$ = `r round(optimalProp_cost["Cognitive", "chisquared"], digits = 2)`, *p* `r report_p(summary_costvsreward["Cognitive", "pval"]`), but under-acceptances by the physical (proportion accepted = `r round(optimalProp_cost["Physical", "probability"], digits = 2)`%; $\chi^2$ = `r round(optimalProp_cost["Physical", "chisquared"], digits = 2)`, *p* `r report_p(summary_costvsreward["Physical", "pval"]`) and wait (proportion accepted = `r round(optimalProp_cost["Physical", "probability"], digits = 2)`%; $\chi^2$ = `r round(optimalProp_cost["Physical", "chisquared"], digits = 2)`, *p* `r report_p(summary_costvsreward["Physical", "pval"]`) groups (no significant difference for the Easy group). Together, these findings show that even though participants did not always perform optimally, they adequately integrated the statistics of the environment as they tracked their recent experience. Further, they suggest that cognitive effort can boost the value of an offer, as reflected by higher acceptances at the expense of earnings.
 
 ``` {r BTW: 16.2.2. rmANOVA, echo=FALSE,fig.align="center",fig.width=5,fig.height=4, results = 'asis'}
 ## This section was removed because it was deemed redundant. The interaction is addressed once the a priori mixed effects logistic model is evaluated against multiple forms of interaction effects (16.2.4.).
@@ -3153,14 +3154,14 @@ include_graphics("./Images/FIG10_modelresults.png")
 
 ```{r New Trial plot (Fig. 1), eval = figsEnd, out.width = "80%", fig.align = "center", fig.cap= "General foraging trial structure. On each trial, participants were offered to earn money (4, 8, or 20 cents) by sustaining effort or waiting during the handling time (2, 10, or 14 s). The end of a trial was followed by a travel time (handling and travel times always added up to 16 s). Participants could skip unfavorable trials and immediately start traveling to a potentially better offer. In the between-subject experiment, cost was fixed per participant and handling time varied per block. In the within-subject version, handling time was fixed at 10 s, but a combination of effort and delay trials changed per block. Possible costs, handling times, and rewards were fully disclosed in order to avoid experience-dependent learning."}
 
-include_graphics("./Images/FIG1_short.png")
+include_graphics("./Images/FIG1_task_a.png")
 ```
 
 \newpage
 
 ```{r New Optimal plot (Fig. 2), eval = figsEnd, out.width = "80%", fig.align = "center", fig.cap= "Possible earnings per second for each acceptance threshold (i.e. the smallest amount accepted) for each handling time. Circles denote the reward-maximizing threshold for each block, which is described in the table. Experiments shared the 10 s handling block, in which it was optimal to skip all 4 cent offers."}
 
-include_graphics("./Images/FIG2.png")
+include_graphics("./Images/FIG1_task_b.png")
 ```
 
 \newpage
