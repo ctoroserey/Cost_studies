@@ -12,11 +12,11 @@ header-includes:
 - \usepackage{indentfirst}
 - \usepackage{fixltx2e}
 output:
+  word_document: #default
+    reference_docx: Style_reference_draft.docx
   pdf_document:
     highlight: haddock
     keep_tex: no
-  word_document: #default
-    reference_docx: Style_reference_draft.docx
   html_document:
     df_print: paged
 csl: apa.csl
@@ -680,13 +680,13 @@ Corresponding authors: Claudio Toro-Serey (ctoro@bu.edu) & Joseph T. McGuire (jt
 
 ## Abstract
 
-  Cognitive and physical effort are typically regarded as costly, but recent findings have suggested that exerting effort can boost the value of prospects under certain conditions. Here we embedded mental and physical effort in a "diet choice" foraging task, which required decision makers not only to evaluate the magnitude and delay of a focal prospective reward, but also to estimate the general opportunity cost of time. In two experiments, independent sets of participants collected rewards that required equivalent periods of cognitive effort, physical effort, or unfilled delay. Monetary offers varied per trial, and the two experiments differed in whether the type of effort or delay cost was the same on every trial (between-subjects, n=21 per condition), or varied across trials (within-subjects, n=48). Participants were free either to accept or reject the cost/reward prospect offered on each trial. All participants were more likely to accept offers when rewards were higher and delays shorter (in line with a reward-maximizing strategy), almost never reversed their acceptance decisions, and committed few errors while completing the effort requirements. When participants faced only one type of cost, cognitive effort persistently produced the highest acceptance rate compared to trials with an equivalent period of either physical effort or unfilled delay. **We theorized that i**f cognitive effort were intrinsically rewarding, we would observe the same pattern of preferences when participants foraged for varying cost types in addition to rewards. In the within-subject experiment, an initially higher acceptance rate for cognitive effort trials disappeared over time amid an overall decline in acceptance rates as participants gained experience with all three conditions. Our results extend the view that cognitive demands may reduce the discounting effect of delays, but also suggest that differences in cost can eventually fade if individuals actively experience alternative forms of demand. Rather than assigning intrinsic value to cognitive effort, our findings support the idea that a cognitive effort requirement might influence contextual factors such as subjective delay durations. Such altered estimations can be recalibrated if multiple forms of demand are interleaved.
+  Cognitive and physical effort are typically regarded as costly, but recent findings have suggested that exerting effort can boost the value of prospects under certain conditions. Here we embedded mental and physical effort in a "diet choice" foraging task, which required decision makers not only to evaluate the magnitude and delay of a focal prospective reward, but also to estimate the general opportunity cost of time. In two experiments, independent sets of participants collected rewards that required equivalent periods of cognitive effort, physical effort, or unfilled delay. Monetary offers varied per trial, and the two experiments differed in whether the type of effort or delay cost was the same on every trial (between-subjects, n=21 per condition), or varied across trials (within-subjects, n=48).When participants faced only one type of cost, cognitive effort persistently produced the highest acceptance rate compared to trials with an equivalent period of either physical effort or unfilled delay. We theorized that if cognitive effort were intrinsically rewarding, we would observe the same pattern of preferences when participants foraged for varying cost types in addition to rewards. In the within-subject experiment, an initially higher acceptance rate for cognitive effort trials disappeared over time amid an overall decline in acceptance rates as participants gained experience with all three conditions. Our results extend the view that cognitive demands may reduce the discounting effect of delays, but also suggest that differences in cost can eventually fade if individuals actively experience alternative forms of demand. Rather than assigning intrinsic value to cognitive effort, our findings support the idea that a cognitive effort requirement might influence contextual factors such as subjective delay durations. Such altered estimations can be recalibrated if multiple forms of demand are interleaved.
 
 \newpage
 
 ## Introduction
 
-  Evaluating whether to pursue a desirable outcome often requires assessing the demands required for obtaining it. In psychology and economics, demands for both time and effort have traditionally been identified as costs that detract from the net subjective value of rewards [@Shenhav2017 ;@Westbrook2015]. Indeed, decision makers tend to prefer low-effort and immediate rewards over larger rewards that demand longer delays and higher effort [@Ainslie1975; @Hull1943; @Kool2010; @Kool2018; @Treadway2009; @Westbrook2013]. However, people often change their attitudes towards exerting effort in everyday decisions, resulting in pursual of effortful avenues instead. Emerging experimental and theoretical work has chiefly explained this phenomenon by suggesting a reciprocal relationship between effort and outcome, whereby exerting effort boosts the perceived value of its outcomes [@HernandezLallement2014; @Kacelnik2002; @Mochon2012], and positive outcomes imbue value into their preceding effortful behavior [i.e. learned industriousness; @Eisenberger1992]. Though intuitively valid and empirically supported, this explanation leaves open questions about what features of an effortful task can make it attractive in its own right, and how contextual factors mold its perceived costs [@Inzlicht2018]. Understanding these intrinsic qualities could improve our ability to motivate completion of effortful daily activities, such as schoolwork or physical exercise.
+  Evaluating whether to pursue a desirable outcome often requires assessing the demands required for obtaining it. In psychology and economics, demands for both time and effort have traditionally been identified as costs that detract from the net subjective value of rewards [@Shenhav2017 ;@Westbrook2015; @Frederick2002; Walton2006]. Indeed, decision makers tend to prefer low-effort and immediate rewards over larger rewards that demand longer delays and higher effort [@Ainslie1975; @Hull1943; @Kool2010; @Kool2018; @Treadway2009; @Westbrook2013]. However, people often change their attitudes towards exerting effort in everyday decisions, resulting in pursual of effortful avenues instead. Emerging experimental and theoretical work has chiefly explained this phenomenon by suggesting a reciprocal relationship between effort and outcome, whereby exerting effort boosts the perceived value of its outcomes [@HernandezLallement2014; @Kacelnik2002; @Mochon2012], and positive outcomes imbue value into their preceding effortful behavior [i.e. learned industriousness; @Eisenberger1992]. Though intuitively valid and empirically supported, this explanation leaves open questions about what features of an effortful task can make it attractive in its own right, and how contextual factors mold its perceived costs [@Inzlicht2018]. Understanding these intrinsic qualities could improve our ability to motivate completion of effortful daily activities, such as schoolwork or physical exercise.
   
   What is often missing from existing accounts is the common case of choosing among types of behavioral demands. Studies have traditionally compared the reduction of subjective value imposed by each type of demand, often through discounting functions that capture how much less appealing a reward becomes as a function of the amount or intensity of its associated behavior [@Ainslie1975; @Frederick2002; @Green1994; @Kable2007; @Kool2010; @Westbrook2013]. Although this line of work suggests that discounting functions are similar for delay and effort [@Massar2015; @Prevost2010; @Seaman2018], there is ongoing debate about the shape of the discounting function across types of demands [@Arulpragasam2018; @Biaaszek2017; @Chong2017; @Hartmann2013; @Klein-Flugge2016; @Kool2018; @Prevost2010], and discount rates do not always correlate across cost domains [@Seaman2018; @Westbrook2013]. However, sporadic preferences for effort could arise from the availability of other types of demands in the same choice environment—in other words, from its context [@Kool2018]. For example, exerting high effort for a reward might be aversive, but the same level of work might become valuable when compared to the boredom of passive waiting (e.g. taking the cumbersome way home rather than waiting for a delayed train, even if the resulting time of arrival is the same). Conversely, even though people tend to donate more to charitable events that require them to perform effortful activities (i.e. the martyrdom effect), they are also less likely to engage in such events once an easier alternative to raise funds becomes available [@Olivola2013]. Recent work has proposed that the subjective costs produced by delays and cognitive effort is modulated by the possibility of missing out on better concurrent alternatives, namely the opportunity cost of time [OC; @Fawcett2012; @Kurzban2013; @Otto2019]. This evidence sets the stage for examining what people would actually select when given the option for multiple types of demands, including the mostly unexplored question of deciding between cognitive and physical effort [@Inzlicht2018; @Kool2018].
 
@@ -696,18 +696,17 @@ Corresponding authors: Claudio Toro-Serey (ctoro@bu.edu) & Joseph T. McGuire (jt
 
   Our results provided mixed support for our pre-registered hypotheses, which are detailed in https://osf.io/2rsgm/. Confirming our predictions, we found that individuals could approximate optimality by preferring higher rewards and shorter delays, regardless of the richness of the environment or whether they faced a single or intermixed demands. When faced with a single type of demand, people in the cognitive effort group accepted more trials than optimal, whereas physical effort and wait groups under-accepted, partially matching our predictions and highlighting that cognitive effort can add value to outcomes. However, against our expectations, we found that a similar preference for cognitive effort disappeared over time as decision makers foraged for types of demands in addition to rewards. Computational modeling suggested that the normative predictions of traditional foraging models were insufficient to explain our results. Instead, we found that demands imposed a bias on the estimation of the opportunity cost of time, which converged over time if individuals were exposed to interleaving types of demands. We hypothesize that this bias arises from modulations of subjective time. For instance, cognitive effort could have become appealing by virtue of compressing the perceived trial time, a perception that could be recalibrated with exposure to alternative demands. The construal of such shorter experienced durations could be due to the ongoing recruitment of working memory (e.g. preventing individuals from estimating the elapsed time), or because of the discrete nature of the cognitive task, which allowed individuals to count instead of thinking about time (versus a continuous configuration of the physical and wait tasks). These results expand our understanding of the attractiveness of effort, bringing forth outcome-independent features that can be leveraged to motivate effort engagement in diverse everyday scenarios. 
 
-## Methods
- 
-### **Experiment 1: Between-subjects comparison of costs**
+## Experiment 1: Between-subjects comparison of costs
 
-### Participants
+### *Methods*
+#### **Participants**
 
   Both between- and within-subject experiments were pregeristered with the Open Science Framework (https://osf.io/2rsgm/registrations). All experimental procedures were approved by the Boston University Institutional Review Board, and written consent was acquired for all participants. For the between-subject experiment, we recruited individuals until a desired number of 84 eligible participants was achieved (58 Female, median age = 21, range = 18 - 31; number excluded before reaching goal = 8). The sample size was determined by means of power analysis (ANOVA), using a significance level of 0.05, power of 0.8, an effect size of f = 0.45 (calculated from a pilot study), and three groups (one for each cost type). The resulting per-group sample was 20, which we increased to 21 in order to match three possible block orders. We added an extra group of 21 participants who experienced a minimally effortful condition in order to determine whether effort or pure engagement were driving our results.
   
 We excluded participant datasets based on four preregistered criteria: 1) Consent: If they withdrew their participation; 2) Inattentiveness: a catch trial was placed at the end of each experimental block, asking participants to press a key within 3 seconds (time requirement based on pilot study response times). A participant who failed two or more of these checks was excluded and replaced. 3) Improbable choice behavior: The task was structured so that one reward amount must always be accepted. A participant who quit every trial in at least one block was assumed not to have followed or understood task instructions, or to have disengaged from the task altogether. 4) Performance: Participants were forced to travel if they made 2 mistakes in a cognitive effort trial (see task procedures below), or if they gripped below threshold during physical trials. Any participant with more than 30% forced travels was excluded.
 
 
-### Foraging Task 
+#### **Foraging Task** 
 
   All experimental tasks were implemented using PsychoPy 2 [v1.85.1, @Peirce2019] on a Macbook Pro laptop. In this task, participants foraged for monetary rewards in an environment in which each trial required either physical effort or cognitive effort for a set period of time (the “handling time”), or an equivalent unfilled delay (Figure 1). Their goal was to maximize their gains within a fixed amount of time. On each trial a monetary offer was displayed for 2 s, and participants had the opportunity to expend time and/or effort during the handling time in order to earn it. Upon completion of a trial participants saw a 2 s window displaying the reward obtained, which was followed by a travel time to the next offer. Alternatively, the participant could quit at any point during the handling time by pressing the spacebar on the computer, and immediately start traveling. 
   
@@ -719,11 +718,11 @@ We excluded participant datasets based on four preregistered criteria: 1) Consen
 
 #Task design and optimal behavior. A: General foraging trial structure. On each trial, participants were offered to earn money by sustaining effort or waiting during the handling time (2, 10, or 14 s). The end of a trial was followed by a travel time (handling and travel times always added up to 16 s). Participants could skip unfavorable trials and immediately start traveling to a potentially better offer. In the between-subject experiment, cost was fixed per participant and handling time varied per block. In the within-subject version, handling time was fixed at 10 s, but a combination of effort and delay trials changed per block. B: Possible earnings per second for each acceptance threshold (i.e. the smallest amount accepted) for each handling time. Circles denote the reward-maximizing threshold for each block, which is described in the table. Experiments shared the 10 s handling block, in which it was optimal to skip all 4 cent offers.
 
-include_graphics("./Images/FIG1_task_a.png")
+include_graphics("./Images/FIG1_task.png")
 ```
 
 
-### Operationalization of Cost
+#### **Operationalization of Cost**
 
   Foraging theory posits that accepting a delayed reward should depend on the opportunity cost (OC) of time incurred in obtaining it, given by the richness of the environment [@Charnov1976; @Stephens2019]. In this study, the richness of the environment was manipulated by the length of the handling and travel times, whereby shorter travel times produced richer environments. Since time combinations were fixed per block, we calculated each block’s optimal accept/reject strategy by computing all decision strategies according to the following equation:
   
@@ -738,7 +737,7 @@ g(*) = \dfrac {\sum p_i R_i} { 3\text{Time}_\text{offer} + (\sum p_i H + \text{T
 include_graphics("./Images/FIG1_task_b.png")
 ```
 
-### Analyses
+#### **Analyses**
 
   All analyses were performed in R 3.5.2 [@RTeam2018]. First we tested whether decision makers integrated delay and reward information. To address the prediction that participants would be more likely to accept higher reward and shorter handling time trials, we fit a mixed-effects logistic regression to predict trial-wise acceptances [using the lme4 package, @Bates2015], giving a random intercept to each subject to account for biases in participant behavior. We included regressors for handling time and reward, as well as two covariates that probed the influence of recent history on choices. The first was an autoregressive regressor containing the number of consecutive offer misses prior to a given trial (misses could be due to quits or forced travels). The second regressor tracked the sum of the previous *n* offers. We identified the *n* that minimized Akaike's Information Criterion (AIC) among 6 versions of the model (tracing from 2 previous trials up to 7, beyond which the model failed to converge), and reported all coefficients from the winning model.
   
@@ -750,109 +749,8 @@ include_graphics("./Images/FIG1_task_b.png")
   
   Next, we examined whether participants were consistent and stable in their choices. For consistency, we visually examined survival curves indicating at what point during the handling time participants quit a trial (censored points included trial completions and forced travels), in addition to quitting time distributions. We interrogated stability by computing each participant’s total proportion of acceptances pre- and post-midpoint for every block type, comparing the mean proportion of acceptances using paired permutations (5000 iterations). We then tested whether the observed differences in costs were still present on each half of the experiment by applying winning model from the mixed-effects logistic comparison to each half separately. In each case, the reference cost category was rotated in order to assess pairwise differences among all costs. We evaluated the consistency of the relative costs by visually comparing the patterns of significant differences between experimental halves.
 
-### **Experiment 2: Within-subjects comparison of costs**
-
-### Participants 
-
-  We collected data from a new sample of 48 eligible participants  (39 Female, median age = 21, range = 18 - 36; number excluded before reaching goal = 6). Sample size was once again determined by means of a power analysis (repeated measures ANOVA), using a significance level of 0.05, power of 0.8, a desired effect size of f = 0.5, and four factors (one for each condition). The resulting sample size was 45, which we increased to 48 in order to balance the potential order of blocks. We excluded participants using the same criteria as in the between-subject experiment.
-
-### Foraging Task Adaptation
-
-  The original between-subjects task was modified so that participants foraged for cost types in addition to rewards. Every participant experienced all forms of cost (delay, physical effort, and cognitive effort). There were two block types, in which delay trials were interspersed with either physical-effort or cognitive-effort trials. This setup prevented participants from having to rapidly switch between response modalities across trials (i.e. keyboard press and handgrip). Block combinations (i.e. physical/wait and cognitive/wait) were experienced three times by each participant in 7-minute-long, interleaved blocks, thus matching the experiment’s length to the between-subject version. Half of the participants experienced a block sequence that started with the physical block. Timing parameters were matched to the middle condition from Experiment 1 (i.e. 10 s handling and 6 s travel), establishing a balance between acquiring enough observations per trial type and being able to compare results across experiments. Participants were informed that this timing combination would be constant prior to beginning the experiment. Cost type combinations were disclosed at the beginning of each block, and reward/cost offers displayed before each trial begins (e.g. “8 cents for physical effort”). Unlike the previous experiment, participants could express their decision to quit during the offer window (instead of during the handling time). Participants trained in each type of demand until they reached the same criteria as in the between-subject experiment.
-
-### Analyses
-
-  The analytical pipeline was mostly preserved from the between-subject experiment. We first ran tests to determine whether decision makers integrated reward information. We performed a mixed-effects logistic regression with regressors for offer amount, number of consecutive offer misses, and the sum of the *n* previously observed offers (we identified *n* by comparing the AIC of different history lengths). We then confirmed that the under- and over-acceptance were detrimental to total earnings by performing the same quadratic linear model explained above. To determine the optimality of the group’s decisions, we examined whether each cost type produced a bias to over or under-accept at 4 and 8 cents (assuming that 20 cents were always be accepted, given our design). The reward-maximizing strategy was to always reject 4 cents and accept 8 cents, yielding a combined optimal proportion of acceptances of 50% (see Operationalization of Costs for details). We performed a two-sided one-sample chi-squared test of proportions against the null probability of 0.5 for each type of cost. Therefore, a significant difference indicated that participants either over or under accepted rewards.
-  
-  To compare acceptances among cost conditions, we first computed the probability of accepting a trial with a mixed-effects logistic regression. The model included cost condition and reward amount as fixed main effects, and participant ID as a random intercept (handling time is not modeled, as participants experienced a single time combination). Cost condition was modeled with three categorical terms, with the fourth condition as the reference condition (two effort conditions, and two delay conditions corresponding to each effort type). We ran three versions of the model with different reference conditions, in order to test all relevant pairwise differences among the four cost conditions. We compared the a priori model to alternative parameterizations using AIC and BIC, varying model complexity in a forward order: 1) intercept only; 2) cost only; 3) reward only; 4) cost and reward main effects (a priori model); and 5) adding a two-way interaction. We predicted that model 4 would have the last considerable decrease in the negative log-likelihood. Models with similar AIC were formally compared using the analysis-of-deviance approach from the between-subjects experiment.
-  
-  Next we probed consistency and stability in people's choices. First, we qualitatively assessed the number of quits performed during during the handling time through a survival curve, and plotted the quit response time distribution as a function of block to examine choice consistency over time. Next, we computed the proportion of quits that were performed during the choice window versus during the handling time. We interpreted as confidence if a participant made at least 80% of their choices during the offer window. We then computed each participant’s total proportion of acceptances on the first two and last two blocks, and compared them using a paired permutation analysis (5000 iterations). We avoided the third and fourth block because their effort designation was counterbalanced across participants, which would have biased our estimates.
-
-### **Computational Modeling of Foraging Behavior**
-  
-  We performed model comparisons to identify qualities that explained findings from both experiments. Based on the observed choice behavior, an adequate model had to meet seven criteria: 1) show deviations from optimality that were not simply due to overharvesting; 2) keep track of recent offer history; 3) experience a slight reduction of acceptances in effortful conditions in the between-subjects experiment; 4) persistently display higher acceptances for cognitive effort when faced with single behavioral costs; 5) initially match this preference for cognitive effort trials when foraging for demands and rewards; 6) display a disappearance of this preference as acceptances decreased to a common rate across costs; and 7) preference ranks should be robust to block order effects, but the magnitude of the differences should be lower for those who started with the physical effort block. These conditions discarded a number of popular explanatory candidates that were not modeled, such as learned industriousness, boredom, fatigue, sunk cost effects, or asymmetric learning of environmental richness (see Discussion). 
-  
-#### **Model Fitting and Model Comparison Procedures**
-
-  For each model, both population level and individual subject level parameters were fit simultaneously using an Expectation-Maximization algorithm [@Huys2011; @Huys2012]. Briefly, it was assumed that, at the population level, each parameter was distributed according to a Gaussian distribution, defined by a mean and standard deviation; the individual subject parameters were drawn from this distribution. Accordingly, a point estimate for the individual subject parameters were found via maximum a posteriori (MAP) estimation using the population distribution for each parameter as the priors, and the variance in the individual subject parameter estimates were calculated by taking the inverse of the Hessian matrix at the MAP estimate. Next, the mean of the prior was updated by taking the weighted mean of individual subject estimates, and the variance of the prior was updated by taking the weighted variance across the parameter estimates of individual subjects. This process was repeated until the mean and variance of the prior for all parameters converged (a change of less than .1% across successive iterations). Full mathematical details of the algorithm can be found in Huys et al. (2011, 2012), and the algorithm was implemented using a custom written R package, GaussExMax, available on github (github.com/gkane26/GaussExMax).
-  
-  Model comparison was performed by calculating Bayes Information Criterion at the group level [integrated BIC or iBIC; @Huys2011; @Huys2012; @Kane2019]. iBIC penalizes the likelihood of the data given model parameters $p(d | model)$ for model flexibility (the number of parameters, $k$), and the size of the penalty depends on the number of observations $o$:
-  
-\begin{align}
-  iBIC = logp(d | model) + \frac{k}{2}log(o)
-\end{align}
-  
-  A Laplace approximation was used to find the log marginal likelihood, the likelihood of the data for each subject given the population level distribution over each parameter (Huys et al., 2011; Huys et al., 2012; Kane et al., 2019).
-  
-  
-#### **Model Definitions**
-  
-  We began by fitting a base model derived from the normative predictions of the Marginal Value Theorem [MVT; @Charnov1976], which states that a delayed reward should be accepted if its earning rate surpasses the opportunity cost (OC) of time incurred in obtaining it (see Operationalization of Cost for details). This decision rule can be expressed as
-
-\begin{align}
-  \text{Model}_\text{base} = R_i - \gamma H_i
-\end{align}
-
-such that a trial’s reward $R_i$ should be accepted if it is larger than the average amount one could earn per second in the environment $\gamma$ (gamma; the OC) during the handling time $H_i$, with high gammas promoting selectivity. We fit this and all subsequent models using a softmax function to predict the probability of accepting a given trial
-
-\begin{align}
-  P(\text{accept})_i = \dfrac {1} {1 + e^{-(1/\beta)(\text{Model}_\text{base})}}
-\end{align}
-
-gamma in this base model was computed as an individual's empirical earning rate by the time of each offer, with the free temperature parameter $\beta$ indexing decision noise. However, this base formulation lacked the flexibility needed to capture the dynamics observed in the within-subjects experiment. We therefore tested a second model that allowed $\gamma$ to evolve over time, adapting a learning rule from @Constantino2015
-
-
-\begin{align}
-  \gamma_{i+1} = (1 - (1 - \alpha) ^ {\tau_i}) \dfrac{R_{i} A_{i}}{\tau_i} +  (1 - \alpha) ^ {\tau_i} \gamma_{i}
-\end{align}
-
-
-where $A_i$ is an acceptance indicator (0 or 1), and $\tau_i$ the amount of time spent in the trial. Higher values of the learning rate $\alpha$ (ranging from 0 to 1) prioritized updating from the current trial’s earning rate (left side of the equation), weighed by the amount of time experienced in the past trial. This time was given by 
-
-\begin{align}
-  \tau_{i} = H_{i}  A_{i} + T_{i}
-\end{align}
-
-such that the handling time was counted only for accepted trials. For this adaptive model, we fit the learning rate $\alpha$ and the initial value of $\gamma$ in addition to the temperature. These modifications allowed for the tracking of recent history that was part of our criteria, while maintaining the general structure of the base model
-
-\begin{align}
-  \text{Model}_\text{adaptive} = R_i - \gamma_i H_i
-\end{align}
-  
-  A third model considered the possibility that each type of demand additively biased the estimate of $\gamma$. Such cost bias would be stable if a single demand was experienced, but recalibrated into a global estimate as decision makers faced different types of demands. The overall model took the following form
-  
-\begin{align}
-  \text{Model}_\text{biased} = R_i - (\gamma + C_i) H_i
-\end{align}
-  
-where $\gamma$ was the mean total earning rate for the whole group (0.55). Negative values of $mC_i$ would therefore suggest a boost in offer value produced by a demand. At each decision point, $mC$ was the cost bias produced by each demand $c_{demand}$ weighted against a global bias estimate $C$
-  
-\begin{align}
-  C_i = c_\text{global} w_i + c_\text{demand} (1 - w_i)
-\end{align}
-  
-with $w_i$ controlling how early participants started integrating the converging cost $C$ into their decisions. The value of this weight was given by
-  
-\begin{align}
-  w_i = \left (\frac{i}{max(i)} \right ) ^{\alpha_w}
-\end{align}
-
-where the section in parentheses was the proportion of the experiment completed so far (note that the organization of the experimental session was fully disclosed), with high values of the free parmeter $\alpha_w$ denoting a late integration of the global converging bias. 
-  
-  Since participants in the between-subjects experiment experienced a single type of demand, the values of $c_{demand}$ and $C$ where the same and $\alpha_w$ did not play a role. This resulted in just fitting parameters $c_{demand}$ and $\beta$ for that dataset. For the within-subjects group, we assumed that the resulting $c_{demand}$ values from the first experiment reflected the actual bias induced by each demand. We therefore fixed each value of $c_{demand}$ (i.e. $c_{cognitive}$, $c_{wait}$, and $c_{physical}$) to the mean of the fitted parameters from each between-subjects demand group, and fit the global bias $C$, the convergence rate $\alpha_w$, and temprature $\beta$. This dynamic allowed for the observed merging of acceptances across demands in the within-subjects experiment, while respecting the stability in the between-subjects study.
-
-  A final model combined the main features from $model_{adaptive}$ and $model_{biased}$, such that $\gamma$ was estimated on each trial per Eq. 3, with demands imposing distinct and potentially converging biases as described in model 3. The form of this fourth model was
-  
-\begin{align}
-  \text{Model}_\text{adaptive + biased} = R_i - (\gamma_i + C_i) H_i
-\end{align}
- 
-  After fitting the parameters, we performed two-sided, one-sample t-tests to compare the biased opportunity costs from each between-subjects demand group **to the mean optimal gamma** (0.61, see Operationalization of Cost). This allowed us to determine whether any demand boosted an offer's value. Finally, we compared parameters with ANOVAs and post-hoc permutations between each group pairing (5000 iterations).
-
-
-## Results
-
-### **Between-subjects: Tests of whether decision makers integrate delay and reward information**
+### *Results*
+#### **Between-subjects: Tests of whether decision makers integrate delay and reward information**
 
 ``` {r BTW: 16.1.1. Individual logistic, fig.align="center", fig.width = 4, fig.height = 4, echo = FALSE}
 # filter out errors and compute R + H logistic per subject, then get coefficients
@@ -966,7 +864,7 @@ earnFitplot_btw <- ggplot(data = temp, aes(pComplete, Earnings)) +
   
   We performed a mixed effects logistic regression to address the first hypothesis. Since participants in the effort groups were forced to travel when they failed to perform above threshold (see Methods), we distinguish between acceptances (entering the handling period) and completions (successfully obtaining a reward). In line with our predictions, larger reward amounts significantly increased acceptance probabilities ($\beta$ = `r historyCoeffs_btw["Offer", "Estimate"]`, SE = `r historyCoeffs_btw["Offer", "Std. Error"]`, *p* `r report_p(historyCoeffs_btw["Offer", "Pr(>|z|)"])`), whereas longer delays decreased them ($\beta$ = `r historyCoeffs_btw["Handling", "Estimate"]`, SE = `r historyCoeffs_btw["Handling", "Std. Error"]`, *p* `r report_p(historyCoeffs_btw["Handling", "Pr(>|z|)"])`). Two additional regressors showed that having missed out on consecutive rewards decreased the probability of acceptance ($\beta$ = `r historyCoeffs_btw["recentTravels", "Estimate"]`, SE = `r historyCoeffs_btw["recentTravels", "Std. Error"]`, *p* `r report_p(historyCoeffs_btw["recentOffers", "Pr(>|z|)"])`), and that participants became more selective when recent offer history was richer ($\beta$ = `r historyCoeffs_btw["recentOffers", "Estimate"]`, SE = `r historyCoeffs_btw["recentOffers", "Std. Error"]`, *p* `r report_p(historyCoeffs_btw["recentOffers", "Pr(>|z|)"])`). The reduction in acceptances from recent misses was driven by the wait group (removing this group from the model yielded a *p* > 0.1), likely because this group accepted the least amount of offers. Comparing likelihood fits among lengths of offer history (e.g. sum over 2 or 3 past trials) suggested that participants were influenced by the `r historyIndex_btw + 1` most recent rewards (AIC = `r round(AIC(historySize_btw[[historyIndex_btw]]), digits = 2)`), which matched the offer presentation rotation (see Methods). 
 
-### **Between-subjects: Comparisons among the four delay and effort conditions**
+#### **Between-subjects: Comparisons among the four delay and effort conditions**
 
 ``` {r BTW: 16.1.4. Optimality (move to acceptance comparison eventually), echo = FALSE}
 # # in order
@@ -1142,7 +1040,7 @@ include_graphics("./Images/FIG3_props.png")
 
   The next set of analyses examined the hypothesis that effort group would uniformly accept more trials. Figure 3 (left) shows that the cognitive effort group consistently accepted more offers, which resulted in lower earnings (middle). One-way ANOVAs showed that differences among groups were significant both for overall acceptance rates (F(`r propAov[[1]]$Df[1]`, `r propAov[[1]]$Df[2]`) = `r round(propAov[[1]][1, 4], digits = 2)`, *p* `r report_p(propAov[[1]][1, 5])`), and total earnings (F(`r earnAov[[1]]$Df[1]`, `r earnAov[[1]]$Df[2]`) = `r round(earnAov[[1]][1, 4], digits = 2)`, *p* `r report_p(earnAov[[1]][1, 5])`). Post-hoc permutations (5000 iterations) comparing mean acceptance rates between every pair of costs confirmed that acceptance rates of the cognitive effort group (mean = `r filter(overallSumms, Cost == "Cognitive")$mProp`, SD = `r filter(overallSumms, Cost == "Cognitive")$sdProp`) were higher than those of the physical (mean = `r filter(overallSumms, Cost == "Physical")$mProp`, SD = `r filter(overallSumms, Cost == "Physical")$sdProp`; *p* `r report_p(filter(propTests, contrast == "Physical < Cognitive")$permPval)`, Cohen's D = `r filter(propTests, contrast == "Physical < Cognitive")$cohenD`) and wait groups (mean = `r filter(overallSumms, Cost == "Wait")$mProp`, SD = `r filter(overallSumms, Cost == "Wait")$sdProp`; *p* `r report_p(filter(propTests, contrast == "Cognitive > Wait")$permPval)`, Cohen's D = `r filter(propTests, contrast == "Cognitive > Wait")$cohenD`). It also showed that those faced with the easy task accepted more than those in the wait group, although responses from the easy group were more variable (mean Easy = `r filter(overallSumms, Cost == "Easy")$mProp`, SD = `r filter(overallSumms, Cost == "Easy")$sdProp`; *p* `r report_p(filter(propTests, contrast == "Wait < Easy")$permPval)`, Cohen's D = `r filter(propTests, contrast == "Wait < Easy")$cohenD`) (all other *p* > 0.05). The higher acceptance rates produced by the cognitive effort group resulted in significantly lower earnings (mean = `r filter(overallSumms, Cost == "Cognitive")$mEarn`, SD = `r filter(overallSumms, Cost == "Cognitive")$sdEarn`) than both physical (mean = `r filter(overallSumms, Cost == "Physical")$mEarn`, SD = `r filter(overallSumms, Cost == "Physical")$sdEarn`; *p* `r report_p(filter(earnTests, contrast == "Physical > Cognitive")$permPval)`, Cohen's D = `r filter(earnTests, contrast == "Physical > Cognitive")$cohenD`) and wait groups (mean = `r filter(overallSumms, Cost == "Wait")$mEarn`, SD = `r filter(overallSumms, Cost == "Wait")$sdEarn`; *p* `r report_p(filter(earnTests, contrast == "Cognitive < Wait")$permPval)`, Cohen's D = `r filter(earnTests, contrast == "Cognitive < Wait")$cohenD`). In addition, we found that the wait group earned more than the physical (*p* `r report_p(filter(earnTests, contrast == "Physical < Wait")$permPval)`, Cohen's D = `r filter(earnTests, contrast == "Physical < Wait")$cohenD`) and easy groups (mean Easy = `r filter(overallSumms, Cost == "Easy")$mEarn`, SD = `r filter(overallSumms, Cost == "Easy")$sdEarn`; *p* `r report_p(filter(earnTests, contrast == "Wait > Easy")$permPval)`, Cohen's D = `r filter(earnTests, contrast == "Wait > Easy")$cohenD`). The percentage of forced travels for cognitive effort was `r round(propFails[2, 2] * 100, digits = 2)`% across participants, and 0% for either physical or easy conditions, making performance an unlikely explanation for the observed differences in choice.
   
-  We next examined the optimality of these decisions. The foraging task was configured so that there was a single reward-maximizing strategy per block type (see Operationalization of Cost in Methods), and participants were warned that accepting everything would not maximize their gains. Accordingly, participants who over- or under-accepted earned the least (Figure 3, right; general linear model with quadratic term, F = `r round(summary(lmEarn)$fstatistic[1], digits = 2)`, Beta = `r round(summary(lmEarn)$coefficients[3,1], digits = 2)`, SE = `r round(summary(lmEarn)$coefficients[3, 2], digits = 2)`, $R^2$ = `r round(summary(lmEarn)$r.squared, digits = 2)`, *p* `r report_p(summary(lmEarn)$coefficients[3, 4])`). We performed group-level chi-squared tests of proportions to examine whether each cost biased decision makers to under- or over-accept 4 and 8 cent offers, which together should have been accepted 50% of the time. We found a significant over-acceptance of these trials by the cognitive effort group (proportion accepted = `r round(optimalProp_cost["Cognitive", "probability"], digits = 2)`%; $\chi^2$ = `r round(optimalProp_cost["Cognitive", "chisquared"], digits = 2)`, *p* `r report_p(summary_costvsreward["Cognitive", "pval"]`), but under-acceptances by the physical (proportion accepted = `r round(optimalProp_cost["Physical", "probability"], digits = 2)`%; $\chi^2$ = `r round(optimalProp_cost["Physical", "chisquared"], digits = 2)`, *p* `r report_p(summary_costvsreward["Physical", "pval"]`) and wait (proportion accepted = `r round(optimalProp_cost["Physical", "probability"], digits = 2)`%; $\chi^2$ = `r round(optimalProp_cost["Physical", "chisquared"], digits = 2)`, *p* `r report_p(summary_costvsreward["Physical", "pval"]`) groups (no significant difference for the Easy group). Together, these findings show that even though participants did not always perform optimally, they adequately integrated the statistics of the environment as they tracked their recent experience. Further, they suggest that cognitive effort can boost the value of an offer, as reflected by higher acceptances at the expense of earnings.
+  We next examined the optimality of these decisions. The foraging task was configured so that there was a single reward-maximizing strategy per block type (see Operationalization of Cost in Methods), and participants were warned that accepting everything would not maximize their gains. Accordingly, participants who over- or under-accepted earned the least (Figure 3, right; general linear model with quadratic term, F = `r round(summary(lmEarn)$fstatistic[1], digits = 2)`, Beta = `r round(summary(lmEarn)$coefficients[3,1], digits = 2)`, SE = `r round(summary(lmEarn)$coefficients[3, 2], digits = 2)`, $R^2$ = `r round(summary(lmEarn)$r.squared, digits = 2)`, *p* `r report_p(summary(lmEarn)$coefficients[3, 4])`). We performed group-level chi-squared tests of proportions to examine whether each cost biased decision makers to under- or over-accept 4 and 8 cent offers, which together should have been accepted 50% of the time. We found a significant over-acceptance of these trials by the cognitive effort group (proportion accepted = `r round(optimalProp_cost["Cognitive", "probability"], digits = 2)`; $\chi^2$ = `r round(optimalProp_cost["Cognitive", "chisquared"], digits = 2)`, *p* `r report_p(optimalProp_cost["Cognitive", "pval"])`), but under-acceptances by the physical (proportion accepted = `r round(optimalProp_cost["Physical", "probability"], digits = 2)`; $\chi^2$ = `r round(optimalProp_cost["Physical", "chisquared"], digits = 2)`, *p* `r report_p(optimalProp_cost["Physical", "pval"])`) and wait (proportion accepted = `r round(optimalProp_cost["Physical", "probability"], digits = 2)`; $\chi^2$ = `r round(optimalProp_cost["Physical", "chisquared"], digits = 2)`, *p* `r report_p(optimalProp_cost["Physical", "pval"])`) groups (no significant difference for the Easy group). Together, these findings show that even though participants did not always perform optimally, they adequately integrated the statistics of the environment as they tracked their recent experience. Further, they suggest that cognitive effort can boost the value of an offer, as reflected by higher acceptances at the expense of earnings.
 
 ``` {r BTW: 16.2.2. rmANOVA, echo=FALSE,fig.align="center",fig.width=5,fig.height=4, results = 'asis'}
 ## This section was removed because it was deemed redundant. The interaction is addressed once the a priori mixed effects logistic model is evaluated against multiple forms of interaction effects (16.2.4.).
@@ -1365,7 +1263,7 @@ include_graphics("./Images/FIG4_btwlogistic.png")
   
   These observations could not be better explained by simpler or more complex regression models. Figure 4C shows AIC and BIC values for models of increasing complexity, starting with an intercept-only configuration (see Methods for details). Here we focus on AIC, as both metrics yielded comparable results. As predicted, the a priori model with all main effects performed better than those relying on a single parameter (a priori model $R^2$ = `r round(mixLogis_compare_btw$AllMainRsq, digits = 2)`), as well as the model with main effects for handling time and reward amount (AIC~a-priori~ = `r filter(ME_evals$abicLogis_compare, Model == "AllMain")$AIC`, AIC~handling/reward~ = `r filter(ME_evals$abicLogis_compare, Model == "HR")$AIC`, $\chi^2$(`r ME_evals$HRvMain[[7]][2]`) = `r round(ME_evals$HRvMain$Chisq[2], digits = 2)`, *p* `r report_p(ME_evals$HRvMain[[8]][2])`). However, against our expectations, the a priori model was outperformed by models that added an interaction between handling and reward (AIC~HR_interaction~ = `r filter(ME_evals$abicLogis_compare, Model == "HR_interaction")$AIC`, $\chi^2$(`r ME_evals$MainvHRint[[7]][2]`) = `r round(ME_evals$MainvHRint$Chisq[2], digits = 2)`, *p* `r report_p(ME_evals$MainvHRint[[8]][2])`) as well as one that considered all possible interactions (AIC~all_interactions~ = `r filter(ME_evals$abicLogis_compare, Model == "Interaction")$AIC`, $\chi^2$(`r ME_evals$MainvAllint[[7]][2]`) = `r round(ME_evals$MainvAllint$Chisq[2], digits = 2)`, *p* `r report_p(ME_evals$MainvAllint[[8]][2])`). These improvements were driven by the fact that differences in offer acceptances among costs were never present for 20 cents (all *p* values for interactions containing offer amount < 0.001). As the highest reward should always be accepted in prey foraging environments, we conclude that the most parsimonious explanation of choice behavior came from the a priori model containing all main effects. These results further support the hypotheses that handling and reward amounts were similarly integrated across groups, and that the absolute rate of acceptances was affected by the demand faced. However, they offer partial support for the hypothesis that effort would induce higher acceptance rates, which was only true for those confronted with cognitive effort.
 
-### **Between-subjects: Consistency and stability**
+#### **Between-subjects: Consistency and stability**
 
 
 ``` {r BTW: 16.3.1. surv and RTs, echo = FALSE, warning = FALSE, fig.align = "center", fig.width = 10, fig.height = 4, include = FALSE}
@@ -1671,7 +1569,26 @@ include_graphics("./Images/FIG6_prepostbtw.png")
 
 
 
-### **Within-subjects: Tests of whether decision makers integrate reward information**
+## Experiment 2: Within-subjects comparison of costs
+### *Methods*
+#### **Participants** 
+
+  We collected data from a new sample of 48 eligible participants  (39 Female, median age = 21, range = 18 - 36; number excluded before reaching goal = 6). Sample size was once again determined by means of a power analysis (repeated measures ANOVA), using a significance level of 0.05, power of 0.8, a desired effect size of f = 0.5, and four factors (one for each condition). The resulting sample size was 45, which we increased to 48 in order to balance the potential order of blocks. We excluded participants using the same criteria as in the between-subject experiment.
+
+#### **Foraging Task Adaptation**
+
+  The original between-subjects task was modified so that participants foraged for cost types in addition to rewards. Every participant experienced all forms of cost (delay, physical effort, and cognitive effort). There were two block types, in which delay trials were interspersed with either physical-effort or cognitive-effort trials. This setup prevented participants from having to rapidly switch between response modalities across trials (i.e. keyboard press and handgrip). Block combinations (i.e. physical/wait and cognitive/wait) were experienced three times by each participant in 7-minute-long, interleaved blocks, thus matching the experiment’s length to the between-subject version. Half of the participants experienced a block sequence that started with the physical block. Timing parameters were matched to the middle condition from Experiment 1 (i.e. 10 s handling and 6 s travel), establishing a balance between acquiring enough observations per trial type and being able to compare results across experiments. Participants were informed that this timing combination would be constant prior to beginning the experiment. Cost type combinations were disclosed at the beginning of each block, and reward/cost offers displayed before each trial begins (e.g. “8 cents for physical effort”). Unlike the previous experiment, participants could express their decision to quit during the offer window (instead of during the handling time). Participants trained in each type of demand until they reached the same criteria as in the between-subject experiment.
+
+#### **Analyses**
+
+  The analytical pipeline was mostly preserved from the between-subject experiment. We first ran tests to determine whether decision makers integrated reward information. We performed a mixed-effects logistic regression with regressors for offer amount, number of consecutive offer misses, and the sum of the *n* previously observed offers (we identified *n* by comparing the AIC of different history lengths). We then confirmed that the under- and over-acceptance were detrimental to total earnings by performing the same quadratic linear model explained above. To determine the optimality of the group’s decisions, we examined whether each cost type produced a bias to over or under-accept at 4 and 8 cents (assuming that 20 cents were always be accepted, given our design). The reward-maximizing strategy was to always reject 4 cents and accept 8 cents, yielding a combined optimal proportion of acceptances of 50% (see Operationalization of Costs for details). We performed a two-sided one-sample chi-squared test of proportions against the null probability of 0.5 for each type of cost. Therefore, a significant difference indicated that participants either over or under accepted rewards.
+  
+  To compare acceptances among cost conditions, we first computed the probability of accepting a trial with a mixed-effects logistic regression. The model included cost condition and reward amount as fixed main effects, and participant ID as a random intercept (handling time is not modeled, as participants experienced a single time combination). Cost condition was modeled with three categorical terms, with the fourth condition as the reference condition (two effort conditions, and two delay conditions corresponding to each effort type). We ran three versions of the model with different reference conditions, in order to test all relevant pairwise differences among the four cost conditions. We compared the a priori model to alternative parameterizations using AIC and BIC, varying model complexity in a forward order: 1) intercept only; 2) cost only; 3) reward only; 4) cost and reward main effects (a priori model); and 5) adding a two-way interaction. We predicted that model 4 would have the last considerable decrease in the negative log-likelihood. Models with similar AIC were formally compared using the analysis-of-deviance approach from the between-subjects experiment.
+  
+  Next we probed consistency and stability in people's choices. First, we qualitatively assessed the number of quits performed during during the handling time through a survival curve, and plotted the quit response time distribution as a function of block to examine choice consistency over time. Next, we computed the proportion of quits that were performed during the choice window versus during the handling time. We interpreted as confidence if a participant made at least 80% of their choices during the offer window. We then computed each participant’s total proportion of acceptances on the first two and last two blocks, and compared them using a paired permutation analysis (5000 iterations). We avoided the third and fourth block because their effort designation was counterbalanced across participants, which would have biased our estimates.
+
+### *Results*
+#### **Within-subjects: Tests of whether decision makers integrate reward information**
 
   If the cost or value of a demand were intrinsic, the relative preferences displayed so far should have been robust to the ability to obtain the same rewards through different demands. We investigated this possibility by modifying the foraging task, such that every participant experienced every type of demand in blocks that interleaved wait trials with either physical or cognitive effort (fixed at 10 s handling and 6 s travel times, to allow for comparisons between experiments). We refer to observations from each block's wait trials by their effort pair (i.e. "Wait-C" for cognitive, and "Wait-P" for physical). We hypothesized that 1) reward decision patterns would match those of the previous experiment; and 2) that interleaving effort and delay would produce persistent preferences for wait trials.
 	
@@ -1835,7 +1752,7 @@ earnings_within <- dataWth %>%
   
 
 
-### **Within-subjects: Comparisons among the four delay and effort conditions**
+#### **Within-subjects: Comparisons among the four delay and effort conditions**
 
 ``` {r WTH: 16.2.1. Overall Proportion diffs, fig.align = "center", fig.width = 6, fig.height = 4, echo = FALSE}  
 # ## ECDF of proportion completed per cost type
@@ -1997,7 +1914,7 @@ include_graphics("./Images/FIG7_wthlogistic.png")
   Next, we addressed the hypothesis that passive waiting trials would be less costly than effortful ones. Even though the reward acceptance pattern at 10 s handling was similar to the between-subjects experiment (Figure 7B), differences among cost conditions were less evident. Moreover, these differences contradicted our predictions, as cognitive effort remained the least costly among demands. A mixed effects logistic regression confirmed once again that increases in offer amount made acceptances significantly more likely (global intercept = `r round(fixef(mixLogis_main_wth$Cognitive)["(Intercept)"], digits = 2)`, $\beta$ = `r round(fixef(mixLogis_main_wth$Cognitive)["Offer"], digits = 2)`, SE = `r round(summary(mixLogis_main_wth$Cognitive)[[10]]["Offer", "Std. Error"], digits = 2)`, *p* `r report_p(summary(mixLogis_main_wth$Cognitive)[[10]]["Offer", "Pr(>|z|)"])`), but that the only significant difference was the higher likelihood to accept cognitive offers compared to physical ones (Figure 7C; $\beta$ = `r round(mixSummary_wth$Betas["Physical", "Cognitive"], digits = 2)`, *p* `r report_p(mixSummary_wth$Pvals["Physical", "Cognitive"])`). Model comparisons suggested that even though a model with all main effects explained a large portion of the variance ($R^2$ = `r round(mixLogis_compare_wth$Rsq, digits = 2)`), there were similar AIC and BIC values for any model including reward amount (Figure 7D). An analysis of deviance among the three models showed that adding cost condition to reward amount significantly improved fit (AIC~reward~ = `r filter(abicLogis_compare, Model == "Reward")$AIC`, AIC~a-priori~ = `r filter(abicLogis_compare, Model == "AllMain")$AIC`, $\chi^2$(`r mixLogis_compare_wth$aod[[7]][2]`) = `r round(mixLogis_compare_wth$aod$Chisq[2], digits = 2)`, *p* `r report_p(mixLogis_compare_wth$aod[[8]][2])`). However, probing the interaction between these features significantly improved fits from the main effects model (AIC~Interaction~ = `r filter(abicLogis_compare, Model == "Interaction")$AIC`, $\chi^2$(`r mixLogis_compare_wth$aod[[7]][3]`) = `r round(mixLogis_compare_wth$aod$Chisq[3], digits = 2)`, *p* `r report_p(mixLogis_compare_wth$aod[[8]][3])`), albeit at the cost of interpretability due to choice fluctuations over time (see Consistency and Stability). These initial results defied our predictions, suggesting that the availability of alternative demands diminishes preferences among them (rather than inverting them from what was observed in experiment 1).
 
 
-### **Consistency and stability**
+#### **Consistency and stability**
 
 ``` {r WTH: 16.3.1. surv and RT, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4, include = FALSE}
 # Survival curve for quits and response time ECDFs across blocks
@@ -2649,314 +2566,90 @@ include_graphics("./Images/FIG9_prepostwth.png")
 ```
 
 
-### **Computational modeling of foraging behavior**
+## Computational Modeling of Foraging Behavior
+  
+  We performed model comparisons to identify qualities that explained findings from both experiments. Based on the observed choice behavior, an adequate model had to meet seven criteria: 1) show deviations from optimality that were not simply due to overharvesting; 2) keep track of recent offer history; 3) experience a slight reduction of acceptances in effortful conditions in the between-subjects experiment; 4) persistently display higher acceptances for cognitive effort when faced with single behavioral costs; 5) initially match this preference for cognitive effort trials when foraging for demands and rewards; 6) display a disappearance of this preference as acceptances decreased to a common rate across costs; and 7) preference ranks should be robust to block order effects, but the magnitude of the differences should be lower for those who started with the physical effort block. These conditions discarded a number of popular explanatory candidates that were not modeled, such as learned industriousness, boredom, fatigue, sunk cost effects, or asymmetric learning of environmental richness (see Discussion). 
 
-``` {r OLD BTW and WTH: 16.3. OC modeling btw, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
-# ## fit the OC model
-# summaryOC_btw <- list()
-# summaryOC_btw$all <- dataBtw %>%
-#                  group_by(Cost, SubjID) %>%
-#                  do(optimizeOCModel(., simplify = T)) %>%
-#                  ungroup()
-# 
-# 
-# ## plot
-# summaryOC_btw$plot <- ggplot(summaryOC_btw$all, aes(Cost, Gamma, fill = Cost)) +
-#   # geom_hline(yintercept = 0.64, alpha = 0.9, color = "gray20", size = 1) +
-#   # geom_hline(yintercept = 0.7, alpha = 0.9, color = "gray40", size = 1) +
-#   # geom_hline(yintercept = 0.9, alpha = 0.9, color = "gray60", size = 1) +
-#   geom_hline(yintercept = 0.74, alpha = 0.9, size = 1, linetype = "dashed") + # mean of highest earning rates across blocks
-#   #geom_dotplot(stackdir = 'center', binaxis = 'y', show.legend = F) +
-#   geom_boxplot(show.legend = F) +
-#   geom_jitter(width = 0.1, alpha = 0.5, show.legend = F, pch = 21, size = 3) +
-#   ylim(0,1.5) +
-#   labs(x = "") +
-#   scale_fill_manual(values = colsBtw) +
-#   theme(panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         panel.background = element_blank(),
-#         axis.line = element_line(colour = "black"),
-#         text = element_text(size = 16))
-# 
-# 
-# ## one sample t against optimal strategy
-# summaryOC_btw$t.test <- summaryOC_btw$all %>%
-#   select(Cost, Gamma) %>%
-#   plyr::dlply("Cost", identity) %>%
-#   sapply(., function(data) {t.test(data$Gamma, mu = 0.74)})
-# 
-# 
-# ## descriptive stats
-# summaryOC_btw$descriptives <- summaryOC_btw$all %>%
-#   group_by(Cost) %>%
-#   summarise(mGamma = round(mean(Gamma), digits = 2),
-#             sdGamma = round(sd(Gamma), digits = 2))
+### *Methods*
+#### **Model Fitting and Model Comparison Procedures**
+
+  For each model, both population level and individual subject level parameters were fit simultaneously using an Expectation-Maximization algorithm [@Huys2011; @Huys2012]. Briefly, it was assumed that, at the population level, each parameter was distributed according to a Gaussian distribution, defined by a mean and standard deviation; the individual subject parameters were drawn from this distribution. Accordingly, a point estimate for the individual subject parameters were found via maximum a posteriori (MAP) estimation using the population distribution for each parameter as the priors, and the variance in the individual subject parameter estimates were calculated by taking the inverse of the Hessian matrix at the MAP estimate. Next, the mean of the prior was updated by taking the weighted mean of individual subject estimates, and the variance of the prior was updated by taking the weighted variance across the parameter estimates of individual subjects. This process was repeated until the mean and variance of the prior for all parameters converged (a change of less than .1% across successive iterations). Full mathematical details of the algorithm can be found in Huys et al. (2011, 2012), and the algorithm was implemented using a custom written R package, GaussExMax, available on github (github.com/gkane26/GaussExMax).
+  
+  Model comparison was performed by calculating Bayes Information Criterion at the group level [integrated BIC or iBIC; @Huys2011; @Huys2012; @Kane2019]. iBIC penalizes the likelihood of the data given model parameters $p(d | model)$ for model flexibility (the number of parameters, $k$), and the size of the penalty depends on the number of observations $o$:
+  
+\begin{align}
+  iBIC = logp(d | model) + \frac{k}{2}log(o)
+\end{align}
+  
+  A Laplace approximation was used to find the log marginal likelihood, the likelihood of the data for each subject given the population level distribution over each parameter (Huys et al., 2011; Huys et al., 2012; Kane et al., 2019).
+  
+  
+#### **Model Definitions**
+  
+  We began by fitting a base model derived from the normative predictions of the Marginal Value Theorem [MVT; @Charnov1976], which states that a delayed reward should be accepted if its earning rate surpasses the opportunity cost (OC) of time incurred in obtaining it (see Operationalization of Cost for details). This decision rule can be expressed as
+
+\begin{align}
+  \text{Model}_\text{base} = R_i - \gamma H_i
+\end{align}
+
+such that a trial’s reward $R_i$ should be accepted if it is larger than the average amount one could earn per second in the environment $\gamma$ (gamma; the OC) during the handling time $H_i$, with high gammas promoting selectivity. We fit this and all subsequent models using a softmax function to predict the probability of accepting a given trial
+
+\begin{align}
+  P(\text{accept})_i = \dfrac {1} {1 + e^{-(1/\beta)(\text{Model}_\text{base})}}
+\end{align}
+
+gamma in this base model was computed as an individual's empirical earning rate by the time of each offer, with the free temperature parameter $\beta$ indexing decision noise. However, this base formulation lacked the flexibility needed to capture the dynamics observed in the within-subjects experiment. We therefore tested a second model that allowed $\gamma$ to evolve over time, adapting a learning rule from @Constantino2015
 
 
-# summaryOC$all %>%
-#   ggplot(aes(Gamma, percentAccept, fill = Cost, size = temperature)) +
-#   geom_point(pch = 21)
+\begin{align}
+  \gamma_{i+1} = (1 - (1 - \alpha) ^ {\tau_i}) \dfrac{R_{i} A_{i}}{\tau_i} +  (1 - \alpha) ^ {\tau_i} \gamma_{i}
+\end{align}
 
 
-# # gamma parameter recovery tests
-# # test a single subject against their own choices
-# (subj <- sample(subjList_btw, 1))
-# subjData <- dataBtw %>% 
-#   filter(SubjID == subj) %>% 
-#   group_by(Cost, Handling, Offer) %>% 
-#   summarise(propAccept = mean(Choice)) %>%
-#   ungroup()
-# 
-# params <- filter(summaryOC$all, SubjID == subj) %>% 
-#   select(Gamma, temperature)
-# 
-# test_params(params,
-#             model = expr(params$Gamma * Handling), 
-#             subjData, 
-#             plot = T)
+where $A_i$ is an acceptance indicator (0 or 1), and $\tau_i$ the amount of time spent in the trial. Higher values of the learning rate $\alpha$ (ranging from 0 to 1) prioritized updating from the current trial’s earning rate (left side of the equation), weighed by the amount of time experienced in the past trial. This time was given by 
+
+\begin{align}
+  \tau_{i} = H_{i}  A_{i} + T_{i}
+\end{align}
+
+such that the handling time was counted only for accepted trials. For this adaptive model, we fit the learning rate $\alpha$ and the initial value of $\gamma$ in addition to the temperature. These modifications allowed for the tracking of recent history that was part of our criteria, while maintaining the general structure of the base model
+
+\begin{align}
+  \text{Model}_\text{adaptive} = R_i - \gamma_i H_i
+\end{align}
+  
+  A third model considered the possibility that each type of demand additively biased the estimate of $\gamma$. Such cost bias would be stable if a single demand was experienced, but recalibrated into a global estimate as decision makers faced different types of demands. The overall model took the following form
+  
+\begin{align}
+  \text{Model}_\text{biased} = R_i - (\gamma + C_i) H_i
+\end{align}
+  
+where $\gamma$ was the mean total earning rate for the whole group (0.55). Negative values of $mC_i$ would therefore suggest a boost in offer value produced by a demand. At each decision point, $mC$ was the cost bias produced by each demand $c_{demand}$ weighted against a global bias estimate $C$
+  
+\begin{align}
+  C_i = c_\text{global} w_i + c_\text{demand} (1 - w_i)
+\end{align}
+  
+with $w_i$ controlling how early participants started integrating the converging cost $C$ into their decisions. The value of this weight was given by
+  
+\begin{align}
+  w_i = \left (\frac{i}{max(i)} \right ) ^{\alpha_w}
+\end{align}
+
+where the section in parentheses was the proportion of the experiment completed so far (note that the organization of the experimental session was fully disclosed), with high values of the free parmeter $\alpha_w$ denoting a late integration of the global converging bias. 
+  
+  Since participants in the between-subjects experiment experienced a single type of demand, the values of $c_{demand}$ and $C$ where the same and $\alpha_w$ did not play a role. This resulted in just fitting parameters $c_{demand}$ and $\beta$ for that dataset. For the within-subjects group, we assumed that the resulting $c_{demand}$ values from the first experiment reflected the actual bias induced by each demand. We therefore fixed each value of $c_{demand}$ (i.e. $c_{cognitive}$, $c_{wait}$, and $c_{physical}$) to the mean of the fitted parameters from each between-subjects demand group, and fit the global bias $C$, the convergence rate $\alpha_w$, and temprature $\beta$. This dynamic allowed for the observed merging of acceptances across demands in the within-subjects experiment, while respecting the stability in the between-subjects study.
+
+  A final model combined the main features from $model_{adaptive}$ and $model_{biased}$, such that $\gamma$ was estimated on each trial per Eq. 3, with demands imposing distinct and potentially converging biases as described in model 3. The form of this fourth model was
+  
+\begin{align}
+  \text{Model}_\text{adaptive + biased} = R_i - (\gamma_i + C_i) H_i
+\end{align}
+ 
+  After fitting the parameters, we performed two-sided, one-sample t-tests to compare the biased opportunity costs from each between-subjects demand group **to the mean optimal gamma** (0.61, see Operationalization of Cost). This allowed us to determine whether any demand boosted an offer's value. Finally, we compared parameters with ANOVAs and post-hoc permutations between each group pairing (5000 iterations).
 
 
-# # test multiple values of gamma and plot the comparison
-# lowGamma <- 0
-# upperGamma <- 1.7
-# nGamma <- 6
-# testys <- lapply(seq(lowGamma, upperGamma, length.out = nGamma), test_params)
-# (testys <- do.call(rbind, testys))
-# testys %>%
-#   ggplot(aes(interaction(Offer, Handling), Choice, color = Gamma)) +
-#   geom_point(size = 3) +
-#   geom_line(aes(group = interaction(Handling, Gamma)), size = 1) +
-#   labs(x = "Offer.Handling", y = "Proportion Accepted") +
-#   facet_wrap(vars(Gamma), ncol = 2) +
-#   theme(legend.key = element_blank(),
-#         panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         panel.background = element_blank(),
-#         axis.line = element_line(colour = "black"),
-#         text = element_text(size = 16))
-
-```
-
-``` {r OLD BTW and WTH: 16.3. OC comparisons btw, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
-# # ANOVA
-# OCanova <- list()
-# OCanova$aov <- summary(aov(Gamma ~ Cost, data = summaryOC_btw$all))
-# Fval <- round(OCanova$aov[[1]]$`F value`[1], digits = 2) # doing separate variables because I can't easily use the `` in markdown.
-# Pval <- OCanova$aov[[1]]$`Pr(>F)`[1]
-# Rsquared_aov <- round(OCanova$aov[[1]]$`Sum Sq`[1] / sum(OCanova$aov[[1]]$`Sum Sq`), digits = 2)
-# 
-# # Post-hoc pairwise tests
-# OCanova$perms <- summaryOC_btw$all %>%
-#   select(Cost, Gamma) %>%
-#   plyr::dlply("Cost", identity) %>%
-#   do.call(cbind, .) %>%
-#   select_if(is.numeric) %>%
-#   rename(Physical = Physical.Gamma,
-#          Cognitive = Cognitive.Gamma,
-#          Wait = Wait.Gamma,
-#          Easy = Easy.Gamma) %>%
-#   outer(., ., FUN = Vectorize(permute), simple = T)
-# diag(OCanova$perms) <- 1
-# 
-# OCanova$ES <- summaryOC_btw$all %>%
-#   select(Cost, Gamma) %>%
-#   plyr::dlply("Cost", identity) %>%
-#   do.call(cbind, .) %>%
-#   select_if(is.numeric) %>%
-#   rename(Physical = Physical.Gamma,
-#          Cognitive = Cognitive.Gamma,
-#          Wait = Wait.Gamma,
-#          Easy = Easy.Gamma) %>%
-#   outer(., ., FUN = Vectorize(cohenD)) %>%
-#   abs()
-```
-
-``` {r OLD BTW and WTH: 16.3. corrplot btw, echo = FALSE, fig.align = "center", fig.width = 5, fig.height = 5}
-# # plot all pairwise comparisons
-# corrplot(OCanova$ES,
-#          is.corr = F, 
-#          p.mat = OCanova$perms,
-#          type = "upper",
-#          insig = "p-value",
-#          sig.level = -1,
-#          na.label = "square",
-#          na.label.col = "grey",
-#          method = "color", 
-#          tl.col = "black", 
-#          tl.cex = 0.8,
-#          outline = T)
-```
-
-``` {r OLD BTW and WTH: 16.3. OC cross-validation btw, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
-# # Compute the OC for pre-midpoint
-# summaryOC_btw$pre <- dataBtw %>%
-#                  filter(Half == "Half_1") %>%
-#                  group_by(Cost, SubjID) %>%
-#                  do(optimizeOCModel(., simplify = T)) %>%
-#                  ungroup() %>%
-#                  select(SubjID, Gamma)
-# 
-# # let's add the gammas to the second half data and estimate prop predicted on the second half
-# summaryOC_btw$predicted <- dataBtw %>%
-#                  filter(Half == "Half_2") %>%
-#                  group_by(Cost, SubjID) %>%
-#                  left_join(summaryOC_btw$pre, by = "SubjID") %>%
-#                  mutate(OC = Handling * Gamma,
-#                         predicted = Offer > OC) %>% 
-#                  summarise(percentPredicted = mean(predicted == Choice) * 100) %>%
-#                  group_by(Cost) %>%
-#                  summarise(mPredicted = round(mean(percentPredicted), digits = 2),
-#                            sdPredicted = round(sd(percentPredicted), digits = 2))
-
-# # plot
-# (summaryOC_btw$predictPlot <- ggplot(summaryOC_btw$predicted, aes(Cost, percentPredicted, fill = Cost)) +
-#                             labs(x = "") +
-#                             geom_boxplot(show.legend = F) +
-#                             scale_fill_manual(values = colsBtw) +
-#                             labs(y = "Percent Predicted") +
-#                             ylim(0,100) +
-#                             theme(panel.grid.major = element_blank(),
-#                             panel.grid.minor = element_blank(),
-#                             panel.background = element_blank(),
-#                             axis.line = element_line(colour = "black"),
-#                             text = element_text(size = 16)))
-
-```
-
-``` {r OLD BTW and WTH: 16.3. OC Modeling wth, echo = FALSE, fig.align="center", fig.width=6, fig.height=4}
-# # Here it might be best to estimate gamma for the wait trials only at first
-# # once the wait OCs are estimated, then they can be modulated by effort
-# # Estimate gamma per subject for each group separately
-# summaryOC_wth <- list()
-# summaryOC_wth$all <- dataWth %>%
-#   mutate(Block = case_when(
-#     Block %in% c(1, 2) ~ 1,
-#     Block %in% c(3, 4) ~ 2,
-#     Block %in% c(5, 6) ~ 3
-#   )) %>%
-#   #filter(Choice < 2) %>%
-#   group_by(SubjID, Cost) %>% #group_by(SubjID, Cost, Block) %>%
-#   do(optimizeOCModel(., simplify = T)) %>%
-#   ungroup()
-# 
-# # plot
-# summaryOC_wth$plot <- ggplot(summaryOC_wth$all, aes(Cost, Gamma, fill = Cost)) +
-#     geom_boxplot(show.legend = F) +
-#     geom_hline(yintercept = 0.64, alpha = 0.9, color = "gray20", size = 1) +
-#     geom_hline(yintercept = 0.7, alpha = 0.9, color = "gray40", size = 1) +
-#     geom_hline(yintercept = 0.9, alpha = 0.9, color = "gray60", size = 1) +
-#     ylim(0,1.5) +
-#     labs(x = "") +
-#     scale_fill_manual(values = colsWth) +
-#     theme(panel.grid.major = element_blank(),
-#           panel.grid.minor = element_blank(),
-#           panel.background = element_blank(),
-#           axis.line = element_line(colour = "black"),
-#           text = element_text(size = 16))
-
-# try to replicate the group-level proportion of acceptances from 16.2
-# this looks pretty much like the empirical proportion data, so the stochasticity is playing a major part in the estimation
-# the estimate probability even matches actual proportions at the single subject level 
-# logis <- mapply(function(g, t) {1 / (1 + exp((-1 * t) * (c(4, 8, 20) - (g * 10))))}, summaryOC_wth$all$Gamma, summaryOC_wth$all$Temperature)
-# colnames(logis) <- unite(summaryOC_wth, test, SubjID, Cost)$test
-# logis2 <- as.data.frame(logis) %>% 
-#   gather(Cost, Probability) %>%
-#   mutate(SubjID = substr(Cost, 1,3), 
-#          Cost = substr(Cost, 5,20),
-#          Reward = rep(c(4,8,20), nrow(.)/3)) %>%
-#   group_by(Cost, Reward) %>%
-#   summarize(propAccept = mean(Probability)) %>%
-#   ggplot(logis2, aes(Reward, propAccept, color = Cost)) +
-#     geom_point(size = 3, show.legend = T) +
-#     geom_line(lwd = 1, show.legend = T) +
-#     scale_color_manual(values = colsWth) +
-#     scale_fill_manual(values = colsWth) +
-#     #geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.4, size = 1) +
-#     scale_y_continuous(limits = c(-0.1,1.1), breaks = c(0,0.5,1)) +
-#     scale_x_continuous(breaks = c(4, 8, 12), labels = c("4", "8", "20")) +
-#     labs(y = "Proportion Accepted") +
-#     theme(legend.key = element_blank(),
-#           panel.grid.major = element_blank(),
-#           panel.grid.minor = element_blank(),
-#           panel.background = element_blank(),
-#           axis.line = element_line(colour = "black"),
-#           text = element_text(size = 16))
-```
-
-``` {r OLD BTW and WTH: 16.3. cross-v wth, echo = FALSE, fig.width=5, fig.height=4, fig.align="center"}
-# # subdivide data
-# dataTrain <- dataWth %>%
-#    filter(Block < 5)
-# 
-# dataTest <- dataWth %>%
-#   filter(Block > 4)
-# 
-# # estimate
-# # per-cost, but consider the idea above
-# OCs_validation <- list()
-# temp <- dataTrain %>% filter(Cost == "Wait-C") %>% plyr::dlply("SubjID", identity)
-# OCs_validation$`Wait-C` <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
-# temp <- dataTrain %>% filter(Cost == "Wait-P") %>% plyr::dlply("SubjID", identity)
-# OCs_validation$`Wait-P` <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
-# temp <- dataTrain %>% filter(Cost == "Cognitive") %>% plyr::dlply("SubjID", identity)
-# OCs_validation$Cognitive <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
-# temp <- dataTrain %>% filter(Cost == "Physical") %>% plyr::dlply("SubjID", identity)
-# OCs_validation$Physical <- sapply(temp, function(Data) {optimizeOCModel(Data)$Gamma})
-# 
-# # reshape data
-# temp <- bind_rows(OCs_validation) %>% 
-#   mutate(SubjID = subjList_wth) %>%
-#   gather(Cost, gamma, `Wait-C`:Physical) %>%
-#   left_join(dataTest, ., by = c("SubjID", "Cost")) %>% # assign OCs to each subject per cost type
-#   mutate(prediction = Offer > Handling * gamma) %>%
-#   # plyr::dlply("SubjID", identity)
-#   group_by(SubjID, Cost) %>%
-#   summarize(predicted = mean(Choice == prediction))
-
-# plot prediction %
-# qplot(Cost, predicted, geom = "boxplot", data = temp) + 
-#   ylim(0,1) +
-#   theme_classic()
-```
-
-``` {r OLD BTW and WTH: 16.3. param compare wth, echo = FALSE}
-# # repeated measures anova
-# OCs_anova <- list()
-# OCs_anova$aov <- summary(aov(Gamma ~ Cost + Error(SubjID / Cost), data = summaryOC_wth$all))
-# 
-# # table
-# #pander(OCs_anova$aov)
-# 
-# # do all pairwise comparisons
-# OCs_anova$gammas <- summaryOC_wth$all %>% 
-#   reshape2::dcast(SubjID ~ Cost, value.var = "Gamma") %>%
-#   select(-SubjID)
-# 
-# # perform a paired permutation among every pair of cost types
-# OCs_anova$perms <- outer(OCs_anova$gammas, OCs_anova$gammas, FUN = Vectorize(permute), simple = T, paired = T)
-# OCs_anova$perms[rbind(c(1,4),c(2,3),c(3,2),c(4,1))] <- NA
-# 
-# # and the effect sizes
-# OCs_anova$ES <- abs(outer(OCs_anova$gammas, OCs_anova$gammas, FUN = Vectorize(DescTools::CohenD)))
-# OCs_anova$ES[rbind(c(1,4),c(2,3),c(3,2),c(4,1))] <- NA
-```
-
-``` {r OLD BTW and WTH: 16.3. corrplot wth, echo = FALSE, fig.align="center", fig.width=5, fig.height=5}
-# corrplot(OCs_anova$ES,
-#          is.corr = F, 
-#          p.mat = OCs_anova$perms,
-#          type = "upper",
-#          insig = "p-value",
-#          sig.level = -1,
-#          na.label = "square",
-#          na.label.col = "grey",
-#          method = "color", 
-#          tl.col = "black", 
-#          tl.cex = 0.8,
-#          outline = T)
-```
-
-
+### *Results*
 
 ``` {r BTW and WTH: 16.3. Model fits, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
 ## the fitting of these models was performed by a separate script (modeling_gk_btw/wth)
@@ -3169,7 +2862,7 @@ include_graphics("./Images/FIG10_modelresults.png")
 
 ```{r New Trial plot (Fig. 1), eval = figsEnd, out.width = "80%", fig.align = "center", fig.cap= "General foraging trial structure. On each trial, participants were offered to earn money (4, 8, or 20 cents) by sustaining effort or waiting during the handling time (2, 10, or 14 s). The end of a trial was followed by a travel time (handling and travel times always added up to 16 s). Participants could skip unfavorable trials and immediately start traveling to a potentially better offer. In the between-subject experiment, cost was fixed per participant and handling time varied per block. In the within-subject version, handling time was fixed at 10 s, but a combination of effort and delay trials changed per block. Possible costs, handling times, and rewards were fully disclosed in order to avoid experience-dependent learning."}
 
-include_graphics("./Images/FIG1_task_a.png")
+include_graphics("./Images/FIG1_task.png")
 ```
 
 \newpage
@@ -3190,7 +2883,7 @@ include_graphics("./Images/FIG1_task_b.png")
 
 ```{r New mixed effects plots (Fig. 4), eval = figsEnd, out.width = "80%", fig.align = "center", fig.cap = "Comparing acceptance rates among costs for each reward and handling combination. A: Proportion accepted by each group for every combination of handling time and reward. Grey dots indicate the reward-maximizing acceptance for each combination. B: Matrix portraying the coefficients (color scale) and significance that resulted from switching the reference cost condition (crosses mark non-significant comparisons). Each entry shows how much more likely a group was to accept compared to the reference condition (row). C: AIC and BIC values for a forward mixed-effects model comparison, ranging from a base intercept-only to a full-interaction model."}
 #hrPlot_btw / (ABIC_plot_btw | ME_matrix_btw) # doesn't work with corrplot.. oh well
-include_graphics("./Images/FIG4.png")
+include_graphics("./Images/FIG4_btwlogistic.png")
 ```
 
 \newpage
@@ -3203,14 +2896,14 @@ include_graphics("./Images/FIG4.png")
 \newpage
 
 ```{r New Prepost mixed effects plot (Fig. 6), eval = figsEnd, fig.align = "center", fig.cap = "Acceptance behavior over time in the between-subjects experiment. Left: Proportion of acceptances per handling, reward, and half, showing that effortful demands became increasingly aversive over time. Right: Mixed-effects coefficients denoting the comparison among costs acceptances for each half separately (mirrored along the diagonal). Even though acceptances steadily decreased in the effort groups, the relative preferences were preserved."}
-include_graphics("./Images/FIG6.png")
+include_graphics("./Images/FIG6_prepostbtw.png")
 ```
 
 \newpage
 
 ```{r New Earnings/prop completed/ME plots (Fig. 7), eval = figsEnd, fig.width = 8, fig.height = 7, fig.align = "center", fig.cap = "Within-subjects acceptance behavior. A: Quadratic relationship between trial completions and total earnings. B: proportion of acceptances of each reward per cost condition. C: Matrix of mixed-effects coefficients showing comparisons among costs (while controlling for reward amount). Comparisons between effort and wait trials from different blocks are omitted, as these are not considered in our original predictions. Crosses mark non-significant comparisons. D: AIC and BIC values for models of increasing complexity (a priori = AllMain)."}
 
-include_graphics("./Images/FIG8.png")
+include_graphics("./Images/FIG8_survival.png")
 ```
 
 \newpage
@@ -3223,14 +2916,14 @@ include_graphics("./Images/FIG8.png")
 \newpage
   
 ```{r New Prepost mixed effects plots (Fig. 9), eval = figsEnd, fig.align = "center", fig.cap = "Acceptance rates over time in the within-subjects experiment. Top-Left: Proportion accepted in the first two and last two blocks of the experiment. An initial preference for cognitive effort trials fades amid a global decrease in acceptance rates. Top-Right: Mixed effects coefficient matrix for each half separately. The pattern from the first half resembles what was observed in the between-subjects experiment (Figure 4). Bottom: Block rder effects show attenuated differences for those who started with the physical configuration."}
-include_graphics("./Images/FIG9.png")
+include_graphics("./Images/FIG9_prepostwth.png")
 ```
 
 \newpage
 
 ```{r New BIC and parameter comparison (Fig. 10), eval = figsEnd, fig.align = "center", fig.height = 5, fig.width = 7, fig.cap = "Computational modeling. A: BIC values for four plausible models of choice behavior for both experiments. Lower values indicate better fit. B: Differences in cost biases produced by each demand. Negative values suggest the cognitive group acted as if it perceived its demand as valuable. C: Parameter comparison portrays consistent foraging behavior across experiments. D: Behavior recovery of the within-subjects adaptive behavior based on the winning model. The model predictions match the initial preference for cognitive effort, and the eventual convergence of acceptances by the end of the session."}
 
-include_graphics("./Images/FIG10.png")
+include_graphics("./Images/FIG10_modelresults.png")
 
 #(bicPlot + costPlot) / allFitsPlot
 
