@@ -26,7 +26,7 @@ bibliography: cost_paper.bib
 
 
 <!-- NOTE: 
-If you're on Rstudio on a mac, you can press 'ctrl + option + o' to compress all chunks and look at the paper + code outline. 
+If you're using Rstudio on a mac, you can press 'ctrl + option + o' to compress all chunks and look at the paper + code outline. 
 -->
 
 
@@ -1497,7 +1497,7 @@ prepost_btw$propBlocks <- dataBtw %>%
                          summarise(propAccept_subj = mean(Choice)) %>%
                          group_by(Cost, Block) %>%
                          summarize(propAccept = mean(propAccept_subj),
-                                   seAccept = sd(propAccept_subj)/sqrt(nSubjs_btw)) %>%
+                                   seAccept = sd(propAccept_subj)/sqrt(length(propAccept_subj))) %>%
                          ggplot(aes(Block, propAccept, color = Cost)) +
                            geom_vline(xintercept = 3.5, linetype = "dashed") +
                            geom_point(size = 2) +
@@ -1540,10 +1540,6 @@ prepost_btw$cogtaskRTs <- dataBtw_coglogs %>%
 
 ```
 
-``` {r BTW: 16.3.2. prepost lm table, pander}
-# panderOptions("digits", 2)
-# pander(prepost$summary, style = "rmarkdown", split.table = 110)
-```
 
   Next, we tested the hypothesis that foragers would display consistent and stable choices. Participants were deemed consistent if they did not quit after engaging in a trial. To examine this, we plotted survival curves of trial quits across all participants (Figure 5, top-left), with black crosses signaling either completed trials (at 2 s, 10 s, and 14 s) or forced travels. These curves show that most decisions to quit happened within the first second into the handling time, and participants rarely quit afterwards (proportion of quits after 1 s = `r  handlingQuits_btw$r`). Physical and easy groups showed slightly lagged responses because the experiment allowed a one-second grace period for participants to begin gripping (marked by the dashed line). This resulted in some individuals opting to wait for that second to indicate an offer rejection (the censor at 4s in the physical group was a completion during a 2 s handling trial that was incorrectly recorded as 4 s by the experimental code). Plotting the quitting time distributions across blocks for the first second of the handling time (ECDFs on Figure 5, top-right) showed that participants in the wait and cognitive groups responded faster as the experiment progressed. These response time observations suggested clarity in participant choices
   
@@ -1558,33 +1554,37 @@ include_graphics("./Images/FIG5_survival.png")
 
 ``` {r BTW: 16.3.2. Plot Pre/Post reward x handling, echo=FALSE, fig.align = "center", fig.width = 8, fig.height = 4}
 # this plot divides the proportion of acceptances for each reward/handling combination per half of the experiment
-hrprepostPlot_btw <-dataBtw %>%
+hrprepostPlot_btw <- dataBtw %>%
   group_by(SubjID) %>%
-  mutate(Half = ifelse(Half == "Half_1", "First Half", "Second Half")) %>%
+  mutate(Half = ifelse(Half == "Half_1", "First Half", "Second Half"),
+         Handling = case_when(
+           Handling == 2 ~ "2 s",
+           Handling == 10 ~ "10 s",
+           Handling == 14 ~ "14 s"
+         ),
+         Handling = factor(Handling, levels = c("2 s", "10 s", "14 s"))) %>%
   group_by(SubjID, Half, Handling, Cost, Offer) %>%
   summarise(pAccept = mean(Choice)) %>%
   group_by(Half, Cost, Handling, Offer) %>%
   summarise(propAccept = mean(pAccept),
-            SE = sd(pAccept) / sqrt(nSubjs_btw)) %>%
+            SE = sd(pAccept) / sqrt(length(pAccept))) %>%
   ungroup() %>%
-  mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%
+  mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%  
   ggplot(aes(Offer, propAccept, color = Cost)) +
-    geom_point(size = 3, show.legend = T) +
-    geom_line(size = 1, show.legend = F) +
-    scale_color_manual(values = colsBtw) +
-    scale_fill_manual(values = colsBtw) +
-    geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 0.8, show.legend = T) +
-    scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
-    scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
-    labs(y = "Proportion Accepted") +
-    facet_wrap(vars(Handling, Half), ncol = 2) +
-    theme(legend.position = "bottom",
-          strip.text.x = element_blank(),
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(), 
-          panel.background = element_blank(), 
-          axis.line = element_line(colour = "black"),
-          text = element_text(size = 28))
+  geom_point(size = 1.2, show.legend = T) +
+  geom_line(size = 0.8, show.legend = F) +
+  scale_color_manual(values = colsBtw) +
+  scale_fill_manual(values = colsBtw) +
+  geom_errorbar(aes(ymin = propAccept - SE, ymax = propAccept + SE), width = 0.3, size = 0.8, show.legend = T) +
+  scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
+  scale_x_continuous(breaks = c(4, 8, 12), labels = c(4, 8, 20)) +
+  labs(y = "Proportion Accepted") +
+  facet_grid(Handling ~ Half) +
+  theme_minimal(base_size = 20) +
+  theme(legend.position = "bottom", 
+        legend.margin=margin(t = -0.6, unit='cm'),
+        strip.text.x = element_blank())
+
 
 ```
 
@@ -1663,7 +1663,7 @@ diag(betaMat) <- 0
 
 ```{r Prepost mixed effects plot (Fig. 6), eval = !figsEnd, fig.align = "center", fig.cap = "Acceptance behavior over time in the between-subjects experiment. Left: Proportion of acceptances per handling, reward, and half, showing that effortful demands became increasingly aversive over time. Right: Mixed-effects coefficients denoting the comparison among costs acceptances for each half separately (mirrored along the diagonal). Even though acceptances steadily decreased in the effort groups, the relative preferences were preserved."}
 # left plot in 16.3.2
-#ggsave("./Images/prepost_btw.png", hrprepostPlot_btw, device = "png", height = 6, width = 6)
+# ggsave("./Images/prepost_btw.png", hrprepostPlot_btw, device = "png", height = 6, width = 6)
 include_graphics("./Images/FIG6_prepostbtw.png")
 
 ```
