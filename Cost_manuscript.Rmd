@@ -2558,14 +2558,14 @@ include_graphics("./Images/FIG9_prepostwth.png")
 
 ## Computational Modeling of Foraging Behavior
   
-  We performed model comparisons to identify qualities that explained findings from both experiments. Based on the observed choice behavior, an adequate model had to meet seven criteria: 1) show deviations from optimality that were not simply due to overharvesting; 2) keep track of recent offer history; 3) experience a slight reduction of acceptances in effortful conditions in the between-subjects experiment; 4) persistently display higher acceptances for cognitive effort when faced with single behavioral costs; 5) initially match this preference for cognitive effort trials when foraging for demands and rewards; 6) display a disappearance of this preference as acceptances decreased to a common rate across costs; and 7) preference ranks should be robust to block order effects, but the magnitude of the differences should be lower for those who started with the physical effort block. These conditions discarded a number of popular explanatory candidates that were not modeled, such as learned industriousness, boredom, fatigue, sunk cost effects, or asymmetric learning of environmental richness (see Discussion). 
+  We developed a computational model to identify cognitive operations that could explain the complex patterns observed in both experiments (e.g. learning, time estimation, etc.). We isolated four key aspects of the behavioral results that an adequate computational model should be able to capture: 1) show deviations in acceptance rates that involved both under- and over-harvesting of offers (e.g. Fig. 3.3A); 2) keep track of recent offer history in order to evaluate the relative value of each offer; 3) persistently display higher acceptances for cognitive effort when faced with single behavioral costs (Experiment 1); and 4) initially match this preference for cognitive effort trials when foraging for demands and rewards (Experiment 2), which should decrease to a common rate across costs over time. These conditions excluded a number of popular explanatory candidates that were not modeled, such as learned industriousness, boredom, fatigue, or asymmetric learning of environmental richness (see Discussion).
 
 ### *Methods*
 #### **Model Fitting and Model Comparison Procedures**
 
   For each model, both population level and individual subject level parameters were fit simultaneously using an Expectation-Maximization algorithm [@Huys2011; @Huys2012]. Briefly, it was assumed that, at the population level, each parameter was distributed according to a Gaussian distribution, defined by a mean and standard deviation; the individual subject parameters were drawn from this distribution. Accordingly, a point estimate for the individual subject parameters were found via maximum a posteriori (MAP) estimation using the population distribution for each parameter as the priors, and the variance in the individual subject parameter estimates were calculated by taking the inverse of the Hessian matrix at the MAP estimate. Next, the mean of the prior was updated by taking the weighted mean of individual subject estimates, and the variance of the prior was updated by taking the weighted variance across the parameter estimates of individual subjects. This process was repeated until the mean and variance of the prior for all parameters converged (a change of less than .1% across successive iterations). Full mathematical details of the algorithm can be found in Huys et al. (2011, 2012), and the algorithm was implemented using a custom written R package, GaussExMax, available on github (github.com/gkane26/GaussExMax).
   
-  Model comparison was performed by calculating Bayes Information Criterion at the group level [integrated BIC or iBIC; @Huys2011; @Huys2012; @Kane2019]. iBIC penalizes the likelihood of the data given model parameters $p(d | model)$ for model flexibility (the number of parameters, $k$), and the size of the penalty depends on the number of observations $o$:
+  Model comparison was performed by calculating Bayes Information Criterion at the group level [integrated BIC or iBIC; @Huys2011; @Huys2012; @Kane2019]. iBIC penalizes the likelihood of the data given model parameters $p(d | \text{model})$ for model flexibility (the number of parameters, $k$), and the size of the penalty depends on the number of observations $o$:
   
 \begin{align}
   iBIC = logp(d | model) + \frac{k}{2}log(o)
@@ -2582,13 +2582,13 @@ include_graphics("./Images/FIG9_prepostwth.png")
   \text{Model}_\text{base} = R_i - \gamma H_i
 \end{align}
 
-such that a trial’s reward $R_i$ should be accepted if it is larger than the average amount one could earn per second in the environment $\gamma$ (gamma; the OC) during the handling time $H_i$, with high gammas promoting selectivity. We fit this and all subsequent models using a softmax function to predict the probability of accepting a given trial
+such that the reward $R$ of trial $i$ should be accepted if it is larger than the average amount one could earn per second in the environment $\gamma$ (gamma; the OC) during the handling time $H_i$, with high gammas promoting selectivity. We fit this and all subsequent models using a softmax function to predict the probability of accepting a given trial
 
 \begin{align}
   P(\text{accept})_i = \dfrac {1} {1 + e^{-(1/\beta)(\text{Model}_\text{base})}}
 \end{align}
 
-gamma in this base model was computed as an individual's empirical earning rate by the time of each offer, with the free temperature parameter $\beta$ indexing decision noise. However, this base formulation lacked the flexibility needed to capture the dynamics observed in the within-subjects experiment. We therefore tested a second model that allowed $\gamma$ to evolve over time, adapting a learning rule from @Constantino2015
+gamma in this base model was computed as an individual’s empirical earning rate by the time of each offer, with the free temperature parameter $\beta$ indexing decision noise. Differences among costs in Experiment 1 could then be due to the impact of each cost on decision noise, which could have also driven the gradual convergence of acceptance rates in Experiment 2. However, it is also possible that individuals updated the estimate of gamma at different rates when faced with different demands. Previous accounts have demonstrated the biases that can impact the learning of the opportunity cost [@Dundon2020; @Garrett2020]. We therefore tested a second model that allowed $\gamma$ to evolve over time, adapting a learning rule from @Constantino2015
 
 
 \begin{align}
@@ -2596,47 +2596,47 @@ gamma in this base model was computed as an individual's empirical earning rate 
 \end{align}
 
 
-where $A_i$ is an acceptance indicator (0 or 1), and $\tau_i$ the amount of time spent in the trial. Higher values of the learning rate $\alpha$ (ranging from 0 to 1) prioritized updating from the current trial’s earning rate (left side of the equation), weighed by the amount of time experienced in the past trial. This time was given by 
+where $A_i$ is an acceptance indicator (0 or 1), and $\tau_i$ is the duration of the trial. The duration was given by 
 
 \begin{align}
   \tau_{i} = H_{i}  A_{i} + T_{i}
 \end{align}
 
-such that the handling time was counted only for accepted trials. For this adaptive model, we fit the learning rate $\alpha$ and the initial value of $\gamma$ in addition to the temperature. These modifications allowed for the tracking of recent history that was part of our criteria, while maintaining the general structure of the base model
+such that the handling time was counted only for accepted trials. Higher values of the learning rate $\alpha$ (ranging from 0 to 1) resulted in a larger update toward the current trial's earning rate weighted by its duration (first term in the equation). For this adaptive model, we fit the learning rate $\alpha$ and the initial value of $\gamma$ in addition to the temperature. These modifications allowed for the tracking of recent reward history, while maintaining the same decision rule
 
 \begin{align}
   \text{Model}_\text{adaptive} = R_i - \gamma_i H_i
 \end{align}
-  
-  A third model considered the possibility that each type of demand additively biased the estimate of $\gamma$. Such cost bias would be stable if a single demand was experienced, but recalibrated into a global estimate as decision makers faced different types of demands. The overall model took the following form
-  
+
+where values of $\gamma$ were now updated on each trial $i$ according to Eq 3, rather than by the empirical earning rate.
+
+  Another possibility was that rather than impacting the learning rate, covert features specific to each type of demand additively biased the estimate of $\gamma$. Suchuniformly affected the way people perceived the opportunity cost bias would be of time. If so, biases could remain stable if a single only one type of demand was experienced, (Experiment 1), but adjust over time as biases from other tasks were experienced (Experiment 2). For example, such biases could reflect an individual’s global estimation of the richness of the environment, or a focal estimation of the passage of time experienced during performance of each task (e.g. how long 10 seconds actually feel). Altered perceived time durations have occasionally been associated with levels of cognitive engagement [@Csikszentmihalyi2014; @Wearden2016], and have a direct effect on a trial’s reward rate. Intuitively, the perceived passage of time could be recalibrated into a global estimate as decision makers faced different types of with experience. We modeled these biases by adding a demand-specific term to $\gamma$ that was gradually integrated across tasks for those participants who foraged among demands. The overall model took the following form
+
 \begin{align}
   \text{Model}_\text{biased} = R_i - (\gamma + C_i) H_i
 \end{align}
   
-where $\gamma$ was the mean total earning rate for the whole group (0.55). Negative values of $mC_i$ would therefore suggest a boost in offer value produced by a demand. At each decision point, $mC$ was the cost bias produced by each demand $c_{demand}$ weighted against a global bias estimate $C$
+where $\gamma$ was the mean total earning rate per subject (mean = 0.55 cents per second, SD = 0.02). Negative values of $C_i$ would therefore suggest a boost in offer value produced by a demand. At each decision point, $C$ was the cost bias produced by each demand $c_{demand}$ weighted against a global bias estimate $c_{global}$
   
 \begin{align}
   C_i = c_\text{global} w_i + c_\text{demand} (1 - w_i)
 \end{align}
   
-with $w_i$ controlling how early participants started integrating the converging cost $C$ into their decisions. The value of this weight was given by
+with $w_i$ controlling how early participants started integrating the converging cost $c_{global}$ into their decisions. The value of this weight was given by
   
 \begin{align}
   w_i = \left (\frac{i}{max(i)} \right ) ^{\alpha_w}
 \end{align}
 
-where the section in parentheses was the proportion of the experiment completed so far (note that the organization of the experimental session was fully disclosed), with high values of the free parmeter $\alpha_w$ denoting a late integration of the global converging bias. 
-  
-  Since participants in the between-subjects experiment experienced a single type of demand, the values of $c_{demand}$ and $C$ where the same and $\alpha_w$ did not play a role. This resulted in just fitting parameters $c_{demand}$ and $\beta$ for that dataset. For the within-subjects group, we assumed that the resulting $c_{demand}$ values from the first experiment reflected the actual bias induced by each demand. We therefore fixed each value of $c_{demand}$ (i.e. $c_{cognitive}$, $c_{wait}$, and $c_{physical}$) to the mean of the fitted parameters from each between-subjects demand group, and fit the global bias $C$, the convergence rate $\alpha_w$, and temprature $\beta$. This dynamic allowed for the observed merging of acceptances across demands in the within-subjects experiment, while respecting the stability in the between-subjects study.
+where the section in parentheses was the proportion of the experiment completed so far (note that the organization of the experimental session was fully disclosed), with high values of the free parameter $\alpha_w$ denoting a late integration of the global converging bias. Since participants in the between-subjects experiment experienced a single type of demand, the values of $c_{demand}$ and $c_{global}$ where the same and $\alpha_w$ did not play a role. This resulted in just fitting parameters $c_{demand}$ and $\beta$ for that dataset. For the within-subjects group, we assumed that the resulting $c_{demand}$ values from the first experiment reflected the actual bias induced by each demand. We therefore fixed each value of $c_{demand}$ (i.e. $c_{cognitive}$, $c_{wait}$, and $c_{physical}$) to the mean of the fitted parameters from each demand group from Experiment 1, and fit the global bias $c_{global}$, the convergence rate $\alpha_w$, and temperature $\beta$. This dynamic allowed for the observed merging of acceptances across demands in Experiment 2, while respecting the stability in the between-subjects study.
 
-  A final model combined the main features from $model_{adaptive}$ and $model_{biased}$, such that $\gamma$ was estimated on each trial per Eq. 3, with demands imposing distinct and potentially converging biases as described in model 3. The form of this fourth model was
+  Finally, we asked if the biases imposed by each demand could be isolated from a flexible computation of the opportunity cost of time. This fourth model combined the main features from $\text{Model}_\text{adaptive}$ and $\text{Model}_\text{biased}$, such that $\gamma$ was estimated on each trial per Eq. 3, with demands imposing distinct and potentially converging biases as described in model 3. The form of this fourth model was
   
 \begin{align}
   \text{Model}_\text{adaptive + biased} = R_i - (\gamma_i + C_i) H_i
 \end{align}
  
-  After fitting the parameters, we performed two-sided, one-sample t-tests to compare the biased opportunity costs from each between-subjects demand group **to the mean optimal gamma** (0.61, see Operationalization of Cost). This allowed us to determine whether any demand boosted an offer's value. Finally, we compared parameters with ANOVAs and post-hoc permutations between each group pairing (5000 iterations).
+  The resulting parameters were compared across cost groups (Experiment 1) and across experiments using ANOVAs, and the cdemand biases computed in Experiment 1 were compared against 0 using one-sample t-tests.
 
 
 ### *Results*
@@ -2807,9 +2807,7 @@ allFitsPlot <- rbind(t1, t2) %>%
           text = element_text(size = 16))
 ```
 
-  We tested four models against a set of criteria derived from observed choice behavior (see Methods for details). The first one, a base formulation, probed the predictions of the Marginal Value Theorem (Charnov, 1975). The second one allowed individuals to estimate the opportunity cost at different rates using a reinforcement learning rule. The third model assumed that different demands imposed distinct cost biases on the experienced opportunity costs, and that these biases could be recalibrated with experience. A final model combined the adaptive features of the second and third formulations.
-  
-  The fourth model produced the lowest BIC in both experiments (Figure 10A. Between-subjects = `r round(modelComparison[4, 3], digits = 2)`; Within-subjects = `r round(modelComparison[8, 3], digits = 2)`), indicating that the tenets of the Marginal Value Theorem were necessary but not sufficient to explain the observed adaptive behavior. Figure 10B-C show parameter fits from the winning model for both experiments. The learning rate $\alpha$ and the bias $c_{demand}$ were of particular interest, as these parameters distinguished whether different demands globally affected the integration of the environmental richness or focally modulated an offer's perceived cost, respectively. Analyses of variance showed significant differences only for $c_{demand}$ (F(`r aovBtw$cost[[1]]$Df[1]`, `r aovBtw$cost[[1]]$Df[2]`) = `r fitFvals["cost"]`, *p* `r report_p(fitPvals["cost"])`), with $\alpha$ being uniformly low for all groups. Pairwise post-hoc permutations confirmed that the cognitive group (mean = `r round(mFits_btw["cost", "cogTask"], digits = 2)`, SD = `r round(sdFits_btw["cost", "cogTask"], digits = 2)`) had lower biases than either wait (mean = `r round(mFits_btw["cost", "wait"], digits = 2)`, SD = `r round(sdFits_btw["cost", "wait"], digits = 2)`; *p* `r report_p(fitPerms["Cognitive", "Wait"])`; Cohen's D = `r fitES["Cognitive", "Wait"]`) or physical (mean = `r round(mFits_btw["cost", "phys"], digits = 2)`, SD = `r round(sdFits_btw["cost", "phys"], digits = 2)`; *p* `r report_p(fitPerms["Cognitive", "Physical"])`; Cohen's D = `r fitES["Cognitive", "Physical"]`) groups. These biases were significantly higher than zero for the wait group (t(`r fitOStest$tresults[[1]]$parameter`) = `r round(fitOStest$tresults[[1]]$statistic, digits = 2)`, *p* `r report_p(fitOStest$tresults[[1]]$p.value)`), and lower than zero for the cognitive group (t(`r fitOStest$tresults[[2]]$parameter`) = `r round(fitOStest$tresults[[2]]$statistic, digits = 2)`, *p* `r report_p(fitOStest$tresults[[2]]$p.value)`). This suggests that rather than reducing costs, cognitive tasks boosted the value of their concommitant offers. 
+  The fourth model produced the lowest BIC in both experiments (Fig. 9A. Between-subjects = `r round(modelComparison[4, 3], digits = 2)`; Within-subjects = `r round(modelComparison[8, 3], digits = 2)`), indicating that the tenets of the Marginal Value Theorem were necessary but not sufficient to explain the observed adaptive behavior. Fig. 9B-C show parameter fits from the winning model for both experiments. The learning rate $\alpha$ and the bias $c_{demand}$ were of particular interest, as these parameters distinguished whether different demands globally affected the integration of the environmental richness or focally modulated an offer's perceived cost, respectively. Analyses of variance showed significant differences among Experiment 1 groups only for $c_{demand}$ (F(`r aovBtw$cost[[1]]$Df[1]`, `r aovBtw$cost[[1]]$Df[2]`) = `r fitFvals["cost"]`, *p* `r report_p(fitPvals["cost"])`), with $\alpha$ being uniformly low for all groups. Pairwise post-hoc permutations confirmed that the cognitive group (mean = `r round(mFits_btw["cost", "cogTask"], digits = 2)`, SD = `r round(sdFits_btw["cost", "cogTask"], digits = 2)`) had lower biases than either wait (mean = `r round(mFits_btw["cost", "wait"], digits = 2)`, SD = `r round(sdFits_btw["cost", "wait"], digits = 2)`; *p* `r report_p(fitPerms["Cognitive", "Wait"])`; Cohen's D = `r fitES["Cognitive", "Wait"]`) or physical (mean = `r round(mFits_btw["cost", "phys"], digits = 2)`, SD = `r round(sdFits_btw["cost", "phys"], digits = 2)`; *p* `r report_p(fitPerms["Cognitive", "Physical"])`; Cohen's D = `r fitES["Cognitive", "Physical"]`) groups. These biases were significantly higher than zero for the wait group (t(`r fitOStest$tresults[[1]]$parameter`) = `r round(fitOStest$tresults[[1]]$statistic, digits = 2)`, *p* `r report_p(fitOStest$tresults[[1]]$p.value)`), and lower than zero for the cognitive group (t(`r fitOStest$tresults[[2]]$parameter`) = `r round(fitOStest$tresults[[2]]$statistic, digits = 2)`, *p* `r report_p(fitOStest$tresults[[2]]$p.value)`). This suggests that rather than reducing costs, cognitive tasks boosted the value of their concomitant offers. 
 
 ```{r BIC and parameter comparison (Fig. 10), eval = !figsEnd, fig.align = "center", fig.height = 5, fig.width = 7, fig.cap = "Computational modeling. A: BIC values for four plausible models of choice behavior for both experiments. Lower values indicate better fit. B: Differences in cost biases produced by each demand. Negative values suggest the cognitive group acted as if it perceived its demand as valuable. C: Parameter comparison portrays consistent foraging behavior across experiments. D: Behavior recovery of the within-subjects adaptive behavior based on the winning model. The model predictions match the initial preference for cognitive effort, and the eventual convergence of acceptances by the end of the session."}
 
@@ -2822,9 +2820,7 @@ include_graphics("./Images/FIG10_modelresults.png")
 
 ```
 
-  The mean values of $c_{demand}$ from each group were carried over to the within-subjects fitting, and were aggregated over time according to a weighted decay into a final $C$ value (see Methods for details). As can be seen on Figure 10C, parameter values were comparable across experiments, pointing to consisency in the way decision makers approached our foraging scenarios. In addition, values of $\alpha_w$ suggested that $c_{demand}$ estimates converged towards the second half of the experiment (mean = `r mFits_wth[4]`, SD = `r sdFits_wth[4]`), gradually reducing bias by the end of the experimental session (mean = `r mFits_wth[3]`, SD = `r sdFits_wth[3]`). Model fits also provided good qulitative resemblance to the observed choice behavior in both experiments (**Supplemental Figure X?**), fulfilling all but one of our modeling criteria (i.e. reduction in acceptances for between-subject effort groups, see Methods for details). 
-  
-
+  The mean values of $c_{demand}$ from each group were carried over to the within-subjects fitting, and were aggregated over time according to a weighted decay into a final $c_{global}$ value. As can be seen on Fig. 9C, parameter values were comparable across experiments, pointing to consistency in the way decision makers approached our foraging scenarios. In addition, values of $\alpha_w$ suggested that $c_{demand}$ estimates converged towards the second half of the experiment (mean = `r mFits_wth[4]`, SD = `r sdFits_wth[4]`), gradually reducing bias by the end of the experimental session (mean = `r mFits_wth[3]`, SD = `r sdFits_wth[3]`). Model fits provided good qualitative resemblance to the observed choice dynamics in each experiment. This is illustrated in Fig. 9, in which 95% confidence intervals from within-subject fits are overlaid to empirical choices (Experiment 1 fits matched the left side of this figure, as expected).
 
 ## Discussion
 
