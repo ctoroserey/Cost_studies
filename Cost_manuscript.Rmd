@@ -2844,6 +2844,11 @@ include_graphics("./Images/FIG10_modelresults.png")
   
 \newpage
 
+## Acknowledgments
+
+This project was funded.... In addition, we would like to thank Andrew Westbrook, the Shenhav lab, and Daw lab for valuable feedback.
+
+
 ## Figures
 
 ```{r New Trial plot (Fig. 1), eval = figsEnd, out.width = "80%", fig.align = "center", fig.cap= "General foraging trial structure. On each trial, participants were offered to earn money (4, 8, or 20 cents) by sustaining effort or waiting during the handling time (2, 10, or 14 s). The end of a trial was followed by a travel time (handling and travel times always added up to 16 s). Participants could skip unfavorable trials and immediately start traveling to a potentially better offer. In Experiment 1, cost was fixed per participant and handling time varied per block. In the within-subject version, handling time was fixed at 10 s, but a combination of effort and delay trials changed per block. Possible costs, handling times, and rewards were fully disclosed in order to avoid experience-dependent learning."}
