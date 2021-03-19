@@ -2844,10 +2844,9 @@ These choice dynamics ruled out a number of common explanatory candidates. For i
   
 \newpage
 
-## Acknowledgments
+## Acknowledgments 
 
-This project was funded.... In addition, we would like to thank Andrew Westbrook, the Shenhav lab, and Daw lab for valuable feedback.
-
+We thank Andrew Westbrook, the Shenhav lab, and the Daw lab for helpful discussions. This work was supported by grants from the National Science Foundation (BCS-1755757) and the Office of Naval Research (MURI award N00014-16-1-2832 and DURIP award N00014-17-1-2304). 
 
 ## Figures
 
