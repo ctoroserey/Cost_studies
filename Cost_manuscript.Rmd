@@ -2548,7 +2548,7 @@ include_graphics("./Images/FIG7_survivalwth.png")
   
   All together, our findings show that the stable preferences for cognitive effort observed during single-demand foraging slowly fade if alternative demands are introduced. This points towards task-specific and outcome-independent features from cognitive tasks that can be recalibrated by new experiences.
   
-```{r New Prepost mixed effects plots (Fig. 8), eval = !figsEnd, fig.align = "center", fig.cap = "Acceptance rates over time in Experiment 2. Top-Left: Proportion accepted in the first two and last two blocks of the experiment. An initial preference for cognitive effort trials fades amid a global decrease in acceptance rates. Top-Right: Mixed effects coefficient matrix for each half separately. The pattern from the first half resembles what was observed in Experiment 1 (Figure 3). Bottom: Block order effects show attenuated differences for those who started with the physical configuration."}
+```{r Prepost mixed effects plots (Fig. 8), eval = !figsEnd, fig.align = "center", fig.cap = "Acceptance rates over time in Experiment 2. Top-Left: Proportion accepted in the first two and last two blocks of the experiment. An initial preference for cognitive effort trials fades amid a global decrease in acceptance rates. Top-Right: Mixed effects coefficient matrix for each half separately. The pattern from the first half resembles what was observed in Experiment 1 (Figure 3). Bottom: Block order effects show attenuated differences for those who started with the physical configuration."}
 # hrprepostPlot_wth, blockOrder_wth
 # ggsave("./Images/prepostwth_2.png", hrprepostPlot_wth, device = "png", height = 4, width = 8)
 include_graphics("./Images/FIG8_prepostwth.png")
