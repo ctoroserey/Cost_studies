@@ -2616,7 +2616,7 @@ where values of $\gamma$ were now updated on each trial $i$ according to Eq. 3, 
   \text{Model}_\text{biased} = R_i - (\gamma + C_i) H_i
 \end{align}
   
-where $\gamma$ was the mean total earning rate per subject (mean = 0.55 cents per second, SD = 0.02). Negative values of $C_i$ would therefore suggest a boost in offer value produced by a demand. At each decision point, $C$ was the cost bias produced by each demand $c_\text{demand}$ weighted against a global bias estimate $c_\text{global}$
+where $\gamma$ was the mean total earning rate per subject (mean = 0.55 cents per second, SD = 0.02). Negative values of $C_i$ would therefore suggest a boost in offer value produced by a demand. At each decision point, $C_i$ was the cost bias produced by each demand $c_\text{demand}$ weighted against a global bias estimate $c_\text{global}$
   
 \begin{align}
   C_i = c_\text{global} w_i + c_\text{demand} (1 - w_i)
