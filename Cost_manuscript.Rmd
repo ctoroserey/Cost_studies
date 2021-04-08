@@ -1241,7 +1241,7 @@ ABIC_plot_btw <- ME_evals$abicLogis_compare %>%
     
 ```
 
-```{r mixed effects plots (Fig. 3), eval = !figsEnd, out.width = "80%", fig.align = "center", fig.cap = "Comparing acceptance rates among costs for each reward and handling combination. A: Proportion accepted by each group for every combination of handling time and reward. Grey dots indicate the reward-maximizing acceptance for each combination. B: Matrix portraying the coefficients (color scale) and significance that resulted from switching the reference cost condition (crosses mark non-significant comparisons). Each entry shows how much more likely a group was to accept compared to the reference condition (row). C: AIC and BIC values for a forward mixed-effects model comparison, ranging from a base intercept-only to a full-interaction model."}
+```{r mixed effects plots (Fig. 3), eval = !figsEnd, out.width = "80%", fig.align = "center", fig.cap = "Comparing acceptance rates among costs for each reward and handling combination. A: Proportion accepted by each group for every combination of handling time and reward. Grey dots indicate the reward-maximizing acceptance for each combination. B: Matrix portraying the coefficients (color scale) and significance that resulted from switching the reference cost condition (crosses mark non-significant comparisons). Each entry shows how much more likely a group was to accept compared to the reference condition (row). C: AIC and BIC values for a mixed-effects model comparison, ranging from a base intercept-only to a full-interaction model. Both metrics yielded the same values across models."}
 #hrPlot_btw / (ABIC_plot_btw | ME_matrix_btw) # doesn't work with corrplot.. oh well
 include_graphics("./Images/FIG3_btwlogistic.png")
 ```
@@ -2862,7 +2862,7 @@ include_graphics("./Images/FIG1_task.png")
 
 \newpage
 
-```{r New mixed effects plots (Fig. 3), eval = figsEnd, out.width = "80%", fig.align = "center", fig.cap = "Comparing acceptance rates among costs for each reward and handling combination. A: Proportion accepted by each group for every combination of handling time and reward. Grey dots indicate the reward-maximizing acceptance for each combination. B: Matrix portraying the coefficients (color scale) and significance that resulted from switching the reference cost condition (crosses mark non-significant comparisons). Each entry shows how much more likely a group was to accept compared to the reference condition (row). C: AIC and BIC values for a forward mixed-effects model comparison, ranging from a base intercept-only to a full-interaction model."}
+```{r New mixed effects plots (Fig. 3), eval = figsEnd, out.width = "80%", fig.align = "center", fig.cap = "Comparing acceptance rates among costs for each reward and handling combination. A: Proportion accepted by each group for every combination of handling time and reward. Grey dots indicate the reward-maximizing acceptance for each combination. B: Matrix portraying the coefficients (color scale) and significance that resulted from switching the reference cost condition (crosses mark non-significant comparisons). Each entry shows how much more likely a group was to accept compared to the reference condition (row). C: AIC and BIC values for a mixed-effects model comparison, ranging from a base intercept-only to a full-interaction model. Both metrics yielded the same values across models."}
 #hrPlot_btw / (ABIC_plot_btw | ME_matrix_btw) # doesn't work with corrplot.. oh well
 include_graphics("./Images/FIG3_btwlogistic.png")
 ```
