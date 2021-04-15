@@ -2642,7 +2642,7 @@ where the section in parentheses was the proportion of the experiment completed 
 ### **Results**
 
 ``` {r BTW and WTH: 16.3. Model fits, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
-## the fitting of these models was performed by a separate script (modeling_gk_btw/wth)
+## the fitting of these models was performed by a separate script (modeling_btw/wth)
 # here we load the results to economize computational power during knitting
 # load results from models
 load("Models/results/mod_results.Rdata")
