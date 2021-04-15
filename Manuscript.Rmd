@@ -708,12 +708,16 @@ Cognitive and physical effort are typically regarded as costly, but demands for 
 ### **Methods**
 #### *Participants*
 
+&nbsp; 
+
   The study was preregistered with the Open Science Framework (https://osf.io/2rsgm/registrations). The code employed for all analyses can be found in https://github.com/ctoroserey/Cost_studies. All experimental procedures were approved by the Boston University Institutional Review Board, and written consent was acquired for all participants. For Experiment 1, we recruited individuals until a desired number of 84 eligible participants was achieved (58 Female, median age = 21, range = 18 - 31; number excluded before reaching goal = 8). The sample size was determined by means of power analysis (ANOVA), using a significance level of 0.05, power of 0.8, an effect size of f = 0.45 (estimated from a pilot study), and three groups (one for each cost type). The resulting per-group sample was 20, which we increased to 21 in order to match three possible block orders. We added an extra group of 21 participants who experienced a minimally effortful condition in order to determine whether effort or pure engagement were driving our results.
   
   Participant data sets could be excluded based on any of the following preregistered criteria: 1) Consent: If they withdrew their participation; 2) Inattentiveness: a catch trial was placed at the end of each experimental block, asking participants to press a key within 3 seconds (time requirement based on pilot study response times). A participant who failed two or more of these checks was excluded and replaced. 3) Improbable choice behavior: The task was structured so that one reward amount must always be accepted. A participant who quit every trial in at least one block was assumed not to have followed or understood task instructions, or to have disengaged from the task altogether. 4) Performance: Participants were forced to travel if they made 2 mistakes in a cognitive effort trial (see task procedures below), or if they gripped below threshold during physical trials. Any participant with more than 30% forced travels was excluded.
 
 
 #### *Foraging Task* 
+
+&nbsp; 
 
   All experimental tasks were implemented using PsychoPy 2 [v1.85.1, @Peirce2019] on a Macbook Pro laptop. In this task, participants foraged for monetary rewards in an environment in which each trial required either physical effort or cognitive effort for a set period of time (the “handling time”), or an equivalent unfilled delay (Fig. 1A). Their goal was to maximize their gains within a fixed amount of time. On each trial a monetary offer was displayed for 2 s, and participants had the opportunity to expend time and/or effort during the handling time in order to earn it. Upon completion of a trial, participants saw a 2 s window displaying the reward obtained, which was followed by a travel time to the next offer. Alternatively, the participant could quit at any point during the handling time by pressing the spacebar on the computer, and immediately start traveling. 
   
@@ -731,6 +735,8 @@ include_graphics("./Images/FIG1_task.png")
 
 #### *Operationalization of Cost*
 
+&nbsp; 
+
   Foraging theory posits that accepting a delayed reward should depend on the opportunity cost (OC) of time to be incurred in obtaining it, which depends on the richness of the environment [@Charnov1976; @Stephens1986]. In this study, the richness of the environment was manipulated by the length of the handling and travel times, where shorter travel times produced richer environments. Since time combinations were fixed per block, we calculated each block’s optimal accept/reject strategy by computing the expected reward rate (g(*)) from all decision strategies according to the following equation:
   
 $$\begin{aligned} 
@@ -740,6 +746,8 @@ g(*) = \dfrac {\sum p_i R_i} { 3\text{Time}_\text{offer} + (\sum p_i H + \text{T
   where *R* and *p* are the reward and acceptance probability of offer *i*, respectively, *H* is the handling time for the block, *T* its associated travel time, $\text{Time}_\text{offer}$ is the duration of the offer window, and $\text{Time}_\text{reward}$ is the duration of the window displaying the reward earned (only presented for completed trials). This gave us the total reward per second attainable in each block as a function of the acceptance threshold (i.e. the lowest amount accepted). Since an ideal forager should always either accept or reject different categories of prey (Krebs et al., 1977), probabilities other than 0 and 1 are not considered. The resulting possible strategies were to accept only 20 cents, accept 8 and 20 cents, or accept everything. Fig. 1B shows possible earnings per second for each choice strategy, as well as the lowest amount participants should accept in order to maximize their rewards (circled dots). For example, a participant in a 10 s handling block should accept 8-cent and 20-cent rewards (and reject 4-cent rewards) to maximize their reward rate. Note that accepting every offer was often detrimental to participant earnings.
 
 #### *Analyses*
+
+&nbsp; 
 
   All analyses were performed in R 3.5.2 [@RTeam2018]. First we tested whether decision makers integrated delay and reward information. To address the prediction that participants would be more likely to accept higher reward and shorter handling time trials, we fit a mixed-effects logistic regression to predict trial-wise acceptances [using the lme4 package, @Bates2015], giving a random intercept to each subject to account for biases in participant behavior. We included continuous regressors for handling time and reward, as well as two covariates that probed the influence of recent history on choices. The first was an autoregressive regressor containing the number of consecutive unobtained offers prior to a given trial (unobtained offers could be due to quits or forced travels). The second regressor tracked the sum of the previous *n* offers. We identified the *n* that minimized Akaike's Information Criterion (AIC) among 6 versions of the model (tracing from 2 previous trials up to 7, beyond which the model failed to converge), and reported all coefficients from the winning model.
   
@@ -788,10 +796,10 @@ plot_handoffer <- qplot(data = temp, x = Var1, y = value, geom = "boxplot") +
 propFails <- dataBtw %>% 
   filter(Cost != "Wait") %>% 
   group_by(SubjID, Cost) %>% 
-  summarise(propFails = mean(rawChoice == 2)) %>%
+  summarise(propFails = mean(rawChoice == 2), .groups = 'drop') %>%
   group_by(Cost) %>% 
   summarise(meanFT = mean(propFails),
-            sdFT = sd(propFails))
+            sdFT = sd(propFails), .groups = 'drop')
 ```
 
 ``` {r BTW: 16.1.2. AR sequential effects, echo = FALSE, include = FALSE}
@@ -845,7 +853,7 @@ temp <- dataBtw %>%
   filter(rawChoice < 2) %>%
   group_by(SubjID, Cost) %>%
   summarise(Earnings = sum(Offer[Choice == 1] / 100),
-            pComplete = mean(Choice)) %>%
+            pComplete = mean(Choice), .groups = 'drop') %>%
   mutate(pComplete2 = pComplete^2) %>%
   ungroup()
 
@@ -872,6 +880,8 @@ earnFitplot_btw <- ggplot(data = temp, aes(pComplete, Earnings)) +
 # pander(lmEarn, style = "rmarkdown")
 
 ```
+
+&nbsp; 
 
   In this experiment, groups faced with different behavioral costs (physical effort, cognitive effort, or delay) chose their preferred strategy to maximize rewards in foraging environments of varying richness. Environmental richness was dictated by the time it took to obtain a reward (the handling time) and the time between trials (the travel time). We hypothesized 1) that participants would approximate reward-maximizing behavior by preferring higher rewards and shorter delays, but that 2) participants confronted with effortful demands would be more likely to accept trials than those faced with passive delay, regardless of handling time and reward amount. The second hypothesis was based on the traditional idea that rewarded work should become appealing [@Eisenberger1992; @Inzlicht2018].
   
@@ -919,7 +929,7 @@ temp <- dataBtw %>%
   filter(Offer < 20) %>%
   summarize(propAccept = mean(Choice),
             accept = sum(Choice),
-            quit = sum(Choice == 0))
+            quit = sum(Choice == 0), .groups = 'drop')
 
 temp2 <- apply(temp, 1, function(row) {prop.test(as.numeric(row[3]), sum(as.numeric(row[3:4])), p = 0.5, conf.level = 0.95)})
 
@@ -940,16 +950,16 @@ rownames(optimalProp_cost) <- temp$Cost
 temp <- dataBtw %>%
         group_by(SubjID, Cost) %>%
         summarise(Earnings = sum(Offer[(Choice == 1) & (rawChoice < 2)] / 100),
-                  pAccept = mean(Choice))
+                  pAccept = mean(Choice), .groups = 'drop')
 
 
 ## summaries
 overallSumms <- temp %>% 
   group_by(Cost) %>% 
-  summarise (mProp = mean(pAccept), 
+  summarise(mProp = mean(pAccept), 
              sdProp = sd(pAccept), 
              mEarn = mean(Earnings), 
-             sdEarn = sd(Earnings)) %>%
+             sdEarn = sd(Earnings), .groups = 'drop') %>%
   mutate_if(is.numeric, round, digits = 2)
 
 ## formal testing 
@@ -1083,10 +1093,10 @@ include_graphics("./Images/FIG2_props.png")
 hrPlot_btw <- dataBtw %>%
         filter(Choice < 2, Cost != "Easy") %>%
         group_by(SubjID, Cost, Handling, Offer, optimal) %>%
-        summarise(pAccept = mean(Choice)) %>%
+        summarise(pAccept = mean(Choice), .groups = 'drop') %>%
         group_by(Cost, Handling, Offer, optimal) %>%
         summarise(meanComplete = mean(pAccept),
-                  SE = sd(pAccept) / sqrt(length(pAccept))) %>%
+                  SE = sd(pAccept) / sqrt(length(pAccept)), .groups = 'drop') %>%
    ggplot(aes(interaction(Offer, Handling), meanComplete, color = Cost)) + 
         geom_point(size = 3) + 
         geom_errorbar(aes(ymin = meanComplete - SE, ymax = meanComplete + SE), width = 0.2, size = 1) +
@@ -1123,7 +1133,7 @@ mixData <- dataBtw %>%
   summarize(totalChoices = length(Choice),
             totalAccepted = sum(Choice),
             totalQuits = sum(Choice == 0),
-            propAccepted = mean(Choice)) %>%
+            propAccepted = mean(Choice), .groups = 'drop') %>%
   ungroup()
 
 
@@ -1301,7 +1311,7 @@ RTplot_btw <- dataBtw %>%
 # actual proportion of quits that happened after 1 s (i.e. after the grace period for physical)
 handlingQuits_btw <- dataBtw %>%
   filter(rawChoice == 0) %>%
-  summarize(r = round(mean(RT > 1.05), digits = 2)) # to account for some measurement error for the grace perior during grip
+  summarize(r = round(mean(RT > 1.05), digits = 2), .groups = 'drop') # to account for some measurement error for the grace perior during grip
 
 
 
@@ -1330,7 +1340,7 @@ handlingQuits_btw <- dataBtw %>%
 temp <- dataBtw %>%
   group_by(SubjID, Cost) %>%
   summarise(propAccept_1 = mean(Choice[Half == "Half_1"]),
-            propAccept_2 = mean(Choice[Half == "Half_2"])) %>%
+            propAccept_2 = mean(Choice[Half == "Half_2"]), .groups = 'drop') %>%
   plyr::dlply("Cost", identity) 
 
 
@@ -1345,13 +1355,13 @@ prepost_btw$Perms <- sapply(temp, function(data) {permute(data$propAccept_1, dat
 # first calculate the mean acceptances per cost/half to draw horizontal and vertical lines on the plot
 df_mean <- dataBtw %>%
             group_by(SubjID, Cost, Block, Half) %>%
-            summarise(propAccept = mean(Choice)) %>%
+            summarise(propAccept = mean(Choice), .groups = 'drop') %>%
             group_by(SubjID, Cost, Half) %>%
-            summarise(propAccept = mean(propAccept)) %>%
+            summarise(propAccept = mean(propAccept), .groups = 'drop') %>%
             spread(Half, propAccept) %>%
             group_by(Cost) %>%
             summarise(propAccept_1 = mean(Half_1),
-                      propAccept_2 = mean(Half_2))
+                      propAccept_2 = mean(Half_2), .groups = 'drop')
 
 
 # and plot
@@ -1359,7 +1369,7 @@ prepost_btw$scatterplot <- dataBtw %>%
                         filter(Choice < 2) %>%
                         group_by(SubjID, Cost) %>%
                         summarise(propAccept_1 = mean(Choice[Half == "Half_1"]),
-                                  propAccept_2 = mean(Choice[Half == "Half_2"])) %>%
+                                  propAccept_2 = mean(Choice[Half == "Half_2"]), .groups = 'drop') %>%
                         ggplot(aes(propAccept_1, propAccept_2, fill = Cost)) +
                           geom_point(size = 3, pch = 21, color = "black", show.legend = F) +
                           scale_fill_manual(values = colsBtw) +
@@ -1381,10 +1391,10 @@ prepost_btw$scatterplot <- dataBtw %>%
 prepost_btw$propBlocks <- dataBtw %>%
                          filter(Choice < 2) %>%
                          group_by(SubjID, Cost, Block) %>%
-                         summarise(propAccept_subj = mean(Choice)) %>%
+                         summarise(propAccept_subj = mean(Choice), .groups = 'drop') %>%
                          group_by(Cost, Block) %>%
                          summarize(propAccept = mean(propAccept_subj),
-                                   seAccept = sd(propAccept_subj)/sqrt(length(propAccept_subj))) %>%
+                                   seAccept = sd(propAccept_subj)/sqrt(length(propAccept_subj)), .groups = 'drop') %>%
                          ggplot(aes(Block, propAccept, color = Cost)) +
                            geom_vline(xintercept = 3.5, linetype = "dashed") +
                            geom_point(size = 2) +
@@ -1409,10 +1419,10 @@ prepost_btw$cogtaskRTs <- dataBtw_coglogs %>%
   filter(Choice == 1,
          Handling > 2) %>%
   group_by(SubjID, Handling, Offer, Trial_Time, Half) %>%
-  summarise(mRT = mean(Task.RT)) %>%
+  summarise(mRT = mean(Task.RT), .groups = 'drop') %>%
   group_by(Handling, Offer, Trial_Time, Half) %>%
   summarise(meanRT = mean(mRT),
-            seRT = sd(mRT, na.rm = T) / sqrt(21)) %>%
+            seRT = sd(mRT, na.rm = T) / sqrt(21), .groups = 'drop') %>%
   ungroup() %>%
   mutate(Offer = factor(Offer, levels = c(4, 8, 20))) %>% 
   ggplot(aes(Trial_Time, meanRT, group = Offer, color = Offer)) +
@@ -1427,6 +1437,7 @@ prepost_btw$cogtaskRTs <- dataBtw_coglogs %>%
 
 ```
 
+&nbsp; 
 
   Next, we tested the hypothesis that foragers would exhibit within-trial consistency and across-trial stability in their choices. Participants were deemed consistent if they did not quit after engaging in a trial. To examine this, we plotted survival curves of trial quits across all participants (Fig. 4, top-left), with black crosses signaling either completed trials (at 2 s, 10 s, and 14 s) or forced travels. These curves show that most decisions to quit happened within the first second into the handling time, and participants rarely quit afterwards (percentage of quits after 1 s = `r  handlingQuits_btw$r * 100`). Physical and easy groups showed slightly lagged responses because the experiment allowed a one-second grace period for participants to begin gripping (marked by the dashed line). This resulted in some individuals opting to wait for that second to indicate an offer rejection (the censor at 4s in the physical group was a completion during a 2 s handling trial that was incorrectly recorded as 4 s by the experimental code). Plotting the quitting time distributions across blocks for the first second of the handling time (ECDFs on Fig. 4, top-right) showed that participants in the wait and cognitive groups responded faster as the experiment progressed. These response time observations suggested clarity in participant choices.
   
@@ -1451,10 +1462,10 @@ hrprepostPlot_btw <- dataBtw %>%
          ),
          Handling = factor(Handling, levels = c("2 s", "10 s", "14 s"))) %>%
   group_by(SubjID, Half, Handling, Cost, Offer) %>%
-  summarise(pAccept = mean(Choice)) %>%
+  summarise(pAccept = mean(Choice), .groups = 'drop') %>%
   group_by(Half, Cost, Handling, Offer) %>%
   summarise(propAccept = mean(pAccept),
-            SE = sd(pAccept) / sqrt(length(pAccept))) %>%
+            SE = sd(pAccept) / sqrt(length(pAccept)), .groups = 'drop') %>%
   ungroup() %>%
   mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%  
   ggplot(aes(Offer, propAccept, color = Cost)) +
@@ -1485,7 +1496,7 @@ mixData <- dataBtw %>%
   summarize(totalChoices = length(Choice),
             totalAccepted = sum(Choice),
             totalQuits = sum(Choice == 0),
-            propAccepted = mean(Choice))
+            propAccepted = mean(Choice), .groups = 'drop')
 
 mixLogis_pre_btw$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait"))
@@ -1503,7 +1514,7 @@ mixData <- dataBtw %>%
   summarize(totalChoices = length(Choice),
             totalAccepted = sum(Choice),
             totalQuits = sum(Choice == 0),
-            propAccepted = mean(Choice))
+            propAccepted = mean(Choice), .groups = 'drop')
 
 mixLogis_post_btw$Physical <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Handling + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait"))
@@ -1565,13 +1576,19 @@ include_graphics("./Images/FIG5_prepostbtw.png")
 ### **Methods**
 #### *Participants* 
 
+&nbsp; 
+
   We collected data from a new sample of 48 eligible participants  (39 Female, median age = 21, range = 18 - 36; number excluded before reaching goal = 6). Sample size was once again determined by means of a power analysis (repeated measures ANOVA), using a significance level of 0.05, power of 0.8, a desired effect size of f = 0.5, and four factors (one for each type of demand; see below for details). The resulting sample size was 45, which we increased to 48 in order to balance the potential order of blocks. We excluded participants using the same criteria as in Experiment 1.
 
 #### *Foraging Task Adaptation*
 
+&nbsp; 
+
   The original between-subjects task from Experiment 1 was modified so that participants foraged for cost types in addition to rewards. Every participant experienced all forms of cost (delay, physical effort, and cognitive effort). There were two block types, in which delay trials were interspersed with either physical-effort or cognitive-effort trials. This setup prevented participants from having to rapidly switch between response modalities across trials (i.e. keyboard press and handgrip). Each block combination (i.e. physical/wait and cognitive/wait) was experienced three times by each participant in 7-minute-long, interleaved blocks, for a total session duration of 42 minutes. Half of the participants experienced a block sequence that started with the physical block. Timing parameters were matched to the middle condition from Experiment 1 (i.e. 10 s handling time and 6 s travel time). Participants were informed that this timing combination would be constant prior to beginning the experiment. The upcoming effort type was disclosed at the beginning of each block, and reward/cost offers were displayed at the start of each trial (e.g. “8 cents for physical effort”). Unlike the previous experiment, participants could express their decision to quit during the offer window (instead of during the handling time). Participants were trained in each type of demand until they reached the same criteria as in Experiment 1.
 
 #### *Analyses*
+
+&nbsp; 
 
   The analytical pipeline was mostly preserved from Experiment 1. We first ran tests to determine whether decision makers integrated reward information. We performed a mixed-effects logistic regression with regressors for offer amount, number of consecutive offer misses, and the sum of the *n* previously observed offers (we identified *n* by comparing the AIC of different history lengths). We then confirmed that the under- and over-acceptance were detrimental to total earnings by performing the same quadratic linear model explained above. We tested the group’s optimality as before. We tested the group’s optimality as before. The optimal strategy was to reject 4 cent offers and accept 8 cent offers, yielding an ideal acceptance of 50% (not counting 20 cent offers, which should have always been accepted per our design). For these trials, we performed a two-sided one-sample chi-squared test of proportions against the null probability of 0.5 for each type of cost.
   
@@ -1582,6 +1599,8 @@ include_graphics("./Images/FIG5_prepostbtw.png")
 
 ### **Results**
 #### *Within-subjects: Decision Makers Integrate Reward Information*
+
+&nbsp; 
 
   In Experiment 2, we directly tested an individual’s preferences for cognitive effort, physical effort, and delay. We did by modifying the foraging task, such that every participant experienced every type of demand in blocks that interleaved wait trials with either physical or cognitive effort (fixed at 10 s handling and 6 s travel times, to allow for comparisons between experiments). We separately analyzed wait trials from the two block types, labeling the two sets of wait trials according to the type of effort with which they were paired (“Wait-C” for cognitive, and “Wait-P” for physical). We hypothesized that 1) reward decision patterns would match those of the previous experiment; and 2) interleaving effort and delay would produce persistent preferences for wait trials. The second hypothesis was based on the idea that people will gravitate to the easiest way to achieve their goals [@Hull1943; @Olivola2013].
   
@@ -1601,7 +1620,7 @@ baseCoeffs$R2 <- sapply(logisticFits_base, function(x) {1 - (summary(x)$deviance
 baseCoeffs$aic <- sapply(logisticFits_base, function(x) {summary(x)$aic})
 baseCoeffs$propAccept_total <- sapply(dataList, function(data) {mean(data$Choice)})
 baseCoeffs$propAccept_totalSQRD <- baseCoeffs$propAccept_total^2
-baseCoeffs$totalEarned <- (dataWth %>% group_by(SubjID) %>% summarize(totalEarned = sum(Offer[Choice == 1])))$totalEarned
+baseCoeffs$totalEarned <- (dataWth %>% group_by(SubjID) %>% summarize(totalEarned = sum(Offer[Choice == 1]), .groups = 'drop'))$totalEarned
 baseCoeffs$SubjID <- subjList_wth # add subject list column to join the demographics by it below
 
 # # plot to match the one in Cost 2, even though we only have offer as an influence
@@ -1667,7 +1686,7 @@ temp <- dataWth %>%
   filter(rawChoice < 2) %>%
   group_by(SubjID) %>%
   summarise(Earnings = sum(Offer[Choice == 1] / 100),
-            pComplete = mean(Choice)) %>%
+            pComplete = mean(Choice), .groups = 'drop') %>%
   mutate(pComplete2 = pComplete^2) %>%
   ungroup()
 
@@ -1713,7 +1732,7 @@ temp <- dataWth %>%
   filter(Offer < 20) %>%
   summarize(propAccept = mean(Choice),
             accept = sum(Choice),
-            quit = sum(Choice == 0))
+            quit = sum(Choice == 0), .groups = 'drop')
 
 # perform a prop.test based on the group's acceptances and quits per cost
 temp2 <- apply(temp, 1, function(row) {prop.test(as.numeric(row[3]), sum(as.numeric(row[3:4])), p = 0.5, conf.level = 0.95)})
@@ -1733,10 +1752,10 @@ rm(temp2)
 earnings_within <- dataWth %>%
   group_by(SubjID, Cost) %>%
   filter(rawChoice == 1) %>%
-  summarise(earning = sum(Offer) / 100) %>%
+  summarise(earning = sum(Offer) / 100, .groups = 'drop') %>%
   group_by(Cost) %>%
   summarise(mEarn = mean(earning),
-            sdEarn = sd(earning)) %>%
+            sdEarn = sd(earning), .groups = 'drop') %>%
   mutate_if(is.numeric, round, digits = 2)
 
 
@@ -1781,7 +1800,7 @@ mixData <- dataWth %>%
   summarize(totalChoices = length(Choice),
             totalAccepted = sum(Choice),
             totalQuits = sum(Choice == 0),
-            propAccepted = mean(Choice))
+            propAccepted = mean(Choice), .groups = 'drop')
 
 mixLogis_main_wth$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-C"))
@@ -1797,7 +1816,7 @@ hrPlot_wth <- dataWth %>%
         filter(Choice < 2) %>%
         group_by(Cost, Offer) %>%
         summarise(propAccept = mean(Choice),
-                  SE = sd(Choice) / sqrt(nSubjs_wth)) %>%
+                  SE = sd(Choice) / sqrt(nSubjs_wth), .groups = 'drop') %>%
         ungroup() %>%
         mutate(Optimal = rep(c(0, 1, 1), length(unique(dataWth$Cost))),
                #BlockType = as.factor(rep(c(0,1,0,1), each = 3)),
@@ -1956,7 +1975,7 @@ RTplot_wth <- dataWth %>%
 propFails_wth <- dataWth %>%
   filter(!Cost %in% c("Wait-C", "Wait-P")) %>%
   group_by(SubjID, Cost) %>%
-  summarise(propFails = mean(rawChoice == 2) * 100) 
+  summarise(propFails = mean(rawChoice == 2) * 100, .groups = 'drop')
 
 
 # Proportion of quits once the trial started per subject
@@ -1964,9 +1983,11 @@ propFails_wth <- dataWth %>%
 propQuits_wth <- dataWth %>%
   filter(!(ResponseType %in% c("Forced Travel", "Forced travel", "Reward"))) %>%
   group_by(SubjID) %>%
-  summarise(propAccept = mean(ResponseType == "Quit") * 100)
+  summarise(propAccept = mean(ResponseType == "Quit") * 100, .groups = 'drop')
 
 ```
+
+&nbsp; 
 
   Similar to the between-subject results, a survival analysis displayed that participants made most of their choices quickly within the offer window (Fig. 7A). The median percentage of quits during the handling time was `r round(median(propQuits_wth$propAccept), digits = 2)`% (SD = `r round(sd(propQuits_wth$propAccept), digits = 2)`), with only `r sum(propQuits_wth$propAccept > 20)` participants quitting over 20% of trials during the handling time. Moreover, the cumulative quitting time distributions show that participant responses during the offer window became faster over time (Fig. 7B). Once in the handling time, the overall percentage of forced travels in the effortful trials was low for both cognitive (median = `r round(median(filter(propFails_wth, Cost == "Cognitive")$propFails), digits = 2)`%, SD = `r round(sd(filter(propFails_wth, Cost == "Cognitive")$propFails), digits = 2)`) and physical (median = `r round(median(filter(propFails_wth, Cost == "Physical")$propFails), digits = 2)`%, SD = `r round(sd(filter(propFails_wth, Cost == "Physical")$propFails), digits = 2)`) conditions. Similar to that of Experiment 1, these results suggest that decision makers were consistent in their adopted strategies, and were able to perform the tasks well.
 
@@ -2002,7 +2023,7 @@ temp <- dataWth %>%
   filter(!(Block %in% c(3, 4))) %>%
   group_by(SubjID, Cost) %>%
   summarise(propAccept_1 = mean(Choice[Half == "Half_1"]),
-            propAccept_2 = mean(Choice[Half == "Half_2"])) %>%
+            propAccept_2 = mean(Choice[Half == "Half_2"]), .groups = 'drop') %>%
   plyr::dlply("Cost", identity) 
 
 
@@ -2018,7 +2039,7 @@ accDiff <- dataWth %>%
          Cost %in% c("Cognitive", "Physical")) %>%
   group_by(SubjID, Cost) %>%
   summarise(propAccept_1 = mean(Choice[Half == "Half_1"]),
-            propAccept_2 = mean(Choice[Half == "Half_2"])) %>%
+            propAccept_2 = mean(Choice[Half == "Half_2"]), .groups = 'drop') %>%
   mutate(Diff = propAccept_2 - propAccept_1)
   
 corDiff <- cor(accDiff$Diff, propFails_wth$propFails)
@@ -2027,7 +2048,7 @@ corDiff <- cor(accDiff$Diff, propFails_wth$propFails)
 temp <- dataWth %>%
   filter(!Cost %in% c("Wait-C", "Wait-P")) %>%
   group_by(SubjID,  Half) %>%
-  summarise(propFails = mean(rawChoice == 2)) %>%
+  summarise(propFails = mean(rawChoice == 2), .groups = 'drop') %>%
   spread(Half, propFails)
 
 failDiffs_wth <- permute(temp$Half_1, temp$Half_2, paired = T)
@@ -2046,10 +2067,10 @@ prepost_wth$propBlocks <- dataWth %>%
       Block %in% c(5, 6) ~ 3
     )) %>%
     group_by(SubjID, Cost, Block) %>%
-    summarise(propAccept_subj = mean(Choice)) %>%
+    summarise(propAccept_subj = mean(Choice), .groups = 'drop') %>%
     group_by(Cost, Block) %>%
     summarize(propAccept = mean(propAccept_subj),
-              seAccept = sd(propAccept_subj)/sqrt(nSubjs_wth)) %>%
+              seAccept = sd(propAccept_subj)/sqrt(nSubjs_wth), .groups = 'drop') %>%
     ggplot(aes(Block, propAccept, color = Cost)) +
       geom_point(size = 2) +
       geom_errorbar(aes(ymin = propAccept - seAccept, ymax = propAccept + seAccept, color = Cost), width = 0.1) +
@@ -2073,18 +2094,18 @@ df_mean <- dataWth %>%
             filter(Choice < 2, !(Block %in% c(3,4))) %>%
             group_by(SubjID, Cost) %>%
             summarise(pAccept_1 = mean(Choice[Half=="Half_1"]),
-                      pAccept_2 = mean(Choice[Half=="Half_2"])) %>%
+                      pAccept_2 = mean(Choice[Half=="Half_2"]), .groups = 'drop') %>%
             group_by(Cost) %>%
             summarise(propAccept_1 = round(mean(pAccept_1), digits = 2),
                       sdAccept_1 = round(sd(pAccept_1), digits = 2),
                       propAccept_2 = round(mean(pAccept_2), digits = 2),
-                      sdAccept_2 = round(sd(pAccept_2), digits = 2))
+                      sdAccept_2 = round(sd(pAccept_2), digits = 2), .groups = 'drop')
 
 prepost_wth$scatterplot <- dataWth %>%
   filter(Choice < 2, !(Block %in% c(3,4))) %>%
   group_by(SubjID, Cost) %>%
   summarise(propAccept_1 = mean(Choice[Half=="Half_1"]),
-            propAccept_2 = mean(Choice[Half=="Half_2"])) %>%
+            propAccept_2 = mean(Choice[Half=="Half_2"]), .groups = 'drop') %>%
   ggplot(aes(propAccept_1, propAccept_2, fill = Cost)) +
     geom_point(size = 3, pch = 21, color = "black", show.legend = F) +
     labs(x = "Proportion Accepted - First Block", y = "Proportion Accepted - Last Block") +
@@ -2109,12 +2130,12 @@ prepost_wth$cogtaskRTs <- dataWth_coglogs %>%
   mutate(Outcome = ifelse(Outcome == 2, 0, Outcome)) %>%
   group_by(SubjID, Offer, Trial_Time, Half) %>%
   summarise(mRT = mean(RT),
-            pComplete = mean(Outcome)) %>%
+            pComplete = mean(Outcome), .groups = 'drop') %>%
   group_by(Offer, Trial_Time, Half) %>%
   summarise(meanRT = mean(mRT),
             seRT = sd(mRT, na.rm = T) / sqrt(48),
             meanProp = mean(pComplete),
-            seProp = sd(pComplete) / sqrt(48)) %>%
+            seProp = sd(pComplete) / sqrt(48), .groups = 'drop') %>%
   ungroup() %>%
   mutate(Offer = factor(Offer, levels = c(4, 8, 20))) %>%
   ggplot(aes(Trial_Time, meanRT, group = Offer, color = Offer)) +
@@ -2270,7 +2291,7 @@ hrprepostPlot_wth <- dataWth %>%
   mutate(Block = ifelse(Block == 1, "First Two Blocks", "Last Two Blocks")) %>%
   group_by(Cost, Block, Offer) %>%
   summarise(propAccept = mean(Choice),
-            SE = sd(Choice) / sqrt(nSubjs_wth)) %>%
+            SE = sd(Choice) / sqrt(nSubjs_wth), .groups = 'drop') %>%
   ungroup() %>%
   mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>%
   ggplot(aes(Offer, propAccept, color = Cost)) +
@@ -2298,7 +2319,7 @@ blockOrder_wth <- dataWth %>%
   mutate(Block = ifelse(Block == 1, "First Two Blocks", "Last Two Blocks")) %>%
   group_by(Cost, BlockOrder, Block, Offer) %>%
   summarise(propAccept = mean(Choice),
-            SE = sd(Choice) / sqrt(nSubjs_wth)) %>%
+            SE = sd(Choice) / sqrt(nSubjs_wth), .groups = 'drop') %>%
   ungroup() %>%
   mutate(Offer = ifelse(Offer == 20, 12, Offer)) %>% 
   ggplot(aes(Offer, propAccept, color = Cost)) +
@@ -2324,7 +2345,7 @@ mixData <- dataWth %>%
   summarize(totalChoices = length(Choice),
             totalAccepted = sum(Choice),
             totalQuits = sum(Choice == 0),
-            propAccepted = mean(Choice))
+            propAccepted = mean(Choice), .groups = 'drop')
 
 mixLogis_pre_wth$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-C"))
@@ -2343,7 +2364,7 @@ mixData <- dataWth %>%
   summarize(totalChoices = length(Choice),
             totalAccepted = sum(Choice),
             totalQuits = sum(Choice == 0),
-            propAccepted = mean(Choice))
+            propAccepted = mean(Choice), .groups = 'drop')
 
 mixLogis_post_wth$Cognitive <-  glmer(cbind(totalAccepted, totalQuits) ~ Cost + Offer + (1 | SubjID), family = "binomial", data = mixData)
 mixData <- within(mixData, Cost <- relevel(Cost, ref = "Wait-C"))
@@ -2563,6 +2584,8 @@ include_graphics("./Images/FIG8_prepostwth.png")
 ### **Methods**
 #### *Model Fitting and Model Comparison Procedures*
 
+&nbsp; 
+
   For each model, both population level and individual subject level parameters were fit simultaneously using an Expectation-Maximization algorithm [@Huys2011; @Huys2012]. Briefly, it was assumed that, at the population level, each parameter was distributed according to a Gaussian distribution, defined by a mean and standard deviation; the individual subject parameters were drawn from this distribution. Accordingly, a point estimate for the individual subject parameters were found via maximum a posteriori (MAP) estimation using the population distribution for each parameter as the priors, and the variance in the individual subject parameter estimates were calculated by taking the inverse of the Hessian matrix at the MAP estimate. Next, the mean of the prior was updated by taking the weighted mean of individual subject estimates, and the variance of the prior was updated by taking the weighted variance across the parameter estimates of individual subjects. This process was repeated until the mean and variance of the prior for all parameters converged (a change of less than .1% across successive iterations). Full mathematical details of the algorithm can be found in Huys et al. (2011, 2012), and the algorithm was implemented using a custom written R package, GaussExMax, available on github (github.com/gkane26/GaussExMax).
   
   Model comparison was performed by calculating Bayes Information Criterion at the group level [integrated BIC or iBIC, @Huys2011; @Huys2012; @Kane2019]. iBIC penalizes the likelihood of the data given model parameters $p(d | \text{model})$ for model flexibility (the number of parameters, $k$), and the size of the penalty depends on the number of observations $o$:
@@ -2576,6 +2599,8 @@ $$\begin{aligned}
   
 #### *Model Definitions*
   
+&nbsp; 
+
   We began by fitting a base model derived from the normative predictions of the Marginal Value Theorem [MVT, @Charnov1976], which states that a delayed reward should be accepted if its earning rate surpasses the opportunity cost (OC) of time incurred in obtaining it (see Operationalization of Cost for details). This decision rule can be expressed as
 
 \begin{align}
@@ -2727,7 +2752,7 @@ fitES <- aovShape_btw$cost %>%
 # and two-sided, one-sample t-test against 0
 fitOStest <- aovShape_btw$cost %>%
   group_by(Group) %>%
-  summarise(tresults = list(t.test(Fit, mu = 0)))
+  summarise(tresults = list(t.test(Fit, mu = 0)), .groups = 'drop')
 
 
 ### plot parameter boxplots
