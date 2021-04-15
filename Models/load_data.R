@@ -3,8 +3,8 @@ library(data.table)
 load_data_dir = dirname(dirname(sys.frame(1)$ofile))
 
 load_data = function() {
-  btw_file = paste0(load_data_dir, "/models_gk/data/dat_btw.csv")
-  wth_file = paste0(load_data_dir, "/models_gk/data/dat_wth.csv")
+  btw_file = paste0(load_data_dir, "/Models/data/dat_btw.csv")
+  wth_file = paste0(load_data_dir, "/Models/data/dat_wth.csv")
 
   dat_btw = fread(btw_file)
   dat_wth = fread(wth_file)

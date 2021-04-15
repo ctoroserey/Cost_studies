@@ -21,7 +21,7 @@ output:
     df_print: paged
 csl: apa.csl
 indent: true
-bibliography: cost_paper.bib
+bibliography: bibliography.bib
 ---
 
 
@@ -556,7 +556,7 @@ standardize_time <- function(subjData) {
 # forced travels are switched to acceptances, as they reflect a preference for that trial
 # rawChoice will be used to compute the # of mistakes
 # The RT is upper-bounded because a glitch in the code made two 14s trials last longer (among all p's) 
-setwd("./Cost2/data")
+setwd("./Exp1/data")
 files <- dir(pattern = '_log.csv')
 
 # load data
@@ -618,7 +618,7 @@ nSubjs_btw <- length(subjList_btw)
 ```{r Load data for within-subject experiment, echo = FALSE, warning = F}
 # First looks at the new data
 # The RT is upper-bounded because a glitch in the code made one 10s last 14s
-setwd('./Cost3/data/')
+setwd('./Exp2/data/')
 files <- dir(pattern = 'main_log.csv')
 
 # load the data and remove extreme subjects
@@ -673,22 +673,22 @@ nSubjs_wth <- length(subjList_wth)
 
 \bigskip
 
-Corresponding authors: Claudio Toro-Serey (ctoro@bu.edu) & Joseph T. McGuire (jtmcg@bu.edu)
+Corresponding authors: Claudio Toro-Serey (ctoroserey@mclean.harvard.edu) & Joseph T. McGuire (jtmcg@bu.edu)
 
 
 \newpage
 
 ## Abstract
 
-  Cognitive and physical effort are typically regarded as costly, but recent findings have suggested that exerting effort can boost the value of prospects under certain conditions. Here we embedded mental and physical effort in a "diet choice" foraging task, which required decision makers not only to evaluate the magnitude and delay of a focal prospective reward, but also to estimate the general opportunity cost of time. In two experiments, independent sets of participants collected rewards that required equivalent periods of cognitive effort, physical effort, or unfilled delay. Monetary offers varied per trial, and the two experiments differed in whether the type of effort or delay cost was the same on every trial (between-subjects, n = 21 per condition), or varied across trials (within-subjects, n = 48). When participants faced only one type of cost, cognitive effort persistently produced the highest acceptance rate compared to trials with an equivalent period of either physical effort or unfilled delay. We theorized that if cognitive effort were intrinsically rewarding, we would observe the same pattern of preferences when participants foraged for varying cost types in addition to rewards. In the within-subject experiment, an initially higher acceptance rate for cognitive effort trials disappeared over time amid an overall decline in acceptance rates as participants gained experience with all three conditions. Our results extend the view that cognitive demands may reduce the discounting effect of delays, but also suggest that differences in cost can eventually fade if individuals actively experience alternative forms of demand. Rather than assigning intrinsic value to cognitive effort, our findings support the idea that a cognitive effort requirement might influence contextual factors such as subjective delay durations. Such altered estimations can be recalibrated if multiple forms of demand are interleaved.
+Cognitive and physical effort are typically regarded as costly, but demands for effort also seemingly boost the value of prospects under certain conditions. One contextual factor that might influence the perceived value of effort is the mix of different demand types a decision maker encounters in a given environment. Here, we embedded both cognitive and physical effort in a "prey selection" foraging task, which required decision makers not only to evaluate the magnitude and delay of a focal prospective reward but also to estimate the general opportunity cost of time. In two experiments, participants encountered prospective rewards that required equivalent intervals of cognitive effort, physical effort, or unfilled delay. Monetary offers varied per trial, and the two experiments differed in whether the type of effort or delay cost was the same on every trial (between-participant manipulation, n=21 per condition), or varied across trials (within-participant manipulation, n=48). When each participant faced only one type of cost, cognitive effort persistently produced the highest acceptance rate compared to trials with an equivalent period of either physical effort or unfilled delay. We theorized that if cognitive effort were intrinsically rewarding, we would observe the same pattern of preferences when participants foraged for varying cost types in addition to rewards. Contrary to this prediction, in the within-participant experiment, an initially higher acceptance rate for cognitive effort trials disappeared over time amid an overall decline in acceptance rates as participants gained experience with all three conditions. Our results indicate that cognitive demands may reduce the discounting effect of delays, but not because decision makers assign intrinsic value to cognitive effort. Rather, the results suggest that a cognitive effort requirement might influence contextual factors such as subjective delay duration estimates, which can be recalibrated if multiple forms of demand are interleaved
 
 \newpage
 
 ## Introduction
 
-  Evaluating whether to pursue a desirable outcome often entails assessing the demands required for obtaining it. In psychology and economics, demands for both time and effort have traditionally been identified as costs that detract from the net subjective value of rewards [@Shenhav2017; @Westbrook2015; @Frederick2002; @Walton2006]. Indeed, decision makers tend to prefer low-effort and immediate rewards over larger rewards that demand longer delays and higher effort [@Ainslie1975; @Hull1943; @Kool2010; @Kool2018; @Treadway2009; @Westbrook2013]. However, people still needlessly pursue effortful courses of action in everyday decisions. Emerging experimental and theoretical work has chiefly explained this phenomenon by suggesting a reciprocal relationship between effort and outcomes, whereby exerting effort boosts the perceived value of its outcomes [@HernandezLallement2014; @Kacelnik2002; @Mochon2012], and positive outcomes imbue value into their preceding effortful behavior [i.e. learned industriousness; @Eisenberger1992]. Though intuitively valid and empirically supported, this explanation leaves open questions about what features of an effortful task can make it attractive in its own right, and how contextual factors mold its perceived costs [@Inzlicht2018]. Understanding what governs the intrinsic costs and rewards of effort could improve our ability to motivate completion of effortful daily activities, such as schoolwork or physical exercise.
+  Evaluating whether to pursue a desirable outcome often entails assessing the demands required for obtaining it. In psychology and economics, demands for both time and effort have traditionally been identified as costs that detract from the net subjective value of rewards [@Shenhav2017; @Westbrook2015; @Frederick2002; @Walton2006]. Indeed, decision makers tend to prefer low-effort and immediate rewards over larger rewards that demand longer delays and higher effort [@Ainslie1975; @Hull1943; @Kool2010; @Kool2018; @Treadway2009; @Westbrook2013]. However, people still needlessly pursue effortful courses of action in everyday decisions. Emerging experimental and theoretical work has chiefly explained this phenomenon by suggesting a reciprocal relationship between effort and outcomes, whereby exerting effort boosts the perceived value of its outcomes [@HernandezLallement2014; @Kacelnik2002; @Mochon2012], and positive outcomes imbue value into their preceding effortful behavior [i.e. learned industriousness, @Eisenberger1992]. Though intuitively valid and empirically supported, this explanation leaves open questions about what features of an effortful task can make it attractive in its own right, and how contextual factors mold its perceived costs [@Inzlicht2018]. Understanding what governs the intrinsic costs and rewards of effort could improve our ability to motivate completion of effortful daily activities, such as schoolwork or physical exercise.
   
-  Recent work has proposed that the subjective costs produced by delays and cognitive effort are modulated by the possibility of missing out on better concurrent alternatives, implying that decision makers track the *opportunity cost of time* [OC; @Fawcett2012; @Kurzban2013; @Otto2019]. Preferences for effortful courses of action could therefore arise from the presence of other types of demands and opportunities in the same choice environment [@Kool2018]. For example, exerting high effort for a reward might be aversive, but the same level of work might be appealing in comparison to the boredom of an equivalent period of passive waiting (e.g. taking the cumbersome way home rather than waiting for a delayed train, even if the resulting time of arrival is the same). This effect of context on effort preferences has been illustrated by experiments on charitable giving, in a which high-effort donation method (such as a run) attracted larger donations than a low-effort method (such as a picnic) when either was available alone (the “martyrdom effect”), but the high-effort event was disfavored when both options were offered as alternatives [@Olivola2013].
+  Recent work has proposed that the subjective costs produced by delays and cognitive effort are modulated by the possibility of missing out on better concurrent alternatives, implying that decision makers track the *opportunity cost of time* [OC, @Fawcett2012; @Kurzban2013; @Otto2019]. Preferences for effortful courses of action could therefore arise from the presence of other types of demands and opportunities in the same choice environment [@Kool2018]. For example, exerting high effort for a reward might be aversive, but the same level of work might be appealing in comparison to the boredom of an equivalent period of passive waiting (e.g. taking the cumbersome way home rather than waiting for a delayed train, even if the resulting time of arrival is the same). This effect of context on effort preferences has been illustrated by experiments on charitable giving, in a which high-effort donation method (such as a run) attracted larger donations than a low-effort method (such as a picnic) when either was available alone (the “martyrdom effect”), but the high-effort event was disfavored when both options were offered as alternatives [@Olivola2013].
   
   Standard models in neuroeconomics and behavioral economics cannot readily address this possibility. The effects on valuation of different types of effort or delay have traditionally been formalized with discounting functions that capture how much less appealing a reward becomes as a function of the associated amount of effort or delay [@Ainslie1975; @Frederick2002; @Green1994; @Kable2007; @kleinflugge2015; @Kool2010; @Westbrook2013]. An advantage of relying on these standardized functions is that they can circumvent a key confound when comparing effort and delay, namely that increasingly effortful tasks also tend to take longer to perform. However, although this line of work suggests that discounting functions are similar for delay and effort [@Massar2015; @Prevost2010; @Seaman2018], there is ongoing debate about the shape of the discounting function across types of demands [@Arulpragasam2018; @Biaaszek2017; @Chong2017; @Hartmann2013; @Klein-Flugge2016; @Kool2018; @Prevost2010], and the degree to which discount rates correlate across cost domains [@Seaman2018; @Westbrook2013]. Further, this approach does not directly probe which type of demand people would prefer if given the option, and constrains the understanding of behavioral demands to one in which such demands are bound to reduce the value of prospects.
   
@@ -2135,10 +2135,10 @@ prepost_wth$cogtaskRTs <- dataWth_coglogs %>%
 # 
 # wth <- dataWth %>%
 #   filter(Block < 3) %>%
-#   mutate(Cost2 = ifelse(Cost %in% c("Wait-P", "Wait-C"), "Wait", Cost)) %>%
-#   group_by(SubjID, Cost2) %>%
+#   mutate(Exp1 = ifelse(Cost %in% c("Wait-P", "Wait-C"), "Wait", Cost)) %>%
+#   group_by(SubjID, Exp1) %>%
 #   summarise(pAccept = mean(Choice)) %>%
-#   plyr::dlply("Cost2", identity)
+#   plyr::dlply("Exp1", identity)
 # 
 # 
 # permute(btw$Cognitive$pAccept, wth$`1`$pAccept, simple = T)
@@ -2150,11 +2150,11 @@ prepost_wth$cogtaskRTs <- dataWth_coglogs %>%
 # # wait vs effort across effort conditions
 # pAll <- dataWth %>%
 #   filter(Choice < 2) %>%
-#   mutate(Cost2 = ifelse(!(Cost %in%  c("Wait-C", "Wait-P")), "EFFORT", "WAIT"),
+#   mutate(Exp1 = ifelse(!(Cost %in%  c("Wait-C", "Wait-P")), "EFFORT", "WAIT"),
 #          BlockType = ifelse(gsub(".*_", "", Cost) == 1, "Physical", "Cognitive")) %>%
 #   group_by(SubjID, BlockType) %>%
-#   summarise(Wait_accept = mean(Choice[Cost2 == "WAIT"]),
-#             Effort_accept = mean(Choice[Cost2 == "EFFORT"])) %>%
+#   summarise(Wait_accept = mean(Choice[Exp1 == "WAIT"]),
+#             Effort_accept = mean(Choice[Exp1 == "EFFORT"])) %>%
 #   ggplot(aes(Wait_accept, Effort_accept, color = SubjID, shape = BlockType)) +
 #     geom_point(size = 5, show.legend = T) +
 #     xlim(0,1) +
@@ -2565,7 +2565,7 @@ include_graphics("./Images/FIG8_prepostwth.png")
 
   For each model, both population level and individual subject level parameters were fit simultaneously using an Expectation-Maximization algorithm [@Huys2011; @Huys2012]. Briefly, it was assumed that, at the population level, each parameter was distributed according to a Gaussian distribution, defined by a mean and standard deviation; the individual subject parameters were drawn from this distribution. Accordingly, a point estimate for the individual subject parameters were found via maximum a posteriori (MAP) estimation using the population distribution for each parameter as the priors, and the variance in the individual subject parameter estimates were calculated by taking the inverse of the Hessian matrix at the MAP estimate. Next, the mean of the prior was updated by taking the weighted mean of individual subject estimates, and the variance of the prior was updated by taking the weighted variance across the parameter estimates of individual subjects. This process was repeated until the mean and variance of the prior for all parameters converged (a change of less than .1% across successive iterations). Full mathematical details of the algorithm can be found in Huys et al. (2011, 2012), and the algorithm was implemented using a custom written R package, GaussExMax, available on github (github.com/gkane26/GaussExMax).
   
-  Model comparison was performed by calculating Bayes Information Criterion at the group level [integrated BIC or iBIC; @Huys2011; @Huys2012; @Kane2019]. iBIC penalizes the likelihood of the data given model parameters $p(d | \text{model})$ for model flexibility (the number of parameters, $k$), and the size of the penalty depends on the number of observations $o$:
+  Model comparison was performed by calculating Bayes Information Criterion at the group level [integrated BIC or iBIC, @Huys2011; @Huys2012; @Kane2019]. iBIC penalizes the likelihood of the data given model parameters $p(d | \text{model})$ for model flexibility (the number of parameters, $k$), and the size of the penalty depends on the number of observations $o$:
   
 $$\begin{aligned}
   iBIC = logp(d | \text{model}) + \frac{k}{2}log(o)
@@ -2576,7 +2576,7 @@ $$\begin{aligned}
   
 #### *Model Definitions*
   
-  We began by fitting a base model derived from the normative predictions of the Marginal Value Theorem [MVT; @Charnov1976], which states that a delayed reward should be accepted if its earning rate surpasses the opportunity cost (OC) of time incurred in obtaining it (see Operationalization of Cost for details). This decision rule can be expressed as
+  We began by fitting a base model derived from the normative predictions of the Marginal Value Theorem [MVT, @Charnov1976], which states that a delayed reward should be accepted if its earning rate surpasses the opportunity cost (OC) of time incurred in obtaining it (see Operationalization of Cost for details). This decision rule can be expressed as
 
 \begin{align}
   \text{Model}_\text{base} = R_i - \gamma H_i
@@ -2645,9 +2645,7 @@ where the section in parentheses was the proportion of the experiment completed 
 ## the fitting of these models was performed by a separate script (modeling_gk_btw/wth)
 # here we load the results to economize computational power during knitting
 # load results from models
-#load("models_gk/results/btw.Rdata")
-#load("models_gk/results/wth.Rdata")
-load("models_gk/results/mod_results.Rdata")
+load("Models/results/mod_results.Rdata")
 
 ### BIC
 # keep relevant model results and combine into a single df with generalizable names (delete eventually)
