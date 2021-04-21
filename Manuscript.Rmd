@@ -49,7 +49,6 @@ library(gridExtra)
 library(reshape2)
 library(corrplot)
 library(survival)
-library(ggfortify)
 library(patchwork)
 library(data.table)
 
