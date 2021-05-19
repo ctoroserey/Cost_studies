@@ -51,6 +51,7 @@ library(corrplot)
 library(survival)
 library(patchwork)
 library(data.table)
+# library(equatiomatic) # with the dev version, you can extract latex equations for the mixed-effects models using e.g. extract_eq(mixLogis_main_btw$Wait)
 
 ## figures at the end of the manuscript?
 figsEnd <- TRUE
