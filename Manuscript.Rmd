@@ -1686,21 +1686,20 @@ mixSummary_wth$Pvals[rbind(c(3, 1), c(4,2))] <- NA
 # # invert colors
 # col2 <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0", "#FFFFFF", "#FDDBC7", "#F4A582", "#D6604D", "#B2182B", "#67001F"))
 
-# corrplot(mixSummary$Betas, 
-#          is.corr = F, 
-#          p.mat = mixSummary$Pvals, 
+# corrplot(mixSummary_wth$Betas,
+#          is.corr = F,
+#          p.mat = mixSummary_wth$Pvals,
 #          type = "lower",
 #          outline = T,
 #          insig = "label_sig",
 #          sig.level = c(.001, .01, .05),
 #          pch.col = "white",
-#          na.label = "square", 
+#          na.label = "square",
 #          na.label.col = "grey",
-#          method = "color", 
+#          method = "color",
 #          tl.col = "black",
 #          tl.cex = 0.8,
 #          cl.length = 5,
-#          cl.lim = c(-2.0001, 2.0001),
 #          col = col2(200))
          
 ```
