@@ -743,7 +743,7 @@ include_graphics("./Images/FIG1_task.png")
   Foraging theory posits that the decision to accept a delayed reward should depend on the opportunity cost of time to be incurred in obtaining it, which in turn depends on the richness of the environment [@Charnov1976; @Stephens1986]. In this study, the richness of the environment was manipulated by the length of the handling and travel times. Shorter travel times produced richer environments by making it possible to save more time by skipping low-reward trials. Since time combinations were fixed per block, we calculated each block’s optimal accept/reject strategy by computing the expected rate of gain (g(*)) from all decision strategies according to the following equation:
   
 $$\begin{aligned} 
-g(*) = \dfrac {\sum p_i \text{R}_{i}} { 3\text{T}_\text{offer} + \sum p_i (\text{T}_\text{handling} + \text{T}_\text{reward}) + 3 \text{T}_\text{travel}},p \in \{0, 1\}
+g(*) = \dfrac {\sum p_i R_{i}} { 3T_\text{offer} + \sum p_i (T_\text{handling} + T_\text{reward}) + 3 T_\text{travel}},p \in \{0, 1\}
 \end{aligned}$$
   
   where *R* and *p* are the reward magnitude and acceptance probability of offer *i*, respectively, $\text{T}_\text{handling}$ is the handling time for the block, $\text{T}_\text{travel}$ is the travel time, $\text{T}_\text{offer}$ is the duration of the offer window (2 s), and $\text{T}_\text{reward}$ is the duration of the window displaying the reward earned (2 s, only presented for completed trials). This gives the average reward per second attainable in each block as a function of the acceptance threshold (i.e. the lowest amount the participant is willing to accept in a given timing environment). Since an ideal forager should always either accept or reject any given category of prey (Krebs et al., 1977), probabilities other than 0 and 1 were not considered. The resulting possible strategies were to accept only 20 cents, accept 8 and 20 cents, or accept everything. Fig. 1B shows possible earnings per second for each choice strategy, as well as the lowest amount participants should accept in order to maximize their rewards (circled dots). For example, a participant in a 10 s handling-time block should accept 8-cent and 20-cent rewards (and reject 4-cent rewards) to maximize their reward rate; a participant in a 14 s handling-time block should accept only 20-cent rewards, and a participant in a 2 s handling-time block should accept everything. Note that accepting every offer was often detrimental to earnings.
@@ -2223,16 +2223,18 @@ $$\begin{aligned}
   We began by fitting a *base model* derived from the normative predictions of the Marginal Value Theorem [MVT, @Charnov1976], which states that a delayed reward should be accepted if its magnitude surpasses the opportunity cost of time incurred in obtaining it (see Reward-maximizing Strategy for details). This evaluation rule can be expressed as
 
 \begin{align}
-  \text{Model}_\text{base} = R_i - \gamma H_i
+  V_{\text{base}_i} = {R}_{i} - \gamma {T}_{\text{handling}_i}
 \end{align}
 
-such that the reward $R$ of trial $i$ should be accepted if it is larger than the average amount one could earn per second in the environment $\gamma$ (gamma; the OC) during the handling time $H_i$, with high gammas promoting selectivity. We fit this and all subsequent models using a softmax function to predict the probability of accepting a given trial
+such that the reward $R$ of trial $i$ is favorable if it is larger than the average amount one could earn per second in the environment $\gamma$ (the opportunity cost) during the handling time ${T}_{\text{handling}_i}$, with high values of $\gamma$ promoting selectivity. We fit this and all subsequent models using a softmax decision rule to determine the probability of accepting the offer on a given trial
 
 \begin{align}
-  P(\text{accept})_i = \dfrac {1} {1 + e^{-(1/\beta)(\text{Model}_\text{base})}}
+  P(\text{accept})_i = \dfrac {1} {1 + e^{-(1/\beta)(V_{\text{base}_i})}}
 \end{align}
 
-gamma in this base model was computed as an individual’s empirical earning rate by the time of each offer, with the free temperature parameter $\beta$ indexing decision noise. Differences among costs in Experiment 1 could then be due to the impact of each cost on decision noise, which could have also driven the gradual convergence of acceptance rates in Experiment 2. However, it is also possible that individuals updated the estimate of gamma at different rates when faced with different demands. Previous accounts have demonstrated the biases that can impact the learning of the opportunity cost [@Dundon2020; @Garrett2020]. We therefore tested a second model that allowed $\gamma$ to evolve over time, adapting a learning rule from @Constantino2015
+The value of $\gamma$ in this base model was computed as an individual’s empirical rate of earnings by the time of each offer, with the free temperature parameter $\beta$ indexing decision noise. Differences among the between-subject cost conditions in Experiment 1 could then be due to the impact of each cost on decision noise, which could have also driven the gradual convergence of acceptance rates in Experiment 2. 
+
+  A second possibility is that individuals updated the estimate of gamma at different rates when faced with different demands. Previous accounts have demonstrated biases that can impact the learning of the opportunity cost in foraging paradigms [@Dundon2020; @Garrett2020]. We therefore tested a second candidate model, an *adaptive model* that allowed $\gamma$ to evolve over time, adapting a learning rule from @Constantino2015
 
 
 \begin{align}
@@ -2243,44 +2245,44 @@ gamma in this base model was computed as an individual’s empirical earning rat
 where $A_i$ is an acceptance indicator (0 or 1), and $\tau_i$ is the duration of the trial. The duration was given by 
 
 \begin{align}
-  \tau_{i} = H_{i}  A_{i} + T_{i}
+  \tau_{i} = {T}_{\text{handling}_i}  A_{i} + {T}_{\text{travel}_i}
 \end{align}
 
-such that the handling time was counted only for accepted trials. Higher values of the learning rate $\alpha$ (ranging from 0 to 1) resulted in a larger update toward the current trial's earning rate weighted by its duration (first term in the equation). For this adaptive model, we fit the learning rate $\alpha$ and the initial value of $\gamma$ in addition to the temperature. These modifications allowed for the tracking of recent reward history, while maintaining the same decision rule
+such that the handling time was counted only for accepted trials. Higher values of the learning rate $\alpha$ (ranging from 0 to 1) resulted in a larger update toward the current trial's rate of earnings weighted by its duration (first term in the equation). Free parameters for this adaptive model were the learning rate $\alpha$ and the initial value of $\gamma$ in addition to the temperature $\beta$. These modifications allowed for the tracking of recent reward history, while maintaining the same evaluation rule
 
 \begin{align}
-  \text{Model}_\text{adaptive} = R_i - \gamma_i H_i
+  V_{\text{adaptive}_i} = {R}_{i} - \gamma_i {T}_{\text{handling}_i}
 \end{align}
 
-where values of $\gamma$ were now updated on each trial $i$ according to Eq. 3, rather than by the empirical earning rate.
+where values of $\gamma$ were now updated on each trial $i$ according to Eq. 3, rather than by the empirical rate of earnings.
 
-  Another possibility was that rather than impacting the learning rate, covert features specific to each type of demand additively biased the estimate of $\gamma$. Suchuniformly affected the way people perceived the opportunity cost bias would be of time. If so, biases could remain stable if a single only one type of demand was experienced, (Experiment 1), but adjust over time as biases from other tasks were experienced (Experiment 2). For example, such biases could reflect an individual’s global estimation of the richness of the environment, or a focal estimation of the passage of time experienced during performance of each task (e.g. how long 10 seconds actually feel). Altered perceived time durations have occasionally been associated with levels of cognitive engagement [@Csikszentmihalyi2014; @Wearden2016], and have a direct effect on a trial’s reward rate. Intuitively, the perceived passage of time could be recalibrated into a global estimate as decision makers faced different types of with experience. We modeled these biases by adding a demand-specific term to $\gamma$ that was gradually integrated across tasks for those participants who foraged among demands. The overall model took the following form
+  A third possibility was that rather than impacting the learning rate, features specific to each cost condition additively biased the estimate of $\gamma$. Such bias could remain stable if only one type of demand was experienced (Experiment 1), but adjust over time as biases from other tasks were experienced (Experiment 2). For example, such biases could reflect an individual’s global estimation of the richness of the environment, could reflect any direct utility or disutility of the experience during the handling time, or could reflect a focal estimation of the passage of time experienced during performance of each task (e.g. how long 10 seconds subjectively feels). Altered perceived time durations have occasionally been associated with levels of cognitive engagement [@Csikszentmihalyi2014; @Wearden2016], and would be expected to impact the subjective estimate of a trial’s reward rate. Intuitively, the subjective duration of a fixed handling time could be recalibrated toward a consensus estimate as decision makers experienced different types of pre-reward demands. Our third candidate model, *biased model*, added a demand-specific term to $\gamma$ that was gradually integrated across tasks for those participants who experienced multiple cost conditions. The overall model took the following form
 
 \begin{align}
-  \text{Model}_\text{biased} = R_i - (\gamma + C_i) H_i
+  V_{\text{biased}_i} = {R}_{i} - (\gamma + C_i) {T}_{\text{handling}_i}
 \end{align}
   
-where $\gamma$ was the mean total earning rate per subject (mean = 0.55 cents per second, SD = 0.02). Negative values of $C_i$ would therefore suggest a boost in offer value produced by a demand. At each decision point, $C_i$ was the cost bias produced by each demand $c_\text{demand}$ weighted against a global bias estimate $c_\text{global}$
+where $\gamma$ was the mean total rate of earnings per subject (mean = 0.55 cents per second, SD = 0.02). Negative values of $C_i$ would therefore suggest a boost in offer value produced by a particular form of demand. On each trial $i$, $C_i$ was the cost bias produced by each demand $c_\text{demand}$ weighted against a global bias estimate $c_\text{global}$
   
 \begin{align}
   C_i = c_\text{global} w_i + c_\text{demand} (1 - w_i)
 \end{align}
   
-with $w_i$ controlling how early participants started integrating the converging cost $c_\text{global}$ into their decisions. The value of this weight was given by
+with $w_i$ controlling how early participants started integrating the consensus cost $c_\text{global}$ into their decisions. The value of this weight was given by
   
 \begin{align}
   w_i = \left (\frac{i}{max(i)} \right ) ^{\alpha_w}
 \end{align}
 
-where the section in parentheses was the proportion of the experiment completed so far (note that the organization of the experimental session was fully disclosed), with high values of the free parameter $\alpha_w$ denoting a late integration of the global converging bias. Since participants in the between-subjects experiment experienced a single type of demand, the values of $c_\text{demand}$ and $c_\text{global}$ where the same and $\alpha_w$ did not play a role. This resulted in just fitting parameters $c_\text{demand}$ and $\beta$ for that dataset. For the within-subjects group, we assumed that the resulting $c_\text{demand}$ values from the first experiment reflected the actual bias induced by each demand. We therefore fixed each value of $c_\text{demand}$ (i.e. $c_\text{cognitive}$, $c_\text{wait}$, and $c_\text{physical}$) to the mean of the fitted parameters from each demand group from Experiment 1, and fit the global bias $c_\text{global}$, the convergence rate $\alpha_w$, and temperature $\beta$. This dynamic allowed for the observed merging of acceptances across demands in Experiment 2, while respecting the stability in the between-subjects study.
+where the term in parentheses was the proportion of the experiment completed so far (note that the organization of the experimental session was fully disclosed), with high values of the free parameter $\alpha_w$ denoting a late integration of the global converging bias. Since participants in Experiment 1 experienced a single type of demand, the values of $c_\text{demand}$ and $c_\text{global}$ where the same and $\alpha_w$ did not play a role. This resulted in fitting only two free parameters, $c_\text{demand}$ and $\beta$, for that data set. For Experiment 2, we fixed each value of $c_\text{demand}$ (i.e. $c_\text{cognitive}$, $c_\text{wait}$, and $c_\text{physical}$) to the mean of the fitted parameters from each demand group from Experiment 1, and fit three free parameters: the global bias $c_\text{global}$, the convergence rate $\alpha_w$, and temperature $\beta$. This dynamic allowed for differences in acceptance rates across cost conditions to remain stable in Experiment 1 but gradually collapse in Experiment 2. 
 
-  Finally, we asked if the biases imposed by each demand could be isolated from a flexible computation of the opportunity cost of time. This fourth model combined the main features from $\text{Model}_\text{adaptive}$ and $\text{Model}_\text{biased}$, such that $\gamma$ was estimated on each trial per Eq. 3, with demands imposing distinct and potentially converging biases as described in model 3. The form of this fourth model was
+  Finally, we asked if the biases imposed by each form of demand could be isolated from a flexible computation of the opportunity cost of time. Our fourth candidate model, an *adaptive + biased model*, combined the main features of the adaptive model and the biased model, such that $\gamma$ was estimated on each trial per Eq. 3, with demands imposing distinct and potentially converging biases as described in Eq. 6-8. The form of this fourth model was
   
 \begin{align}
-  \text{Model}_\text{adaptive + biased} = R_i - (\gamma_i + C_i) H_i
+  V_{\text{ataptive + biased}_i} = {R}_{i} - (\gamma_i + C_i) {T}_{\text{handling}_i}
 \end{align}
  
-  The resulting parameters were compared across cost groups (Experiment 1) and across experiments using ANOVAs, and the cdemand biases computed in Experiment 1 were compared against 0 using one-sample t-tests.
+  The resulting parameters were compared across cost groups (in Experiment 1) and across experiments using ANOVAs, and the $c_\text{demand}$ biases computed in Experiment 1 were compared against 0 using one-sample t-tests.
 
 
 ### **Results**
