@@ -28,7 +28,7 @@ bibliography: bibliography.bib
 <!-- NOTES: 
 - If you're using Rstudio on a mac, you can press 'ctrl + option + o' to compress all chunks and look at the paper + code outline. 
 - This script is set so you can run each code snippet independently (after you run the setups and data loading snippets above the institutional affiliations)
-- Numbers on each chunk correspond generally to sections in the preregistrations
+- Numbers on each chunk correspond generally to sections in the preregistrations (https://osf.io/2rsgm/registrations)
 -->
 
 
@@ -2198,16 +2198,16 @@ include_graphics("./Images/FIG8_prepostwth.png")
 
 ## Computational Modeling of Foraging Behavior
   
-  We developed a computational model to identify cognitive operations that could explain the complex patterns observed in both experiments (e.g. learning, time estimation, etc.). We isolated four key aspects of the behavioral results that an adequate computational model should be able to capture: 1) show deviations in acceptance rates that involved both under- and over-harvesting of offers (e.g. Fig. 3.3A); 2) keep track of recent offer history in order to evaluate the relative value of each offer; 3) persistently display higher acceptances for cognitive effort when faced with single behavioral costs (Experiment 1); and 4) initially match this preference for cognitive effort trials when foraging for demands and rewards (Experiment 2), which should decrease to a common rate across costs over time. These conditions excluded a number of popular explanatory candidates that were not modeled, such as learned industriousness, boredom, fatigue, or asymmetric learning of environmental richness (see Discussion).
+  We developed a computational model to identify cognitive operations that could explain the complex patterns observed across Experiments 1 and 2. We identified four key aspects of the behavioral results that an adequate computational model should be able to capture: 1) modest under- and over-harvesting of offers relative to the optimal strategy as a function of reward offer amount (e.g. Fig. 3A); 2) dependence of choices on recent offer history; 3) higher acceptance rates if all reward offers were associated with cognitive effort (Experiment 1); and 4) gradual abolishment of the tendency to over-accept cognitive effort trials if other forms of demand were interleaved in the same environment (Experiment 2). These conditions excluded a number of potential explanatory candidates that were not modeled, such as learned industriousness, boredom, fatigue, or asymmetric learning of environmental richness (see Discussion).
 
 ### **Methods**
 #### *Model Fitting and Model Comparison Procedures*
 
 &nbsp; 
 
-  For each model, both population level and individual subject level parameters were fit simultaneously using an Expectation-Maximization algorithm [@Huys2011; @Huys2012]. Briefly, it was assumed that, at the population level, each parameter was distributed according to a Gaussian distribution, defined by a mean and standard deviation; the individual subject parameters were drawn from this distribution. Accordingly, a point estimate for the individual subject parameters were found via maximum a posteriori (MAP) estimation using the population distribution for each parameter as the priors, and the variance in the individual subject parameter estimates were calculated by taking the inverse of the Hessian matrix at the MAP estimate. Next, the mean of the prior was updated by taking the weighted mean of individual subject estimates, and the variance of the prior was updated by taking the weighted variance across the parameter estimates of individual subjects. This process was repeated until the mean and variance of the prior for all parameters converged (a change of less than .1% across successive iterations). Full mathematical details of the algorithm can be found in Huys et al. (2011, 2012), and the algorithm was implemented using a custom written R package, GaussExMax, available on github (github.com/gkane26/GaussExMax).
+  For each model, both population-level and individual subject-level parameters were fit simultaneously using an Expectation-Maximization algorithm [@Huys2011; @Huys2012]. Briefly, it was assumed that, at the population level, subject-level values for each parameter were distributed according to a Gaussian distribution, defined by a mean and standard deviation. Accordingly, point estimates for the individual subject parameters were found via maximum a posteriori (MAP) estimation using the population distribution for each parameter as the priors, and the variance in each individual subject parameter estimate was calculated by taking the inverse of the Hessian matrix at the MAP estimate. Next, the mean of the prior was updated by taking the weighted mean of individual subject estimates, and the variance of the prior was updated by taking the weighted variance across the parameter estimates of individual subjects. This process was repeated until the mean and variance of the prior for all parameters converged (a change of less than .1% across successive iterations). Full mathematical details of the algorithm can be found in Huys et al. (2011, 2012), and the algorithm was implemented using a custom written R package, GaussExMax, available on GitHub (github.com/gkane26/GaussExMax).
   
-  Model comparison was performed by calculating Bayes Information Criterion at the group level [integrated BIC or iBIC, @Huys2011; @Huys2012; @Kane2019]. iBIC penalizes the likelihood of the data given model parameters $p(d | \text{model})$ for model flexibility (the number of parameters, $k$), and the size of the penalty depends on the number of observations $o$:
+  Model comparison was performed by calculating Bayesian Information Criterion at the group level [integrated BIC or iBIC, @Huys2011; @Huys2012; @Kane2019]. iBIC penalizes the likelihood of the data given model parameters, $p(d | \text{model})$, for model flexibility (the number of parameters, $k$), and the size of the penalty depends on the number of observations $o$:
   
 $$\begin{aligned}
   iBIC = logp(d | \text{model}) + \frac{k}{2}log(o)
@@ -2220,7 +2220,7 @@ $$\begin{aligned}
   
 &nbsp; 
 
-  We began by fitting a base model derived from the normative predictions of the Marginal Value Theorem [MVT, @Charnov1976], which states that a delayed reward should be accepted if its earning rate surpasses the opportunity cost (OC) of time incurred in obtaining it (see Operationalization of Cost for details). This decision rule can be expressed as
+  We began by fitting a *base model* derived from the normative predictions of the Marginal Value Theorem [MVT, @Charnov1976], which states that a delayed reward should be accepted if its magnitude surpasses the opportunity cost of time incurred in obtaining it (see Reward-maximizing Strategy for details). This evaluation rule can be expressed as
 
 \begin{align}
   \text{Model}_\text{base} = R_i - \gamma H_i
