@@ -1913,7 +1913,7 @@ prepost_wth$scatterplot <- dataWth %>%
             propAccept_2 = mean(Choice[Half=="Half_2"]), .groups = 'drop') %>%
   ggplot(aes(propAccept_1, propAccept_2, fill = Cost)) +
     geom_point(size = 3, pch = 21, color = "black", show.legend = F) +
-    labs(x = "Proportion Accepted - First Block", y = "Proportion Accepted - Last Block") +
+    labs(x = "Prop. Accepted - First Two Blocks", y = "Prop. Accepted - Last Two Blocks") +
     scale_fill_manual(values = colsWth) +
     scale_color_manual(values = colsWth) +
     xlim(0, 1) +
@@ -2179,8 +2179,10 @@ pvalMat[rbind(c(1, 3), c(2, 4), c(3, 1), c(4,2))] <- NA
 
 ```{r Survival and prepost plots (Fig. 7), eval = !figsEnd, fig.width = 8, fig.height = 7, fig.align = "center", fig.cap = "Choice consistency and stability in Experiment 2. Top: Survival curve (left), and distribution of quitting times over time (right). Bottom: Proportion accepted in the second half as a function of first half acceptances (left). Dashed lines indicate the mean for each cost. On the right, the proportion accepted every time participants experienced a given block type."}
 # plots generated in 16.3.1. and 16.3.3.
-#historyPlot_wth <- (suppressWarnings(survPlot_wth) | suppressWarnings(RTplot_wth)) / (prepost_wth$scatterplot | prepost_wth$propBlocks)
-#ggsave("./Images/FIG8_survival.png", historyPlot_wth, device = "png", height = 8, width = 10)
+# historyPlot_wth <- (suppressWarnings(survPlot_wth) | suppressWarnings(RTplot_wth)) / (prepost_wth$scatterplot | prepost_wth$propBlocks) + 
+#     plot_annotation(tag_levels = 'A') &
+#     theme(plot.tag = element_text(size = 20, face = "bold"))
+#ggsave("./Images/FIG7_survivalwth.png", historyPlot_wth, device = "png", height = 8, width = 10)
 include_graphics("./Images/FIG7_survivalwth.png")
 ```
 
