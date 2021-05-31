@@ -17,7 +17,7 @@ Once you install Docker:
 
 - Clone this repo
 
-- Run the following command, where `<yourpath>` is the path to cloned repository (this command will download a ~3GB image to your machine):
+- Run the following command, where `<yourpath>` is the path to cloned repository (this command will download a ~4GB image to your machine):
 
 ```
 docker run --rm -p 8787:8787 -e PASSWORD=foraging -v <yourpath>:/home/rstudio/Cost_studies ctoroserey/cost_studies:preprintenv
@@ -25,9 +25,9 @@ docker run --rm -p 8787:8787 -e PASSWORD=foraging -v <yourpath>:/home/rstudio/Co
 
 - In your browser of choice, go to `http://localhost:8787` (user: rstudio, password: foraging), then make sure you're in the Cost_studies working directory (`setwd(‘Cost_studies’)`) and that you see all the repo files. Open `Manuscript.Rmd`. This will allow you to load the data from the repo directory, and everything produced within the Docker container will be stored locally within the repo directory. 
 
-- To produce the pdf, click on the `Knit` button towards the top of the window. This will take ~5 mins. If you want the figures at the end of the manuscript, set figsEnd to `TRUE` (within the Setups chunk).
+- To produce the pdf, click on the `Knit` button towards the top of the window. This will take ~5 mins, during which you'll see temp files within your local repo directory. If you want the figures at the end of the manuscript, set figsEnd to `TRUE` (within the Setups chunk).
 
-Of course, loading this environment will also let you run sections of the code that you might be interested in. As long as you run the `Setups` and both `Load data *` sections, you should be able to run any section by itself. *Note that the models are not run within the manuscript file (results are loaded from previous fits).* To examine the model in detail, run `modeling_btw/wth.R` withi the Models directory.
+Of course, loading this Docker image will also let you run sections of the code that you might be interested in. As long as you run the `Setups` and both `Load data *` sections, you should be able to run any section by itself. *Note that the models are not run within the manuscript file (results are loaded from previous fits).* To examine the model in detail, run `modeling_btw/wth.R` withi the Models directory.
 
 
 
