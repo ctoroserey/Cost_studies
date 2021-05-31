@@ -7,7 +7,9 @@ This repo contains all the scripts and data for the following paper:
 
 The paper can be reproduced in pdf format by running (well, Knitting) `Manuscript.Rmd` in R (blogdown required). The markdown file is organized so that code for the analyses precedes each written section. The files `sessionInfo_iMac.txt` and `sessionInfo_m1.txt` contain information about the environments used and tested to produce this manuscript. 
 
-### Docker environment
+### Docker environment 
+
+#### *This method does not work on M1 Macs yet because of Rstudio incompatibility in rocker/verse*
 
 You can also use a [Docker](https://www.docker.com/) container to run `Manuscript.Rmd` and produce the preprint pdf [(Image produced based on this tutorial.)](https://ropenscilabs.github.io/r-docker-tutorial/)
 
