@@ -5,5 +5,5 @@ This repo contains all the scripts and data for the following paper:
 
 ## Reproduce the preprint
 
-The paper can be reproduced in pdf format by running `Manuscript.Rmd` in R. The markdown file is organized so that code for the analyses precedes each written section. The files `sessionInfo_iMac.txt` and `sessionInfo_m1.txt` contain information about the environments used and tested to produce this manuscript. Docker image pending.
+The paper can be reproduced in pdf format by running (Knitting) `Manuscript.Rmd` in R (blogdown required). The markdown file is organized so that code for the analyses precedes each written section. The files `sessionInfo_iMac.txt` and `sessionInfo_m1.txt` contain information about the environments used and tested to produce this manuscript. Docker image pending.
 
