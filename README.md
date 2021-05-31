@@ -17,7 +17,7 @@ Once you install Docker:
 
 - Clone this repo
 
-- Run the following command, where `<yourpath>` is the path to the saved folder from OSF (this will download a ~3GB image to your machine):
+- Run the following command, where `<yourpath>` is the path to cloned repository (this command will download a ~3GB image to your machine):
 
 ```
 docker run --rm -p 8787:8787 -e PASSWORD=foraging -v <yourpath>:/home/rstudio/Cost_studies ctoroserey/cost_studies:preprintenv
