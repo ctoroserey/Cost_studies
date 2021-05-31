@@ -30,6 +30,7 @@ bibliography: bibliography.bib
 - If you're using Rstudio on a mac, you can press 'ctrl + option + o' to compress all chunks and look at the paper + code outline. 
 - This script is set so you can run each code snippet independently (after you run the setups and data loading snippets above the institutional affiliations)
 - Numbers on each chunk correspond generally to sections in the preregistrations (https://osf.io/2rsgm/registrations)
+- Within the Setups chunk, the 'figsEnd' variable dictates whether figs are shown at the end (T) or intermixed in the text (F)
 -->
 
 
@@ -56,7 +57,7 @@ library(data.table)
 # library(equatiomatic) # with the dev version, you can extract latex equations for the mixed-effects models using e.g. extract_eq(mixLogis_main_btw$Wait)
 
 ## figures at the end of the manuscript?
-figsEnd <- TRUE
+figsEnd <- F
 
 
 ## aesthetic options
@@ -2499,7 +2500,8 @@ include_graphics("./Images/FIG9_modelresults.png")
 
 We thank Andrew Westbrook, the Shenhav lab, and the Daw lab for helpful discussions. This work was supported by grants from the National Science Foundation (BCS-1755757) and the Office of Naval Research (MURI award N00014-16-1-2832 and DURIP award N00014-17-1-2304). 
 
-## Figures
+
+`r if(figsEnd){"## Figures"}`
 
 ```{r New Task Plot (Fig. 1), eval = figsEnd, out.width = "80%", fig.align = "center", fig.cap= "Task design and optimal behavior. A: General foraging trial structure. On each trial, participants were offered an opportunity to earn money by sustaining effort or waiting during the handling time (2, 10, or 14 s). The end of a trial was followed by a travel time (handling and travel times always added up to 16 s). Participants could skip unfavorable trials and immediately start traveling to a potentially better offer. In Experiment 1, the type of demand was fixed per participant and handling time varied per block. In Experiment 2, handling time was fixed at 10 s, but a combination of effort and delay trials changed per block. B: Possible earnings per second for each acceptance threshold (i.e. the smallest amount accepted) for each handling time in Experiment 1. Circles denote the reward-maximizing threshold for each block, which is described in the table. Experiment 2 presented only the 10 s handling time, for which it was optimal to skip all 4-cent offers."}
 
