@@ -16,13 +16,10 @@ output:
     highlight: haddock
     keep_tex: no
     fig_caption: yes
-  word_document: #default
-    reference_docx: Style_reference_draft.docx
-  html_document:
-    df_print: paged
 csl: apa.csl
 indent: true
 bibliography: bibliography.bib
+geometry: margin=1in
 ---
 
 
@@ -684,7 +681,7 @@ Corresponding authors: Claudio Toro-Serey (ctoroserey@mclean.harvard.edu) & Jose
 
 ## Abstract
 
-Cognitive and physical effort are typically regarded as costly, but demands for effort also seemingly boost the value of prospects under certain conditions. One contextual factor that might influence the perceived value of effort is the mix of different demand types a decision maker encounters in a given environment. Here, we embedded both cognitive and physical effort in a "prey selection" foraging task, which required decision makers not only to evaluate the magnitude and delay of a focal prospective reward but also to estimate the general opportunity cost of time. In two experiments, participants encountered prospective rewards that required equivalent intervals of cognitive effort, physical effort, or unfilled delay. Monetary offers varied per trial, and the two experiments differed in whether the type of effort or delay cost was the same on every trial (between-participant manipulation, n=21 per condition), or varied across trials (within-participant manipulation, n=48). When each participant faced only one type of cost, cognitive effort persistently produced the highest acceptance rate compared to trials with an equivalent period of either physical effort or unfilled delay. We theorized that if cognitive effort were intrinsically rewarding, we would observe the same pattern of preferences when participants foraged for varying cost types in addition to rewards. Contrary to this prediction, in the within-participant experiment, an initially higher acceptance rate for cognitive effort trials disappeared over time amid an overall decline in acceptance rates as participants gained experience with all three conditions. Our results indicate that cognitive demands may reduce the discounting effect of delays, but not because decision makers assign intrinsic value to cognitive effort. Rather, the results suggest that a cognitive effort requirement might influence contextual factors such as subjective delay duration estimates, which can be recalibrated if multiple forms of demand are interleaved.
+Cognitive and physical effort are typically regarded as costly, but demands for effort also seemingly boost the value of prospects under certain conditions. One contextual factor that might influence the perceived value of effort is the mix of different demand types a decision maker encounters in a given environment. In two foraging experiments, participants encountered prospective rewards that required equivalent intervals of cognitive effort, physical effort, or unfilled delay. Monetary offers varied per trial, and the two experiments differed in whether the type of effort or delay cost was the same on every trial, or varied across trials. When each participant faced only one type of cost, cognitive effort persistently produced the highest acceptance rate compared to trials with an equivalent period of either physical effort or unfilled delay. We theorized that if cognitive effort were intrinsically rewarding, we would observe the same pattern of preferences when participants foraged for varying cost types in addition to rewards. Contrary to this prediction, in the second experiment, an initially higher acceptance rate for cognitive effort trials disappeared over time amid an overall decline in acceptance rates as participants gained experience with all three conditions. Our results indicate that cognitive demands may reduce the discounting effect of delays, but not because decision makers assign intrinsic value to cognitive effort. Rather, the results suggest that a cognitive effort requirement might influence contextual factors such as subjective delay duration estimates, which can be recalibrated if multiple forms of demand are interleaved.
 
 \newpage
 
@@ -2496,17 +2493,14 @@ include_graphics("./Images/FIG9_modelresults.png")
   
 \newpage
 
-## Data availability
-
-The data obtained from human participants are available at https://github.com/ctoroserey/Cost_studies 
-
-## Code availability
-
-The code used to perform all analyses can be found in https://github.com/ctoroserey/Cost_studies
 
 ## Acknowledgments 
 
 We thank Andrew Westbrook, the Shenhav lab, and the Daw lab for helpful discussions. This work was supported by grants from the National Science Foundation (BCS-1755757) and the Office of Naval Research (MURI award N00014-16-1-2832 and DURIP award N00014-17-1-2304). 
+
+## Open Practices Statement
+
+The data obtained from human participants and the code used to perform all analyses can be found in https://github.com/ctoroserey/Cost_studies. Both studies were preregistered with the Open Science Framework (https://osf.io/2rsgm/registrations).
 
 
 `r if(figsEnd){"## Figures"}`
