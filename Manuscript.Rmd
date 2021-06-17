@@ -11,6 +11,7 @@ header-includes:
   \setcounter{figure}{0} \renewcommand{\thefigure}{S\arabic{figure}} }
 - \usepackage{indentfirst}
 - \usepackage{fixltx2e}
+- \pagestyle{myheadings}
 output:
   pdf_document:
     highlight: haddock
@@ -674,7 +675,26 @@ nSubjs_wth <- length(subjList_wth)
 
 \bigskip
 
-Corresponding authors: Claudio Toro-Serey (ctoroserey@mclean.harvard.edu) & Joseph T. McGuire (jtmcg@bu.edu)
+**Corresponding authors**:
+
+\begin{itemize}
+  \item[] Claudio Toro-Serey
+  \item[] McLean Hospital
+  \item[] 115 Mill St., MRC 3, Belmont, MA 02478
+  \item[] (859) 619-7217
+  \item[] ctoroserey@mclean.harvard.edu
+\end{itemize}
+
+\bigskip
+\bigskip
+
+\begin{itemize}
+  \item[] Joseph T. McGuire
+  \item[] Boston University
+  \item[] 677 Beacon St., Rm 212, Boston, MA 02215
+  \item[] (617) 353-7670
+  \item[] jtmcg@bu.edu
+\end{itemize}
 
 
 \newpage
