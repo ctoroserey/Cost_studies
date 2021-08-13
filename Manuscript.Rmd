@@ -136,12 +136,14 @@ testParams <- function(params = list(Gamma = 1), model = expr(params$Gamma * Han
 }
   
 # get the number of continuous quits before current trial
-seqQuits <- function(subjData = 1){
+seqQuits <- function(subjData = 1, event = 1){
+    # event dictates whether to only look at quits (1) or completions (0)
+    # basically, add the event that won't be considered in the sequential tally regressor
   
     # get the lag
     tempSeq <- sequence(rle(subjData)$lengths) # sequence
-    tempSeq[subjData==1] <- 0 # not interested in completed runs, just quits
-    tempSeq <- c(0,tempSeq) # lag it so it can be used as a t-1 regressor
+    tempSeq[subjData == event] <- 0 # not interested in completed runs, just quits
+    tempSeq <- c(0, tempSeq) # lag it so it can be used as a t-1 regressor
 
     # return data so that the length is equivalent
     out <- tempSeq[1:length(subjData)]
@@ -851,6 +853,27 @@ historyIndex_btw <- which(sapply(historySize_btw, function(iter) {AIC(iter)}) ==
 
 historyCoeffs_btw <- round(summary(historySize_btw[[historyIndex_btw]])$coefficients, digits = 2)
 
+## potential for reviewers
+# ## track the number of completions
+# # the idea here is that if participants are fatigued by recent physical exertion, they should seek breaks as a function of continuous work
+# # the results is no. In fact, the more they recently completed, the more likely they were to accept
+# # this was true even when just testing the physical group
+# new <- lapply(seq(2, 7), function(tail) {
+#   dat <- dataBtw %>%
+#     filter(Cost == "Physical") %>%
+#     group_by(SubjID) %>%
+#     mutate(recentTravels = seqQuits(Completed),
+#            recentCompletions = seqQuits(Completed, 0),
+#            recentOffers = ifelse(TrialN < (tail + 1), Offer, Reduce(`+`, shift(Offer, 1:tail)))) 
+#   
+#   glmer(Choice ~ Handling + Offer + recentTravels + recentOffers + recentCompletions + (1 | SubjID), data = dat, family = "binomial")
+# })
+# 
+# # then get the summary of the tail length that reduced the AIC the most
+# historyIndex_btw <- which(sapply(new, function(iter) {AIC(iter)}) == min(sapply(new, function(iter) {AIC(iter)})))
+# 
+# round(summary(new[[historyIndex_btw]])$coefficients, digits = 2)
+
 ```
 
 ``` {r BTW: 16.1.3. Earnings, echo = FALSE, fig.align = "center", fig.width = 6, fig.height = 4}
@@ -1063,6 +1086,30 @@ hrPlot_btw <- dataBtw %>%
               panel.background = element_blank(), 
               axis.line = element_line(colour = "black"),
               text = element_text(size = 12))
+
+## alternative form of the plot, instead showing a decay of acceptances as a function of handling time
+# more of a traditional discounting plot
+# dataBtw %>%
+#   filter(Choice < 2) %>% # , Cost != "Easy"
+#   group_by(SubjID, Cost, Handling, Offer, optimal) %>%
+#   summarise(pAccept = mean(Choice), .groups = 'drop') %>%
+#   group_by(Cost, Handling, Offer, optimal) %>%
+#   summarise(meanComplete = mean(pAccept),
+#             SE = sd(pAccept) / sqrt(length(pAccept)), .groups = 'drop') %>%
+#   mutate(Handling = factor(Handling, levels = c(2, 10, 14)),
+#          Offer = factor(Offer, levels = c(4, 8, 20))) %>%
+#   ggplot(aes(Offer, meanComplete, group = interaction(Cost, Handling), color = Cost)) +
+#     geom_point(size = 2) +
+#     scale_color_manual(values = colsBtw) +
+#     geom_line(aes(linetype = Handling), size = 0.7) +
+#     geom_errorbar(aes(ymin = meanComplete - SE, ymax = meanComplete + SE), width = 0.1, size = 0.5) +
+#     theme(legend.key = element_blank(),
+#           panel.grid.major = element_blank(), 
+#           panel.grid.minor = element_blank(), 
+#           panel.background = element_blank(), 
+#           axis.line = element_line(colour = "black"),
+#           text = element_text(size = 12))
+
 
 ```
 
