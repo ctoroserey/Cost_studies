@@ -17,14 +17,15 @@ output:
     highlight: haddock
     keep_tex: no
     fig_caption: yes
+  word_document: default
 csl: apa.csl
-indent: true
+indent: yes
 bibliography: bibliography.bib
 geometry: margin=1in
 ---
 
 
-<!-- NOTES: 
+<!-- NOTES AND TIPS: 
 - If you're using Rstudio on a mac, you can press 'ctrl + option + o' to compress all chunks and look at the paper + code outline. 
 - This script is set so you can run each code snippet independently (after you run the setups and data loading snippets above the institutional affiliations)
 - Numbers on each chunk correspond generally to sections in the preregistrations (https://osf.io/2rsgm/registrations)
